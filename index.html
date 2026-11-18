@@ -1,0 +1,1939 @@
+<!DOCTYPE html>
+<html lang="es" data-boot-ui="v7-salo-showroom">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>SALO SHOWROOM · Cálculo y Diseño · Portal Interactivo 3D / 360°</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./vendor/three/build/three.module.js",
+        "three/addons/": "./vendor/three/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body data-role="public" data-screen="portal">
+
+  <!-- ========================================================================
+       PORTAL PRINCIPAL MULTI-PROYECTO · SALO CÁLCULO Y DISEÑO
+       ======================================================================== -->
+  <div class="salo-portal-home" id="portal-home">
+    <header class="portal-topbar">
+      <div class="portal-brand-block">
+        <div class="portal-brand-emblem">S</div>
+        <div class="portal-brand-titles">
+          <h1>SALO SHOWROOM</h1>
+          <span>SALO · Cálculo y Diseño</span>
+        </div>
+      </div>
+
+      <nav class="portal-nav-tabs" aria-label="Secciones del Portal SALO">
+        <button class="portal-tab-btn active" data-portal-tab="projects" id="ptab-projects">🏛️ Proyectos</button>
+        <button class="portal-tab-btn" data-portal-tab="examples" id="ptab-examples">🖼️ Ejemplos</button>
+        <button class="portal-tab-btn" data-portal-tab="about" id="ptab-about">📐 SALO Cálculo y Diseño</button>
+        <button class="portal-tab-btn" data-portal-tab="editors" id="ptab-editors">🔐 Editores</button>
+      </nav>
+
+      <div class="portal-social-bar">
+        <a class="portal-tiktok-btn" id="portal-link-tiktok" href="https://www.tiktok.com/@.salo.bo?is_from_webapp=1&sender_device=pc" target="_blank" rel="noopener">
+          🎵 TikTok @.salo.bo
+        </a>
+        <a class="salo-fixed-wa-btn" id="portal-link-whatsapp" href="https://wa.me/59173080076" target="_blank" rel="noopener">
+          💬 +591 73080076
+        </a>
+      </div>
+    </header>
+
+    <div class="portal-main">
+      <!-- TAB 1: PANEL DE PROYECTOS + ACCESO POR CÓDIGO ÚNICO + BUSCADOR -->
+      <section id="portal-sec-projects" style="display:flex;flex-direction:column;gap:24px;">
+        <div class="portal-hero-grid">
+          <div class="portal-hero-card">
+            <div>
+              <span class="dropdown-role-badge">SALO · CÁLCULO Y DISEÑO</span>
+              <h2 style="font-family:var(--font-display);font-size:26px;color:var(--gold-bright);margin-top:10px;line-height:1.18;">
+                Showrooms Interactivos 3D, Plantas &amp; Recorridos 360°
+              </h2>
+              <p style="font-size:13px;color:var(--ink-silver);margin-top:8px;line-height:1.55;">
+                Desarrollamos ingeniería de <strong>cálculo estructural, diseño arquitectónico y visualización interactiva</strong> de edificios y viviendas. Explora cualquier proyecto por código único o busca tu edificio directamente abajo.
+              </p>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+              <a class="salo-fixed-wa-btn" href="https://wa.me/59173080076?text=Hola%20SALO%20C%C3%A1lculo%20y%20Dise%C3%B1o%2C%20deseo%20cotizar%20un%20Showroom%20interactivo." target="_blank" rel="noopener" style="height:36px;padding:0 15px;font-size:11.5px;">
+                💬 Cotizar por WhatsApp (+591 73080076)
+              </a>
+              <a class="portal-tiktok-btn" href="https://www.tiktok.com/@.salo.bo?is_from_webapp=1&sender_device=pc" target="_blank" rel="noopener" style="height:36px;padding:0 15px;">
+                🎵 Ver proyectos en TikTok
+              </a>
+            </div>
+          </div>
+
+          <div class="portal-access-card">
+            <div>
+              <strong style="font-size:12.5px;color:var(--gold-bright);letter-spacing:0.6px;">🔑 INGRESAR CON CÓDIGO ÚNICO DE PROYECTO</strong>
+              <p style="font-size:11px;color:var(--ink-silver);margin-top:3px;">Si recibiste un código de proyecto (ej. <code>SALO-001</code>), ingrésalo para abrir directo el Showroom:</p>
+            </div>
+            <div class="portal-input-row">
+              <input type="text" id="portal-code-input" placeholder="Código único (ej: SALO-001)" style="text-transform:uppercase;font-family:monospace;font-weight:700;" />
+              <button class="action-btn gold-cta" id="btn-portal-open-code" style="grid-column:auto;padding:8px 14px;white-space:nowrap;">Abrir →</button>
+            </div>
+            <div id="portal-code-error" style="display:none;color:#f87171;font-size:11px;font-weight:600;">❌ No se encontró ningún proyecto con ese código.</div>
+
+            <div style="border-top:1px solid rgba(212,175,55,0.2);padding-top:11px;">
+              <strong style="font-size:11.5px;color:var(--gold-bright);display:block;margin-bottom:6px;">🔍 BUSCAR PROYECTO POR NOMBRE</strong>
+              <div class="portal-input-row">
+                <input type="search" id="portal-search-input" placeholder="Buscar edificio, torre, residencial..." />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANEL DESTACADO DE PROYECTOS -->
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+            <div>
+              <span style="font-size:10px;color:var(--gold-bright);letter-spacing:1.4px;text-transform:uppercase;font-weight:700;">CATÁLOGO ACTIVO</span>
+              <h3 style="font-family:var(--font-display);font-size:20px;color:var(--ink-white);margin-top:2px;">🏛️ Panel de Proyectos Showroom</h3>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <span id="portal-projects-count" class="code-tag">1 Proyecto</span>
+              <button class="action-btn gold-cta" id="btn-portal-create-project" data-editor-only style="grid-column:auto;padding:8px 15px;">
+                ➕ Crear Nuevo Proyecto
+              </button>
+              <button class="action-btn" id="btn-portal-open-cloud" data-editor-only style="padding:8px 14px;border-color:var(--gold-border-strong);color:var(--gold-bright);">
+                ☁️ Publicar
+              </button>
+              <button class="glass-pill-btn" id="btn-portal-goto-editor-login" data-public-only>
+                🔐 Acceso Editores
+              </button>
+            </div>
+          </div>
+          <div class="portal-projects-grid" id="portal-projects-grid"></div>
+        </div>
+
+        <!-- VISTA RÁPIDA DE EJEMPLOS DE EDIFICIOS -->
+        <div style="display:flex;flex-direction:column;gap:12px;border-top:1px solid rgba(212,175,55,0.18);padding-top:22px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+            <div>
+              <span style="font-size:10px;color:var(--gold-bright);letter-spacing:1.4px;text-transform:uppercase;font-weight:700;">PORTAFOLIO VISUAL</span>
+              <h3 style="font-family:var(--font-display);font-size:18px;color:var(--ink-white);margin-top:2px;">🖼️ Vistas de Ejemplos de Edificios</h3>
+            </div>
+            <label class="action-btn gold-cta" style="cursor:pointer;grid-column:auto;padding:7px 14px;" data-editor-only>
+              ⬆️ Subir Fotos de Edificios
+              <input type="file" id="input-portal-upload-examples" accept="image/*" multiple style="display:none;" />
+            </label>
+          </div>
+          <div class="portal-examples-grid" id="portal-examples-grid"></div>
+        </div>
+      </section>
+
+      <!-- TAB 2: GALERÍA COMPLETA DE EJEMPLOS -->
+      <section id="portal-sec-examples" style="display:none;flex-direction:column;gap:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+          <div>
+            <span class="dropdown-role-badge">GALERÍA SALO</span>
+            <h2 style="font-family:var(--font-display);font-size:22px;color:var(--gold-bright);margin-top:6px;">🖼️ Ejemplos de Edificios &amp; Renders Arquitectónicos</h2>
+          </div>
+          <label class="action-btn gold-cta" style="cursor:pointer;grid-column:auto;padding:8px 16px;" data-editor-only>
+            ➕ Subir Fotos de Ejemplos
+            <input type="file" id="input-portal-upload-examples-2" accept="image/*" multiple style="display:none;" />
+          </label>
+        </div>
+        <div class="portal-examples-grid" id="portal-examples-full-grid"></div>
+      </section>
+
+      <!-- TAB 3: INFORMACIÓN SALO CÁLCULO Y DISEÑO -->
+      <section id="portal-sec-about" style="display:none;flex-direction:column;gap:18px;">
+        <div class="portal-hero-card">
+          <span class="dropdown-role-badge">INGENIERÍA · ARQUITECTURA · VISUALIZACIÓN</span>
+          <h2 style="font-family:var(--font-display);font-size:26px;color:var(--gold-bright);">SALO · Cálculo y Diseño</h2>
+          <p style="font-size:13.5px;color:var(--ink-silver);line-height:1.65;max-width:860px;">
+            En <strong>SALO Cálculo y Diseño</strong> combinamos ingeniería estructural de precisión, diseño arquitectónico contemporáneo y plataformas digitales interactivas <strong>SALO SHOWROOM</strong> para impulsar la comercialización de proyectos inmobiliarios, edificios y viviendas modernas.
+          </p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:6px;">
+            <div class="kpi-box" style="text-align:left;padding:14px;">
+              <strong style="font-size:14px;">📐 Cálculo Estructural</strong>
+              <span style="display:block;margin-top:4px;font-size:11.5px;color:var(--ink-silver);">Análisis sísmico, hormigón armado, estructuras metálicas y optimización constructiva.</span>
+            </div>
+            <div class="kpi-box" style="text-align:left;padding:14px;">
+              <strong style="font-size:14px;">🏛️ Diseño Arquitectónico</strong>
+              <span style="display:block;margin-top:4px;font-size:11.5px;color:var(--ink-silver);">Diseño integral de edificios, viviendas unifamiliares, interiores y documentación técnica.</span>
+            </div>
+            <div class="kpi-box" style="text-align:left;padding:14px;">
+              <strong style="font-size:14px;">🌐 SALO Showroom 3D / 360°</strong>
+              <span style="display:block;margin-top:4px;font-size:11.5px;color:var(--ink-silver);">Recorridos virtuales interactivos, maquetas 3D piso a piso, plantas con áreas disponibles y acabados.</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+            <a class="salo-fixed-wa-btn" href="https://wa.me/59173080076" target="_blank" rel="noopener" style="height:38px;padding:0 18px;font-size:12px;">
+              💬 WhatsApp Directo: +591 73080076
+            </a>
+            <a class="portal-tiktok-btn" href="https://www.tiktok.com/@.salo.bo?is_from_webapp=1&sender_device=pc" target="_blank" rel="noopener" style="height:38px;padding:0 18px;font-size:12px;">
+              🎵 TikTok Oficial: @.salo.bo
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: INICIO DE SESIÓN PARA EDITORES -->
+      <section id="portal-sec-editors" style="display:none;flex-direction:column;gap:16px;">
+        <div class="portal-editor-login-panel" id="portal-editor-login-box">
+          <span class="dropdown-role-badge" style="align-self:flex-start;">ÁREA PRIVADA</span>
+          <h2 style="font-family:var(--font-display);font-size:20px;color:var(--gold-bright);">🔐 Inicio de Sesión para Editores</h2>
+          <p style="font-size:12px;color:var(--ink-silver);line-height:1.5;">
+            Inicia sesión con una cuenta autorizada para crear nuevos proyectos, subir fotos de edificios de ejemplo y editar cualquier Showroom.
+          </p>
+          <form id="portal-login-form" style="display:flex;flex-direction:column;gap:10px;" onsubmit="return false;">
+            <div class="field-col"><label for="portal-login-user">Usuario Editor:</label><input type="text" id="portal-login-user" value="admin" autocomplete="username" /></div>
+            <div class="field-col"><label for="portal-login-pin">Contraseña / PIN:</label><input type="password" id="portal-login-pin" placeholder="Clave (Demo: 1234)" autocomplete="current-password" /></div>
+            <div id="portal-login-error" style="display:none;color:#f87171;font-size:11.5px;font-weight:600;">❌ Usuario o PIN incorrecto.</div>
+            <button type="submit" class="action-btn gold-cta" id="btn-portal-login-submit" style="grid-column:auto;padding:10px;">
+              🔓 Iniciar Sesión como Editor
+            </button>
+          </form>
+        </div>
+
+        <div class="portal-editor-login-panel" id="portal-editor-signed-in" style="display:none;">
+          <span class="dropdown-role-badge" style="align-self:flex-start;background:rgba(34,197,94,0.15);border-color:#22c55e;color:#4ade80;">🛡️ SESIÓN ACTIVA</span>
+          <h2 style="font-family:var(--font-display);font-size:19px;color:var(--gold-bright);">Bienvenido, <span id="portal-active-editor-name">admin</span></h2>
+          <p style="font-size:12px;color:var(--ink-silver);">Tienes permiso completo para crear proyectos, subir ejemplos de edificios y administrar todos los Showrooms.</p>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <button class="action-btn gold-cta" id="btn-portal-signed-new-proj" style="grid-column:auto;padding:10px;">➕ Crear Nuevo Proyecto Showroom</button>
+            <button class="action-btn" id="btn-portal-signed-manage-accounts" style="padding:9px;">👥 Administrar Cuentas Editor</button>
+            <button class="action-btn" id="btn-portal-logout-editor" style="padding:9px;color:#f87171;border-color:rgba(239,68,68,0.4);">👁️ Cerrar Sesión (Volver a Vista Público)</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="showroom-shell">
+
+    <!-- ==================== SALO SHOWROOM TOP BAR ==================== -->
+    <header class="top-bar">
+      <!-- 1. SALO SHOWROOM (FIJO) + NOMBRE EDIFICIO EDITABLE + CONTACTO WHATSAPP FIJO -->
+      <div class="brand-header-group">
+        <button class="portal-home-back-btn" id="btn-return-to-portal" title="Volver al Portal Principal SALO">
+          ← Portal
+        </button>
+
+        <div class="project-dropdown-wrap">
+          <button class="project-tab-btn salo-brand-tab" id="btn-project-dropdown" aria-haspopup="true" aria-expanded="false">
+            <span class="role-mini-dot" id="role-mini-dot"></span>
+            <span class="salo-brand-stack">
+              <span class="salo-brand-fixed-name" id="project-tab-name">SALO SHOWROOM</span>
+              <span class="salo-building-sub" id="project-building-name">Torre Pocito 3D</span>
+            </span>
+            <span class="project-tab-chevron">▾</span>
+          </button>
+
+          <div class="project-dropdown-menu" id="project-dropdown-menu" role="menu">
+            <div class="dropdown-project-header">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+                <strong id="project-title">SALO SHOWROOM · Torre Pocito 3D</strong>
+                <span class="dropdown-role-badge" id="dropdown-role-badge">Editor</span>
+              </div>
+              <span id="project-subtitle">Showroom Interactivo 3D · 360° · Plantas</span>
+              <span id="dropdown-project-code" style="font-family:monospace;font-size:10px;color:var(--gold-bright);margin-top:2px;display:block;">Código: SALO-001</span>
+            </div>
+
+            <button class="dropdown-item" id="menu-back-to-portal">
+              <span>🏠 Volver al Portal Principal SALO</span>
+            </button>
+            <button class="dropdown-item" id="menu-open-location">
+              <span>📍 Ubicación &amp; Google Earth</span>
+              <small style="opacity:0.6;">Mapa</small>
+            </button>
+            <button class="dropdown-item" id="menu-open-renders">
+              <span>🖼️ Vistas Renderizadas</span>
+              <small style="opacity:0.6;">Galería</small>
+            </button>
+            <button class="dropdown-item" id="menu-open-avance">
+              <span>🏗️ Avance de Obra</span>
+              <small id="dropdown-avance-pct" style="color:var(--gold-bright);">68%</small>
+            </button>
+
+            <div class="dropdown-divider"></div>
+
+            <button class="dropdown-item" id="menu-edit-project-info" data-editor-only>
+              <span>⚙️ Edificio, Logo, Opacidad y WhatsApp</span>
+              <small style="opacity:0.6;">Config</small>
+            </button>
+            <button class="dropdown-item" id="menu-open-exterior-mgr" data-editor-only>
+              <span>🖼️ Vistas Exteriores &amp; Video Intro</span>
+              <small style="opacity:0.6;">Inicio</small>
+            </button>
+            <button class="dropdown-item" id="menu-open-floor-creator" data-editor-only>
+              <span>🏗️ Crear / Eliminar Piso o Nivel</span>
+              <small style="opacity:0.6;">Planta</small>
+            </button>
+            <button class="dropdown-item" id="menu-open-transitions" data-editor-only>
+              <span>🎬 Gestor de Transiciones</span>
+              <small style="opacity:0.6;">Videos</small>
+            </button>
+            <button class="dropdown-item" id="menu-open-studio" data-editor-only>
+              <span>⬆️ Estudio de Carga</span>
+              <small style="opacity:0.6;">Archivos</small>
+            </button>
+            <button class="dropdown-item" id="menu-open-cloud-publish" data-editor-only>
+              <span>☁️ Nube, Drive &amp; Publicar</span>
+              <small style="color:var(--gold-bright);">Web Gratis</small>
+            </button>
+            <button class="dropdown-item" id="menu-export-json" data-editor-only>
+              <span>💾 Exportar Proyecto (.JSON)</span>
+            </button>
+            <label class="dropdown-item" style="cursor:pointer;" data-editor-only>
+              <span>📂 Importar Proyecto (.JSON)</span>
+              <input type="file" id="menu-input-import-project" accept=".json" style="display:none;" />
+            </label>
+            <button class="dropdown-item" id="menu-reset-demo" data-editor-only>
+              <span>🔄 Restaurar Datos Demo</span>
+            </button>
+
+            <div class="dropdown-divider"></div>
+
+            <button class="dropdown-item" id="menu-switch-to-public" data-editor-only>
+              <span>👁️ Cambiar a Vista Público General</span>
+            </button>
+            <button class="dropdown-item" id="menu-manage-accounts" data-editor-only>
+              <span>👥 Cuentas Editor &amp; Enlace Público</span>
+            </button>
+            <button class="dropdown-item" id="menu-login-editor" data-public-only>
+              <span>🔐 Iniciar Sesión como Editor</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- BOTÓN FIJO NO EDITABLE AL LADO DE SALO SHOWROOM -> WHATSAPP +59173080076 -->
+        <a class="salo-fixed-wa-btn" id="btn-salo-fixed-whatsapp" href="https://wa.me/59173080076" target="_blank" rel="noopener" title="Contacto directo SALO Showroom (+591 73080076)">
+          💬 Contacto
+        </a>
+      </div>
+
+      <!-- 2. WHISPER-MINIMAL CENTER NAV PILL -->
+      <nav class="nav-dock" aria-label="Modos del Showroom">
+        <button class="nav-btn active" data-view="masterplan" id="nav-masterplan">
+          <span>🏛️</span> Exterior
+        </button>
+        <button class="nav-btn" data-view="tour360" id="nav-tour360">
+          <span>🌐</span> 360°
+        </button>
+        <button class="nav-btn" data-view="model3d" id="nav-model3d">
+          <span>🧊</span> Maqueta 3D
+        </button>
+        <button class="nav-btn" data-view="finishes" id="nav-finishes">
+          <span>✨</span> Acabados
+        </button>
+        <button class="nav-btn" data-view="location" id="nav-location">
+          <span>📍</span> Ubicación
+        </button>
+        <button class="nav-btn" data-view="units" id="nav-units">
+          <span>💎</span> Áreas disponibles ($) <span id="available-count-badge" style="display:none;">6</span>
+        </button>
+      </nav>
+
+      <!-- 3. TOP-RIGHT FLOATING TOOLBAR -->
+      <div class="maihuenia-right-toolbar">
+        <button class="consult-cta-btn" id="btn-top-consult">
+          <span>📞</span> Consultar ahora
+        </button>
+        <span class="toolbar-sep"></span>
+        <button class="role-chip-btn" id="btn-role-toggle" title="Cambiar entre Cuenta Editor y Vista Público General">
+          <span id="role-toggle-label">👁️ Público</span>
+        </button>
+        <button class="toolbar-icon-btn" id="btn-day-night" title="Alternar Día / Noche">
+          <span id="day-night-icon">☀️</span>
+        </button>
+        <button class="toolbar-icon-btn" id="btn-top-share" title="Compartir enlace de este proyecto">
+          🔗
+        </button>
+        <button class="toolbar-icon-btn" id="btn-top-fullscreen" title="Pantalla Completa">
+          ⛶
+        </button>
+        <button class="toolbar-icon-btn" id="btn-open-menu-drawer" title="Menú del Showroom">
+          ☰
+        </button>
+      </div>
+    </header>
+
+    <!-- BOTÓN UNIVERSAL "← VOLVER ATRÁS" -->
+    <button class="global-back-btn" id="btn-global-back" title="Volver a la vista anterior">
+      ← Volver Atrás
+    </button>
+
+    <!-- BANNER ACTIVO AL UBICAR UN PUNTO PERSONALIZABLE DE RENDER / 360° SOBRE LA PLANTA -->
+    <div class="plan-point-place-banner" id="plan-point-place-banner">
+      <span>📍 Haz clic en el lugar de la planta donde deseas ubicar el punto interactivo</span>
+      <button class="glass-pill-btn" id="btn-cancel-plan-point">Cancelar</button>
+    </div>
+
+    <!-- LOGO REDIMENSIONABLE CON OPACIDAD (SOLO CENTRO ENCIMA DE VISTAS EXTERIORES O ESQUINA INFERIOR DERECHA) -->
+    <div class="main-project-logo-wrap pos-above-exterior" id="main-project-logo-wrap">
+      <img id="main-project-logo-img" src="" alt="Logo del Proyecto" />
+    </div>
+
+    <!-- SUB-TOOLS (Sonar Finder 🔍 + Avance de Obra Pill) -->
+    <div class="maihuenia-sub-tools">
+      <button class="finder-sonar-btn" id="btn-finder-lupa" title="Áreas disponibles ($)">
+        <span class="finder-sonar-ring" aria-hidden="true"></span>
+        <span>🔍</span>
+      </button>
+      <button class="avance-pill-btn" id="btn-open-avance" title="Ver Avance de Obra">
+        <span>↑</span>
+        <strong id="avance-pill-pct">68%</strong>
+        <span>Avance de obra</span>
+      </button>
+    </div>
+
+    <!-- BARRA FLOTANTE DISCRETA DE EDICIÓN (Solo visible en Cuenta Editor) -->
+    <div class="editor-quick-strip" id="editor-quick-strip" data-editor-only>
+      <button class="glass-pill-btn" id="btn-open-exterior-manager" title="Cambiar vista principal, añadir fotos exteriores y video de intro">🖼️ Vistas / Intro</button>
+      <button class="glass-pill-btn" id="btn-draw-polygon" title="Trazar y guardar polígonos">✏️ Polígono</button>
+      <button class="glass-pill-btn" id="btn-open-floor-creator" title="Crear o eliminar pisos / niveles">🏗️ Pisos</button>
+      <button class="glass-pill-btn" id="btn-adjust-image" title="Acomodar imagen activa">🎛️ Encuadre</button>
+      <button class="glass-pill-btn" id="btn-quick-transitions" title="Gestor de Transiciones (Solo Editor)">🎬 Transiciones</button>
+      <button class="glass-pill-btn" id="btn-quick-settings" title="Edificio, Logo, Opacidad y WhatsApp">⚙️ Config</button>
+      <button class="glass-pill-btn" id="nav-studio-pill" data-view="studio" title="Subir archivos sin pérdida">⬆️ Estudio</button>
+      <button class="glass-pill-btn active" id="btn-quick-cloud-publish" title="Publicar web 24/7 en GitHub Pages + Drive">☁️ Publicar</button>
+    </div>
+
+    <!-- ==================== SLIDE-OVER MENU DRAWER (☰) ==================== -->
+    <div class="menu-drawer-backdrop" id="menu-drawer-backdrop"></div>
+    <aside class="maihuenia-menu-drawer" id="maihuenia-menu-drawer" aria-label="Menú del Showroom">
+      <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--gold-border);padding-bottom:10px;">
+        <div>
+          <span style="font-size:9.5px;color:var(--gold-bright);letter-spacing:1.4px;text-transform:uppercase;font-weight:700;">SALO SHOWROOM</span>
+          <h3 id="drawer-menu-proj-title" style="font-family:var(--font-display);font-size:15px;color:var(--ink-white);margin-top:2px;">Torre Pocito 3D</h3>
+        </div>
+        <button class="icon-btn" id="btn-close-menu-drawer">✕</button>
+      </div>
+
+      <button class="menu-drawer-link" id="drawer-link-portal"><span>🏠 Portal Principal SALO</span><span>→</span></button>
+      <button class="menu-drawer-link" data-drawer-nav="masterplan"><span>🏛️ Exterior &amp; Plantas Foto</span><span>→</span></button>
+      <button class="menu-drawer-link" data-drawer-nav="tour360"><span>🌐 Recorrido Virtual 360° HD</span><span>→</span></button>
+      <button class="menu-drawer-link" data-drawer-nav="model3d"><span>🧊 Maqueta 3D · Piso a Piso</span><span>→</span></button>
+      <button class="menu-drawer-link" id="drawer-link-renders"><span>🖼️ Galería de Vistas Renderizadas</span><span>→</span></button>
+      <button class="menu-drawer-link" data-drawer-nav="finishes"><span>✨ Comparador de Acabados</span><span>→</span></button>
+      <button class="menu-drawer-link" data-drawer-nav="location"><span>📍 Ubicación &amp; Google Earth</span><span>→</span></button>
+      <button class="menu-drawer-link" data-drawer-nav="units" id="drawer-link-units"><span>💎 Áreas disponibles ($)</span><span>→</span></button>
+      <button class="menu-drawer-link" id="drawer-link-avance"><span>🏗️ Avance de Obra</span><span id="drawer-avance-val" style="color:var(--gold-bright);">68%</span></button>
+
+      <div class="dropdown-divider" data-editor-only></div>
+      <span style="font-size:9.5px;color:var(--gold-bright);letter-spacing:1.2px;text-transform:uppercase;font-weight:700;" data-editor-only>HERRAMIENTAS DE EDITOR</span>
+      <button class="menu-drawer-link" id="drawer-link-exterior-mgr" data-editor-only><span>🖼️ Vistas Exteriores &amp; Video Intro</span><span>→</span></button>
+      <button class="menu-drawer-link" id="drawer-link-floor-creator" data-editor-only><span>🏗️ Crear / Eliminar Piso</span><span>→</span></button>
+      <button class="menu-drawer-link" id="drawer-link-proj-settings" data-editor-only><span>⚙️ Edificio, Logo y WhatsApp</span><span>→</span></button>
+      <button class="menu-drawer-link" data-drawer-nav="studio" data-editor-only><span>⬆️ Estudio de Carga (HD)</span><span>→</span></button>
+      <button class="menu-drawer-link" id="drawer-link-cloud-publish" data-editor-only><span>☁️ Nube, Drive &amp; Publicar</span><span>→</span></button>
+      <button class="menu-drawer-link" id="drawer-link-transitions" data-editor-only><span>🎬 Gestor de Transiciones</span><span>→</span></button>
+      <button class="menu-drawer-link" id="drawer-link-accounts" data-editor-only><span>👥 Cuentas Editor / Enlace Público</span><span>→</span></button>
+
+      <div style="margin-top:auto;padding-top:10px;border-top:1px solid var(--gold-border);display:flex;flex-direction:column;gap:6px;">
+        <button class="action-btn whatsapp-cta" id="drawer-menu-whatsapp" style="grid-column:auto;">
+          💬 Consultar por WhatsApp
+        </button>
+        <div class="salo-drawer-promo-footer" id="salo-drawer-promo-footer">
+          Para promover su construcción de esta forma contacta a <a href="https://wa.me/59173080076" target="_blank" rel="noopener">+591 73080076</a> y cotiza
+        </div>
+      </div>
+    </aside>
+
+    <!-- ==================== STAGE CONTAINER ==================== -->
+    <main class="stage-container">
+
+      <!-- =================================================================
+           1. EXTERIOR & PLANTAS FOTO-RENDER (CON POLÍGONOS + PISOS PERSONALIZADOS)
+           ================================================================= -->
+      <section class="view-panel active" id="view-masterplan">
+
+        <!-- Barra flotante activa al Trazar un Polígono (Solo Editor) -->
+        <div class="polygon-draw-toolbar" id="polygon-draw-toolbar" data-editor-only>
+          <span style="color:var(--gold-bright);font-size:11px;font-weight:700;">
+            ✏️ Clic para marcar esquinas (<span id="draft-points-count">0</span> pts)
+          </span>
+          <button class="glass-pill-btn active" id="btn-finish-polygon">✅ Crear Polígono</button>
+          <button class="glass-pill-btn" id="btn-undo-polygon-pt">↩️ Deshacer</button>
+          <button class="glass-pill-btn" id="btn-cancel-polygon">✕</button>
+        </div>
+
+        <!-- Barra Flotante de Edición Directa de Forma y Botones de Polígono (Solo Editor) -->
+        <div class="polygon-draw-toolbar" id="polygon-shape-toolbar" data-editor-only>
+          <span style="font-size:10.5px;color:var(--gold-bright);font-weight:700;" id="shape-edit-label">
+            ✏️ Arrastra vértices · Clic en borde agrega · Doble clic borra
+          </span>
+          <button class="glass-pill-btn active" id="btn-save-shape-edit">✅ Guardar forma</button>
+          <button class="glass-pill-btn" id="btn-shape-open-panel">🧩 Editar panel y botones</button>
+          <button class="glass-pill-btn" id="btn-cancel-shape-edit">Cancelar</button>
+        </div>
+
+        <!-- Popover Flotante para Acomodar Imagen (Solo Editor) -->
+        <div class="image-adjust-popover" id="image-adjust-popover" data-editor-only>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <strong style="color:var(--gold-bright);font-size:11.5px;">🎛️ Acomodar Imagen Activa</strong>
+            <button class="icon-btn" id="btn-close-adjust" style="width:22px;height:22px;">✕</button>
+          </div>
+          <div class="field-col">
+            <label for="adj-fit">Modo de Ajuste:</label>
+            <select id="adj-fit">
+              <option value="cover">Cubrir lienzo (Cover)</option>
+              <option value="contain">Completa sin recorte (Contain)</option>
+              <option value="fill">Estirar al marco (Fill)</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label><span>Escala</span><span id="lbl-adj-scale">100%</span></label>
+            <input type="range" id="adj-scale" min="50" max="200" step="1" value="100" />
+          </div>
+          <div class="control-group">
+            <label><span>Posición X</span><span id="lbl-adj-x">0%</span></label>
+            <input type="range" id="adj-x" min="-50" max="50" step="1" value="0" />
+          </div>
+          <div class="control-group">
+            <label><span>Posición Y</span><span id="lbl-adj-y">0%</span></label>
+            <input type="range" id="adj-y" min="-50" max="50" step="1" value="0" />
+          </div>
+          <div style="display:flex;gap:6px;">
+            <label class="action-btn gold-cta" style="flex:1;cursor:pointer;grid-column:auto;">
+              🖼️ Cambiar Foto
+              <input type="file" id="input-quick-replace-img" accept="image/*" style="display:none;" />
+            </label>
+            <button class="action-btn" id="btn-reset-adjust">⟲</button>
+          </div>
+        </div>
+
+        <!-- Pestañas de Restaurar Paneles Minimizados -->
+        <button class="restore-edge-tab left-edge visible" id="restore-floors-panel" title="Abrir selector de Pisos y Plantas">
+          🏢 Pisos ▶
+        </button>
+        <button class="restore-edge-tab right-edge visible" id="restore-unit-drawer" title="Abrir ficha del Departamento / Ambiente">
+          ◀ 📋 Ficha
+        </button>
+
+        <!-- Panel Izquierdo de Pisos / Plantas -->
+        <aside class="floor-elevator-panel minimized" id="floor-elevator-panel" aria-label="Navegador de Vistas y Plantas">
+          <div class="elevator-header">
+            <span class="elevator-title">Exterior y Plantas</span>
+            <div class="elevator-arrows">
+              <button class="elevator-step-btn" id="btn-floor-up" title="Subir Nivel">▲</button>
+              <button class="elevator-step-btn" id="btn-floor-down" title="Bajar Nivel">▼</button>
+              <button class="panel-minimize-btn" id="btn-min-floors-panel" title="Minimizar panel">◀</button>
+            </div>
+          </div>
+          <div class="levels-stack" id="levels-list"></div>
+          <div class="plan-mode-switch">
+            <button class="plan-mode-btn active" id="btn-mode-3drender">Render 3D</button>
+            <button class="plan-mode-btn" id="btn-mode-2dplan">Plano 2D</button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;" data-editor-only>
+            <button class="action-btn gold-cta" id="btn-sidebar-create-floor" style="grid-column:auto;font-size:10px;padding:6px;">
+              ➕ Crear Nuevo Piso / Nivel
+            </button>
+            <label class="action-btn" style="cursor:pointer;font-size:10px;padding:5px 7px;">
+              📸 Añadir Foto Planta Nivel
+              <input type="file" id="input-upload-floor-plan-direct" accept="image/*" style="display:none;" />
+            </label>
+            <button class="action-btn" id="btn-sidebar-edit-floor" style="font-size:10px;padding:5px 7px;">
+              ⚙️ Editar Nivel / Transición
+            </button>
+            <button class="action-btn" id="btn-open-transitions-inline" style="font-size:10px;padding:5px 7px;">
+              🎬 Gestor Transiciones
+            </button>
+          </div>
+        </aside>
+
+        <!-- Lienzo Principal Full-Bleed + Polígonos + Portal 360° Animado -->
+        <div class="interactive-canvas-wrap" id="masterplan-viewport">
+          <div class="zoom-transform-layer" id="zoom-layer">
+            <div class="scene-media-frame" id="scene-frame">
+              <img id="masterplan-custom-img" class="scene-render-img" src="./sample-assets/exterior-tower.webp" alt="Vista del proyecto" draggable="false" />
+              <svg class="scene-svg-overlay" id="polygon-svg" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+              <div id="pins-container"></div>
+
+              <!-- MAIHUENIA ANIMATED PULSING 360° ENTRY PORTAL -->
+              <div class="portal-360-hotspot" id="exterior-portal-360" style="left: 44%; top: 75%;">
+                <div class="portal-360-preview">
+                  <img src="./sample-assets/render-interior-1.jpg" alt="Vista previa 360°" />
+                  <div class="portal-360-preview-meta">
+                    <strong id="portal-360-title">Recorrido Virtual 360°</strong>
+                    <span id="portal-360-sub">Hall, Living &amp; Amenities en HD</span>
+                  </div>
+                </div>
+                <span class="portal-360-aura" aria-hidden="true"></span>
+                <button class="portal-360-btn" id="btn-portal-360-enter" title="Ingresar al Recorrido Virtual 360°">
+                  <svg class="portal-360-ring-svg" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                    <circle cx="32" cy="32" r="27" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="42 127" />
+                    <circle cx="32" cy="32" r="27" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="42 127" stroke-dashoffset="-84.5" />
+                  </svg>
+                  <span class="portal-360-text">360°</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MAIHUENIA FLOATING CURSOR TOOLTIP CARD -->
+        <div class="unit-hover-tooltip" id="unit-hover-tooltip">
+          <div class="uht-thumb">
+            <img id="uht-img" src="./sample-assets/floor-piso9-3d.jpg" alt="" />
+            <span class="uht-badge" id="uht-badge">● Disponible</span>
+          </div>
+          <div class="uht-body">
+            <h4 id="uht-title">Departamento 9-01</h4>
+            <p id="uht-meta">3 Cuartos · 2 Baños · 150 m² · $168,000</p>
+          </div>
+        </div>
+
+        <!-- PANEL DERECHO PERSONALIZABLE (TÍTULO DESTACADO + DISPONIBILIDAD OPCIONAL + LÍNEAS ILIMITADAS + BOTONES ILIMITADOS) -->
+        <aside class="unit-drawer" id="unit-drawer" aria-label="Ficha del Departamento o Ambiente">
+          <!-- 1. Barra Superior de Disponibilidad (Mostrable u Ocultable por polígono) -->
+          <div class="availability-top-banner available" id="drawer-availability-banner">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span class="status-dot available" id="drawer-banner-dot"></span>
+              <span id="drawer-status-text">DISPONIBLE</span>
+            </div>
+            <div class="status-quick-pills" title="Cambiar estado rápido (Solo Editor)" data-editor-only>
+              <button class="status-Color-btn green" data-set-status="available" title="Disponible (Verde)"></button>
+              <button class="status-Color-btn orange" data-set-status="reserved" title="Reservado (Naranja)"></button>
+              <button class="status-Color-btn red" data-set-status="sold" title="Vendido (Rojo)"></button>
+            </div>
+          </div>
+
+          <!-- 2. Encabezado con Título Grande Destacado + Minimizar -->
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;">
+            <div id="field-wrap-name" style="min-width:0;">
+              <span id="drawer-eyebrow" style="font-size:9.5px;color:var(--ink-silver);text-transform:uppercase;letter-spacing:1px;font-weight:700;">Departamento / Ambiente</span>
+              <h2 id="drawer-title" class="drawer-featured-title" style="margin-top:2px;">Departamento 9-01</h2>
+              <p id="drawer-subtitle" style="font-size:10.5px;color:var(--ink-silver);margin-top:2px;">Torre Pocito · Piso 9°</p>
+            </div>
+            <div style="display:flex;gap:3px;flex-shrink:0;">
+              <button class="panel-minimize-btn" id="btn-edit-shape-polygon" title="Editar forma del polígono tocando esquinas" data-editor-only>✏️</button>
+              <button class="panel-minimize-btn" id="btn-toggle-info-config" title="Configurar campos, editar polígono y botones" data-editor-only>⚙️</button>
+              <button class="panel-minimize-btn" id="btn-min-unit-drawer" title="Minimizar ficha lateral">▶</button>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:5px;" data-editor-only>
+            <button type="button" class="action-btn" id="btn-drawer-quick-shape" style="flex:1;padding:5px 7px;font-size:10px;">✏️ Editar Forma</button>
+            <button type="button" class="action-btn gold-cta" id="btn-drawer-quick-buttons" style="flex:1;grid-column:auto;padding:5px 7px;font-size:10px;">🧩 Botones y Datos</button>
+          </div>
+
+          <!-- 3. Grilla KPI Estándar (Opcional) -->
+          <div class="unit-kpi-grid" id="drawer-kpi-grid">
+            <div class="kpi-box" id="field-wrap-area"><strong id="drawer-area">150 m²</strong><span>Área</span></div>
+            <div class="kpi-box" id="field-wrap-rooms"><strong id="drawer-beds">3 Ctos</strong><span>Cuartos</span></div>
+            <div class="kpi-box" id="field-wrap-baths"><strong id="drawer-baths">2 Baños</strong><span>Baños</span></div>
+            <div class="kpi-box" id="field-wrap-kitchen"><strong id="drawer-kitchens">1 Cocina</strong><span>Cocina</span></div>
+            <div class="kpi-box" id="field-wrap-price" style="grid-column: span 2;">
+              <strong id="drawer-price" style="font-size:13.5px;color:#4ade80;">$168,000 USD</strong>
+              <span>Precio de Lista</span>
+            </div>
+          </div>
+
+          <!-- 4. LÍNEAS PERSONALIZABLES ILIMITADAS (Texto + Número + Unidad o Descripción Libre) -->
+          <div class="custom-lines-container" id="drawer-custom-lines"></div>
+
+          <!-- 5. BOTONES PERSONALIZABLES ILIMITADOS (Foto Render Normal o Vista 360°) -->
+          <div class="custom-buttons-container" id="drawer-custom-buttons"></div>
+
+          <!-- 6. Panel Desplegable de Configuración (Solo Editor) -->
+          <div class="info-config-panel" id="info-config-panel" data-editor-only>
+            <strong style="color:var(--gold-bright);font-size:10.5px;">⚙️ Campos globales visibles:</strong>
+            <div class="checkbox-grid">
+              <label><input type="checkbox" data-toggle-field="availability" checked /> Disponibilidad</label>
+              <label><input type="checkbox" data-toggle-field="name" checked /> Título</label>
+              <label><input type="checkbox" data-toggle-field="area" checked /> Área (m²)</label>
+              <label><input type="checkbox" data-toggle-field="rooms" checked /> Cuartos</label>
+              <label><input type="checkbox" data-toggle-field="baths" checked /> Baños</label>
+              <label><input type="checkbox" data-toggle-field="kitchen" checked /> Cocina</label>
+              <label><input type="checkbox" data-toggle-field="price" checked /> Precio</label>
+              <label><input type="checkbox" data-toggle-field="pinButton" checked /> Botón Mapa</label>
+            </div>
+            <div style="display:flex;gap:5px;margin-top:3px;flex-wrap:wrap;">
+              <button class="action-btn gold-cta" id="btn-edit-current-polygon" style="flex:1;grid-column:auto;padding:6px;">✏️ Editar Datos / Líneas / Botones</button>
+              <button class="action-btn" id="btn-create-floor-from-unit" style="flex:1;padding:6px;">🏗️ Crear Piso</button>
+              <button class="action-btn" id="btn-delete-current-polygon" style="padding:6px;color:#f87171;border-color:rgba(239,68,68,0.4);">🗑️</button>
+            </div>
+          </div>
+
+          <!-- 7. Vista previa de la Planta Foto-Render -->
+          <div id="drawer-floor-preview-wrap" style="background:rgba(255,255,255,0.03);border:1px solid var(--gold-border);border-radius:10px;padding:7px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;font-size:10px;color:var(--gold-bright);">
+              <span>📸 Planta Foto-Render</span>
+              <span id="drawer-floor-label">Piso 9°</span>
+            </div>
+            <img id="drawer-floor-photo-preview" src="./sample-assets/floor-piso9-3d.jpg" alt="Planta Foto Render" style="width:100%;height:92px;object-fit:cover;border-radius:7px;cursor:pointer;" />
+          </div>
+
+          <!-- 8. Botones de Acción del Nivel -->
+          <div class="unit-action-stack">
+            <button class="action-btn gold-cta" id="btn-drawer-transition-to-floor">🎬 Ir a Vista en Planta</button>
+            <button class="action-btn" id="btn-drawer-open-renders">🖼️ Renders</button>
+            <button class="action-btn" id="btn-drawer-go-360">🌐 Tour 360° del Piso</button>
+            <button class="action-btn" id="btn-drawer-go-3d-floor">🧊 Piso 3D</button>
+            <button class="action-btn" id="btn-drawer-go-finishes">✨ Acabados</button>
+            <button class="action-btn whatsapp-cta" id="btn-drawer-whatsapp">💬 Consultar por WhatsApp</button>
+          </div>
+        </aside>
+
+        <!-- BARRA INFERIOR MINIMALISTA: Botón Único Vistas Exteriores · Zoom -->
+        <div class="bottom-hud">
+          <!-- UN SOLO BOTÓN EN PANTALLA PARA CAMBIAR ENTRE LAS VISTAS EXTERIORES / NIVELES -->
+          <div class="flyby-rotate-dock" id="flyby-rotate-dock">
+            <div class="exterior-single-pill" id="exterior-single-pill">
+              <button class="ext-step-mini" id="btn-flyby-prev" title="Vista exterior anterior">‹</button>
+              <button class="ext-label-btn" id="btn-cycle-exterior-view" title="Cambiar a la siguiente vista exterior">
+                🖼️ <span id="flyby-angle-badge">Vista Exterior 1 / 4</span>
+              </button>
+              <button class="ext-step-mini" id="btn-flyby-next" title="Siguiente vista exterior">›</button>
+            </div>
+          </div>
+
+          <div class="zoom-controls">
+            <button class="icon-btn" id="btn-zoom-out" title="Alejar">−</button>
+            <span id="zoom-percentage" style="font-size:10.5px;font-weight:700;color:var(--gold-bright);padding:0 5px;">100%</span>
+            <button class="icon-btn" id="btn-zoom-in" title="Acercar">+</button>
+            <button class="icon-btn" id="btn-zoom-reset" title="Restablecer">⟲</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           2. RECORRIDO VIRTUAL 360° PRO (BOTÓN DE PISO + PAGINADOR NUMÉRICO BLANCO)
+           ================================================================= -->
+      <section class="view-panel" id="view-tour360">
+        <div class="tour360-canvas-container" id="tour360-container">
+          <div id="tour360-hotspots-layer"></div>
+        </div>
+
+        <!-- Left & Right Mid-Edge Room Step Arrows -->
+        <button class="tour360-side-nav prev" id="btn-360-prev-room" title="Vista 360° anterior">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button class="tour360-side-nav next" id="btn-360-next-room" title="Siguiente vista 360°">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+
+        <!-- Pro Minimalist 360° Control Stack -->
+        <div class="tour360-pro-controls">
+          <div class="tour360-compass-pill" title="Orientación en tiempo real">
+            <span id="compass-needle" style="display:inline-block;">🧭</span>
+            <span id="compass-deg-label">N 000°</span>
+          </div>
+          <button class="tour360-circle-btn" id="btn-360-zoom-in" title="Acercar vista 360°">＋</button>
+          <button class="tour360-circle-btn" id="btn-360-zoom-out" title="Alejar vista 360°">－</button>
+          <button class="tour360-circle-btn" id="btn-360-reset-view" title="Centrar cámara 360°">⟲</button>
+          <button class="tour360-circle-btn active" id="btn-360-autorotate-icon" title="Alternar giro automático">🔄</button>
+          <button class="tour360-circle-btn" id="btn-360-exit-exterior" title="Volver Atrás">✕</button>
+        </div>
+
+        <div class="tour360-drag-hint" id="tour360-drag-hint">ARRASTRA PARA MIRAR ALREDEDOR 360°</div>
+
+        <!-- Left Minimizable 360° HUD Panel -->
+        <button class="restore-edge-tab left-edge" id="restore-360-panel" title="Mostrar Panel 360°">
+          🌐 Panel 360° ▶
+        </button>
+        <aside class="tour360-hud-panel" id="tour360-hud-panel">
+          <div class="elevator-header">
+            <span class="elevator-title" id="tour360-floor-context">Recorrido 360° HD</span>
+            <button class="panel-minimize-btn" id="btn-min-360-panel" title="Minimizar panel">◀</button>
+          </div>
+          <div>
+            <div id="tour360-current-room-title" style="font-size:12.5px;font-weight:700;color:var(--ink-white);">Grand Living Obsidiana</div>
+            <div id="tour360-quality-badge" style="font-size:9.5px;color:var(--gold-bright);margin-top:2px;">Calidad Nativa Sin Compresión</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <button class="action-btn gold-cta" id="btn-360-add-hotspot" style="grid-column:auto;" data-editor-only>
+              ⭕ Añadir Botón de Piso / Flecha 360°
+            </button>
+            <label class="action-btn" style="cursor:pointer;" data-editor-only>
+              🖼️ Subir Imagen 360° para este Piso
+              <input type="file" id="input-upload-360-inline" accept="image/*" style="display:none;" />
+            </label>
+            <button class="action-btn" id="btn-360-autorotate">🔄 Giro Automático: ON</button>
+          </div>
+          <div id="hotspot-place-hint" style="display:none;background:rgba(212,175,55,0.14);border:1px solid var(--gold-bright);color:var(--gold-bright);padding:6px 8px;border-radius:8px;font-size:10.5px;font-weight:600;">
+            👆 Haz clic en el piso o punto del panorama 360° donde deseas ubicar el botón
+          </div>
+        </aside>
+
+        <!-- BARRA INFERIOR NUMÉRICA SEMI-TRANSPARENTE (SOLO NÚMEROS BLANCOS + FLECHAS SI HAY MUCHOS) -->
+        <div class="tour360-number-bar" id="tour360-number-bar" aria-label="Selector numérico de vistas 360°">
+          <button class="tour360-num-scroll-btn" id="btn-360-nums-left" title="Desplazar números a la izquierda">‹</button>
+          <div class="tour360-numbers-track" id="tour360-numbers-track"></div>
+          <button class="tour360-num-scroll-btn" id="btn-360-nums-right" title="Desplazar números a la derecha">›</button>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           3. MAQUETA 3D INTERACTIVA PISO A PISO (.OBJ + .MTL + .GLB + .FBX)
+           ================================================================= -->
+      <section class="view-panel" id="view-model3d">
+        <div id="model3d-canvas-container" style="position:relative;width:100%;height:100%;background:#08090d;">
+          <div id="model3d-labels-layer" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
+          <div class="model3d-loading-overlay" id="model3d-loading-overlay" aria-live="polite">
+            <div class="model3d-loading-card">
+              <strong id="model3d-loading-title">⏳ Descargando Maqueta 3D…</strong>
+              <span id="model3d-loading-detail">0 MB</span>
+              <div class="model3d-loading-track"><div class="model3d-loading-bar" id="model3d-loading-bar"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <button class="restore-edge-tab left-edge" id="restore-3d-left" title="Mostrar Controles 3D">🧊 Controles ▶</button>
+        <button class="restore-edge-tab right-edge" id="restore-3d-floors" title="Mostrar Pisos 3D">◀ 🏢 Pisos 3D</button>
+
+        <aside class="model3d-hud-left" id="model3d-hud-left">
+          <div class="elevator-header">
+            <span class="elevator-title">🧊 Motor 3D · Piso a Piso</span>
+            <button class="panel-minimize-btn" id="btn-min-3d-left" title="Minimizar controles 3D">◀</button>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;">
+            <button class="action-btn active" id="btn-3d-mode-orbit" style="padding:6px 4px;font-size:10px;">🛰️ Órbita</button>
+            <button class="action-btn" id="btn-3d-mode-walk" style="padding:6px 4px;font-size:10px;">🚶 Peatón</button>
+            <button class="action-btn" id="btn-3d-mode-drone" style="padding:6px 4px;font-size:10px;">🚁 Dron</button>
+          </div>
+          <button class="action-btn" id="btn-3d-explode" style="width:100%;">💥 Vista Explotada</button>
+          <div class="control-group">
+            <label><span>✂️ Corte Horizontal</span><span id="label-cut-height" style="color:var(--gold-bright);">Completo</span></label>
+            <input type="range" id="slider-cut-height" min="0.5" max="20" step="0.1" value="20" />
+          </div>
+          <div class="control-group">
+            <label><span>☀️ Asoleamiento</span><span id="label-sun-hour" style="color:var(--gold-bright);">16:30 hs</span></label>
+            <input type="range" id="slider-sun-hour" min="6" max="21" step="0.25" value="16.5" />
+          </div>
+          <div class="control-group">
+            <label><span>🎥 Cámaras Directas:</span></label>
+            <div id="model3d-cameras-grid" style="display:flex;flex-direction:column;gap:4px;margin-top:2px;"></div>
+            <button class="action-btn gold-cta" id="btn-3d-save-camera" style="margin-top:4px;padding:5px 7px;font-size:10px;grid-column:auto;" data-editor-only>
+              ➕ Guardar Vista Actual con Nombre
+            </button>
+          </div>
+          <label class="action-btn gold-cta" style="cursor:pointer;grid-column:auto;" data-editor-only>
+            📦 Importar .OBJ / .MTL / .GLB / .FBX
+            <input type="file" id="input-upload-3d-inline" accept=".obj,.mtl,.glb,.gltf,.fbx,.d5a,.d5" multiple style="display:none;" />
+          </label>
+          <button class="action-btn" id="btn-restore-demo-3d" style="display:none;font-size:10px;" data-editor-only>↺ Volver a Maqueta Demo</button>
+          <div id="model-import-status" style="font-size:10px;color:var(--gold-bright);text-align:center;line-height:1.35;">Activo: Maqueta SALO (4 Niveles)</div>
+        </aside>
+
+        <aside class="model3d-floor-selector" id="model3d-floor-selector" aria-label="Selector Piso por Piso 3D">
+          <div class="elevator-header">
+            <span class="elevator-title">Pisos 3D</span>
+            <div class="elevator-arrows">
+              <button class="elevator-step-btn" id="btn-3d-floor-up" title="Subir Piso">▲</button>
+              <button class="elevator-step-btn" id="btn-3d-floor-down" title="Bajar Piso">▼</button>
+              <button class="panel-minimize-btn" id="btn-min-3d-floors" title="Minimizar panel">▶</button>
+            </div>
+          </div>
+          <div id="model3d-floors-stack" style="display:flex;flex-direction:column;gap:4px;"></div>
+          <button class="action-btn gold-cta" id="btn-3d-add-floor" style="margin-top:4px;padding:6px;font-size:10px;grid-column:auto;" data-editor-only>
+            ➕ Crear Piso 3D (Vista Actual)
+          </button>
+        </aside>
+
+        <div class="walk-dpad">
+          <span style="font-size:9.5px;color:var(--gold-bright);font-weight:700;">MOVER:</span>
+          <button class="dpad-btn" data-move="forward">▲</button>
+          <button class="dpad-btn" data-move="backward">▼</button>
+          <button class="dpad-btn" data-move="left">◀</button>
+          <button class="dpad-btn" data-move="right">▶</button>
+          <button class="dpad-btn" data-move="up">＋</button>
+          <button class="dpad-btn" data-move="down">－</button>
+          <button class="glass-pill-btn" id="btn-3d-wireframe" style="height:24px;padding:0 8px;font-size:10px;">Malla</button>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           4. COMPARADOR DE ACABADOS PERSISTENTE POR PESTAÑAS CON NOMBRES
+           ================================================================= -->
+      <section class="view-panel" id="view-finishes">
+        <button class="restore-edge-tab right-edge" id="restore-finishes-panel" title="Mostrar Lista de Acabados">◀ ✨ Acabados</button>
+        <aside class="finishes-tabs-panel" id="finishes-tabs-panel" aria-label="Lista de Acabados">
+          <div class="elevator-header">
+            <span class="elevator-title">✨ Acabados</span>
+            <button class="panel-minimize-btn" id="btn-min-finishes-panel" title="Ocultar lista de acabados">▶</button>
+          </div>
+          <div id="finishes-tabs-list" class="finishes-tabs-list"></div>
+          <div class="finishes-pagination-bar" id="finishes-pagination-bar">
+            <button type="button" class="glass-pill-btn" id="btn-finishes-prev-page" title="Página anterior">◀</button>
+            <span id="finishes-page-indicator" style="font-size:10.5px;color:var(--gold-bright);font-weight:700;">1 / 1</span>
+            <button type="button" class="glass-pill-btn" id="btn-finishes-next-page" title="Página siguiente">▶</button>
+          </div>
+          <button type="button" class="action-btn gold-cta" id="btn-add-finish-tab" data-editor-only style="grid-column:auto;padding:7px;font-size:10.5px;">
+            ➕ Nuevo Acabado
+          </button>
+        </aside>
+        <div class="finish-side-badge left" id="finish-badge-left">Lado A</div>
+        <div class="finish-side-badge right" id="finish-badge-right">Lado B</div>
+
+        <div class="finishes-comparator-stage" id="finishes-stage">
+          <div class="finish-layer" id="finish-layer-right">
+            <canvas id="finish-canvas-right" width="1600" height="900"></canvas>
+            <img id="finish-img-right" alt="Acabado Opción B" style="display:none;" />
+          </div>
+          <div class="finish-layer" id="finish-layer-left" style="clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%);">
+            <canvas id="finish-canvas-left" width="1600" height="900"></canvas>
+            <img id="finish-img-left" alt="Acabado Opción A" style="display:none;" />
+          </div>
+          <div class="split-divider" id="finish-split-divider" style="left: 50%;"><div class="split-handle">↔</div></div>
+        </div>
+
+        <div class="finishes-Floating-Controls">
+          <div class="field-col"><label for="select-finish-left">Lado Izquierdo (Opción A):</label><select id="select-finish-left"></select></div>
+          <div class="field-col"><label for="select-finish-right">Lado Derecho (Opción B):</label><select id="select-finish-right"></select></div>
+          <label class="glass-pill-btn" style="cursor:pointer;" data-editor-only>
+            🖼️ Subir a Opción A
+            <input type="file" id="input-finish-left" accept="image/*" style="display:none;" />
+          </label>
+          <label class="glass-pill-btn" style="cursor:pointer;" data-editor-only>
+            🖼️ Subir a Opción B
+            <input type="file" id="input-finish-right" accept="image/*" style="display:none;" />
+          </label>
+          <button class="glass-pill-btn" id="btn-add-finish-option" data-editor-only>➕ Nueva Opción</button>
+          <button class="glass-pill-btn" id="btn-rename-finish-option" data-editor-only>✏️ Renombrar A</button>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           5. UBICACIÓN SATELITAL · GOOGLE EARTH · PUNTOS DE REFERENCIA
+           ================================================================= -->
+      <section class="view-panel" id="view-location">
+        <div class="location-map-stage" id="location-map-stage">
+          <canvas id="location-tile-canvas"></canvas>
+          <div id="location-markers-layer"></div>
+        </div>
+
+        <button class="restore-edge-tab left-edge" id="restore-location-panel" title="Mostrar Panel de Ubicación">📍 Ubicación ▶</button>
+        <aside class="location-sidebar" id="location-sidebar">
+          <div class="elevator-header">
+            <span class="elevator-title">📍 Ubicación &amp; Google Earth</span>
+            <button class="panel-minimize-btn" id="btn-min-location-panel" title="Minimizar panel">◀</button>
+          </div>
+          <div style="background:rgba(212,175,55,0.06);border:1px solid var(--gold-border);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px;">
+            <strong style="font-size:10.5px;color:var(--gold-bright);">Coordenadas del Proyecto</strong>
+            <div class="form-grid-2" data-editor-only>
+              <div class="field-col"><label for="loc-input-lat">Latitud:</label><input type="number" step="0.000001" id="loc-input-lat" value="-17.783327" /></div>
+              <div class="field-col"><label for="loc-input-lng">Longitud:</label><input type="number" step="0.000001" id="loc-input-lng" value="-63.182140" /></div>
+            </div>
+            <div id="loc-coords-readonly" style="font-size:11px;color:var(--ink-silver);" data-public-only>Lat: -17.783327 · Lng: -63.182140</div>
+            <div style="display:flex;gap:5px;">
+              <button class="action-btn" id="btn-apply-project-coords" style="flex:1;" data-editor-only>💾 Guardar Coordenadas</button>
+              <button class="action-btn" id="btn-center-project-map" style="padding:6px 8px;" title="Centrar en el proyecto">🎯</button>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <button class="action-btn gold-cta" id="btn-open-google-earth" style="grid-column:auto;">🌍 Abrir en Google Earth Web</button>
+            <button class="action-btn" id="btn-export-kml">⬇️ Descargar Puntos (.KML)</button>
+            <button class="action-btn" id="btn-toggle-place-poi" data-editor-only>➕ Añadir Punto Visual en Mapa</button>
+          </div>
+          <div id="poi-place-hint" style="display:none;background:rgba(212,175,55,0.15);border:1px solid var(--gold-bright);color:var(--gold-bright);padding:6px 8px;border-radius:8px;font-size:10.5px;font-weight:600;">
+            👆 Haz clic en el mapa para guardar una referencia visual
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:10.5px;color:var(--gold-bright);font-weight:700;">Puntos de Referencia Guardados</span>
+            <span id="poi-count-badge" class="code-tag">0</span>
+          </div>
+          <div id="location-poi-list" style="display:flex;flex-direction:column;gap:5px;"></div>
+        </aside>
+
+        <div class="bottom-hud">
+          <div class="legend-pill">
+            <span id="map-cursor-coords" style="color:var(--gold-bright);font-family:monospace;">Lat: -17.7833 · Lng: -63.1821</span>
+            <span style="color:var(--ink-silver);">Satélite HD</span>
+          </div>
+          <div class="zoom-controls">
+            <button class="icon-btn" id="btn-map-zoom-out">−</button>
+            <span id="map-zoom-label" style="font-size:10.5px;font-weight:700;color:var(--gold-bright);padding:0 5px;">Z15</span>
+            <button class="icon-btn" id="btn-map-zoom-in">+</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           6. ÁREAS DISPONIBLES ($) (CONFIGURABLE: MOSTRAR/OCULTAR · NIVELES / DPTOS / CASA TOTAL)
+           ================================================================= -->
+      <section class="view-panel scrollable-view" id="view-units">
+        <div class="container-max">
+          <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;">
+            <div>
+              <span class="dropdown-role-badge">Buscador &amp; Catálogo</span>
+              <h2 style="font-family:var(--font-display);font-size:20px;color:var(--gold-bright);margin-top:4px;">Áreas disponibles ($)</h2>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <!-- Selector de modo: Por Niveles / Departamentos / Casa Total -->
+              <div class="units-mode-tabs" id="units-mode-tabs">
+                <button class="finish-tab-pill active" data-units-mode="departments">🚪 Departamentos</button>
+                <button class="finish-tab-pill" data-units-mode="levels">🏢 Por Niveles</button>
+                <button class="finish-tab-pill" data-units-mode="house">🏡 Casa Total</button>
+              </div>
+              <label class="toggle-switch" data-editor-only style="background:var(--glass-obsidian);border:1px solid var(--gold-border);padding:5px 10px;border-radius:99px;">
+                <input type="checkbox" id="toggle-show-units-tab" checked />
+                <span style="color:var(--gold-bright);">Mostrar Pestaña al Público</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="filter-bar" id="units-filter-bar">
+            <div class="field-col">
+              <label for="filter-status">Disponibilidad</label>
+              <select id="filter-status">
+                <option value="all">Todos</option>
+                <option value="available">🟢 Disponible</option>
+                <option value="reserved">🟠 Reservado</option>
+                <option value="sold">🔴 Vendido</option>
+              </select>
+            </div>
+            <div class="field-col">
+              <label for="filter-beds">Cuartos mínimos</label>
+              <select id="filter-beds">
+                <option value="0">Cualquier cantidad</option>
+                <option value="1">1+ Cuartos</option>
+                <option value="2">2+ Cuartos</option>
+                <option value="3">3+ Cuartos</option>
+              </select>
+            </div>
+            <div class="field-col">
+              <label for="filter-price">Precio Máximo: <strong id="filter-price-label">$450,000</strong></label>
+              <input type="range" id="filter-price" min="50000" max="450000" step="5000" value="450000" />
+            </div>
+          </div>
+          <div id="units-catalog-grid"></div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           7. ESTUDIO DE CARGA (SOLO EDITOR)
+           ================================================================= -->
+      <section class="view-panel scrollable-view" id="view-studio" data-editor-only>
+        <div class="container-max">
+          <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;">
+            <div>
+              <span class="dropdown-role-badge">Solo Cuenta Editor</span>
+              <h2 style="font-family:var(--font-display);font-size:20px;color:var(--gold-bright);margin-top:4px;">Estudio de Carga · Calidad Nativa</h2>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button class="glass-pill-btn active" id="btn-studio-open-exterior-mgr">🖼️ Vistas Exteriores &amp; Intro</button>
+              <button class="glass-pill-btn active" id="btn-studio-open-transitions">🎬 Transiciones</button>
+              <button class="glass-pill-btn" id="btn-export-project">💾 Exportar (.JSON)</button>
+              <label class="glass-pill-btn" style="cursor:pointer;">
+                📂 Importar (.JSON)
+                <input type="file" id="input-import-project" accept=".json" style="display:none;" />
+              </label>
+              <button class="glass-pill-btn" id="btn-reset-demo-data">🔄 Demo</button>
+            </div>
+          </div>
+
+          <div class="studio-grid">
+            <div class="studio-card">
+              <h3 style="color:var(--gold-bright);font-family:var(--font-display);font-size:13.5px;">1. Foto-Render de Exterior / Planta Activa</h3>
+              <p style="font-size:11px;color:var(--ink-silver);">Guarda en IndexedDB al 100% de resolución original sin pérdida.</p>
+              <label class="dropzone">
+                <strong style="color:var(--gold-bright);">☀️ Subir Imagen Principal / Planta Foto-Render</strong>
+                <input type="file" id="studio-upload-day-render" accept="image/*" />
+              </label>
+              <label class="dropzone">
+                <strong style="color:var(--gold-bright);">🌙 Subir Versión Nocturna (Opcional)</strong>
+                <input type="file" id="studio-upload-night-render" accept="image/*" />
+              </label>
+            </div>
+
+            <div class="studio-card">
+              <h3 style="color:var(--gold-bright);font-family:var(--font-display);font-size:13.5px;">2. Videos de Intro y Transiciones</h3>
+              <p style="font-size:11px;color:var(--ink-silver);">Configura el video de ingreso inicial y los videos por cada transición.</p>
+              <button class="action-btn gold-cta" id="btn-studio-manage-transitions-card" style="grid-column:auto;">🎬 Abrir Gestor de Transiciones</button>
+              <label class="dropzone">
+                <strong style="color:var(--gold-bright);">⚡ Carga Rápida Video Exterior → Piso 9°</strong>
+                <input type="file" id="studio-upload-transition" accept="video/mp4,video/webm" />
+              </label>
+            </div>
+
+            <div class="studio-card">
+              <h3 style="color:var(--gold-bright);font-family:var(--font-display);font-size:13.5px;">3. Panoramas 360° HD y Modelos 3D (.OBJ/.GLB/.FBX)</h3>
+              <div class="field-col">
+                <label for="studio-360-name">Nombre del Nuevo Panorama 360°:</label>
+                <input type="text" id="studio-360-name" value="Nueva Habitación 360°" />
+              </div>
+              <label class="dropzone">
+                <strong style="color:var(--gold-bright);">🌐 Subir Panorama 360° (Sin pérdida de calidad)</strong>
+                <input type="file" id="studio-upload-360" accept="image/*" />
+              </label>
+              <label class="dropzone">
+                <strong style="color:var(--gold-bright);">🧊 Subir Modelo 3D (.OBJ + .MTL, .GLB, .FBX)</strong>
+                <input type="file" id="studio-upload-glb" accept=".obj,.mtl,.glb,.gltf,.fbx,.d5a,.d5" multiple />
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ==================== OVERLAYS: INTRO VIDEO, VIDEO TRANSICIÓN & 2-IMAGE TRANSITION ==================== -->
+    <div class="intro-video-overlay" id="intro-video-overlay">
+      <video id="intro-video-player" muted playsinline></video>
+      <div class="intro-brand-caption">
+        <h2 id="intro-brand-title">SALO SHOWROOM</h2>
+        <p id="intro-brand-sub">Bienvenido al Showroom Interactivo</p>
+      </div>
+      <button class="transition-skip-badge" id="btn-skip-intro">Ingresar al Panel Principal ⏭️</button>
+    </div>
+
+    <div class="video-transition-overlay" id="video-transition-overlay">
+      <video id="transition-video-player" muted playsinline></video>
+      <button class="transition-skip-badge" id="btn-skip-transition">Saltar Transición ⏭️</button>
+    </div>
+
+    <div class="two-image-transition-overlay" id="two-image-transition-overlay">
+      <img class="two-img-frame" id="two-img-frame-1" src="" alt="" />
+      <img class="two-img-frame" id="two-img-frame-2" src="" alt="" />
+      <button class="transition-skip-badge" id="btn-skip-two-img">Saltar ⏭️</button>
+    </div>
+
+    <!-- ==================== MODAL: GESTOR DE VISTAS EXTERIORES & VIDEO INTRO (SOLO EDITOR) ==================== -->
+    <div class="modal-backdrop" id="modal-exterior-manager">
+      <div class="luxury-modal wide" style="max-width:680px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <span class="dropdown-role-badge">Solo Editor</span>
+            <h3 style="font-family:var(--font-display);color:var(--gold-bright);font-size:16px;margin-top:4px;">
+              🖼️ Vistas Exteriores &amp; Video de Intro al Ingresar
+            </h3>
+          </div>
+          <button class="icon-btn" id="btn-close-exterior-mgr">✕</button>
+        </div>
+
+        <!-- Sección Video de Intro -->
+        <div style="background:rgba(212,175,55,0.08);border:1px solid var(--gold-border-strong);border-radius:11px;padding:11px;display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+            <div>
+              <strong style="font-size:12px;color:var(--gold-bright);">🎬 Video de Ingreso (Intro hasta el Panel Principal)</strong>
+              <p id="intro-video-status-lbl" style="font-size:10.5px;color:var(--ink-silver);">Video Demo: transition-fly.mp4</p>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-intro-video-enabled" />
+              <span id="lbl-intro-enabled" style="color:var(--gold-bright);">DESACTIVADO</span>
+            </label>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <label class="action-btn gold-cta" style="flex:1;cursor:pointer;grid-column:auto;">
+              ⬆️ Subir Video de Intro (.MP4 / .WEBM)
+              <input type="file" id="input-upload-intro-video" accept="video/mp4,video/webm" style="display:none;" />
+            </label>
+            <button class="action-btn" id="btn-play-intro-now">▶️ Probar Intro Ahora</button>
+          </div>
+        </div>
+
+        <!-- Sección Vistas Exteriores (Cambiar principal + Añadir varias) -->
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <strong style="font-size:12px;color:var(--gold-bright);">🏛️ Fotos de Vistas Exteriores (Botón único en pantalla principal)</strong>
+          <div style="display:flex;gap:6px;">
+            <label class="glass-pill-btn active" style="cursor:pointer;">
+              🔄 Cambiar Vista Principal
+              <input type="file" id="input-replace-main-exterior" accept="image/*" style="display:none;" />
+            </label>
+            <label class="glass-pill-btn" style="cursor:pointer;">
+              ➕ Añadir Varias Fotos Exteriores
+              <input type="file" id="input-add-exterior-photos" accept="image/*" multiple style="display:none;" />
+            </label>
+          </div>
+        </div>
+
+        <div id="exterior-views-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL: CREAR / CONFIGURAR PISO O NIVEL (SOLO EDITOR) ==================== -->
+    <div class="modal-backdrop" id="modal-floor-creator">
+      <div class="luxury-modal wide" style="max-width:600px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <span class="dropdown-role-badge">Constructor de Niveles</span>
+            <h3 id="floor-modal-heading" style="font-family:var(--font-display);color:var(--gold-bright);font-size:16px;margin-top:3px;">
+              🏗️ Crear Nuevo Piso / Nivel
+            </h3>
+          </div>
+          <button class="icon-btn" id="btn-close-floor-modal">✕</button>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="field-col"><label for="floor-input-name">Nombre del Piso / Nivel:</label><input type="text" id="floor-input-name" placeholder="Ej: Piso 12° · Planta Tipo" /></div>
+          <div class="field-col"><label for="floor-input-badge">Etiqueta Corta:</label><input type="text" id="floor-input-badge" placeholder="Ej: Piso 12" /></div>
+        </div>
+
+        <!-- Transición al entrar a este Piso: Video O 2 Imágenes O Directo -->
+        <div style="background:rgba(255,255,255,0.03);border:1px solid var(--gold-border);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px;">
+          <div class="field-col">
+            <label for="floor-input-trans-type">Tipo de Transición para entrar a este Piso:</label>
+            <select id="floor-input-trans-type">
+              <option value="video">🎬 Video de Transición (.MP4 / .WEBM)</option>
+              <option value="two_images">🖼️ Transición de 2 Imágenes (Animada)</option>
+              <option value="none">⚡ Cambio Directo (Sin Transición)</option>
+            </select>
+          </div>
+
+          <div id="floor-trans-video-box" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+            <span id="floor-trans-video-name" style="font-size:10.5px;color:var(--ink-silver);">Video Demo: transition-floors.mp4</span>
+            <label class="glass-pill-btn" style="cursor:pointer;">
+              ⬆️ Subir Video de Transición
+              <input type="file" id="floor-upload-trans-video" accept="video/mp4,video/webm" style="display:none;" />
+            </label>
+          </div>
+
+          <div id="floor-trans-twoimg-box" class="form-grid-2" style="display:none;">
+            <label class="dropzone" style="padding:8px;">
+              <strong style="color:var(--gold-bright);display:block;font-size:10.5px;">🖼️ Imagen Transición 1</strong>
+              <span id="floor-twoimg-1-lbl" style="font-size:9.5px;color:var(--ink-silver);">Sin seleccionar</span>
+              <input type="file" id="floor-upload-trans-img1" accept="image/*" />
+            </label>
+            <label class="dropzone" style="padding:8px;">
+              <strong style="color:var(--gold-bright);display:block;font-size:10.5px;">🖼️ Imagen Transición 2</strong>
+              <span id="floor-twoimg-2-lbl" style="font-size:9.5px;color:var(--ink-silver);">Sin seleccionar</span>
+              <input type="file" id="floor-upload-trans-img2" accept="image/*" />
+            </label>
+          </div>
+        </div>
+
+        <!-- Fotografía en Planta del Nivel -->
+        <div style="background:rgba(212,175,55,0.06);border:1px solid var(--gold-border-strong);border-radius:10px;padding:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+          <div>
+            <strong style="font-size:11.5px;color:var(--gold-bright);display:block;">📸 Fotografía en Planta del Nivel</strong>
+            <span id="floor-plan-photo-lbl" style="font-size:10px;color:var(--ink-silver);">Se usará render de planta predeterminado o sube tu foto</span>
+          </div>
+          <label class="action-btn gold-cta" style="cursor:pointer;grid-column:auto;">
+            ⬆️ Añadir Fotografía en Planta
+            <input type="file" id="floor-upload-plan-photo" accept="image/*" style="display:none;" />
+          </label>
+        </div>
+
+        <!-- Opción de Recorrido 360° Propio de este Piso (Mostrar u Ocultar) -->
+        <div style="background:rgba(255,255,255,0.03);border:1px solid var(--gold-border);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:7px;">
+          <label class="toggle-switch">
+            <input type="checkbox" id="floor-input-has-360" checked />
+            <span style="color:var(--gold-bright);">🌐 Habilitar y mostrar opción de Recorrido 360° propio para este piso</span>
+          </label>
+          <div id="floor-360-upload-box" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+            <span id="floor-360-initial-lbl" style="font-size:10px;color:var(--ink-silver);">Opcional: sube ya la 1ra imagen 360° de este piso</span>
+            <label class="glass-pill-btn" style="cursor:pointer;">
+              🌐 Subir Panorama 360° de este Piso
+              <input type="file" id="floor-upload-initial-360" accept="image/*" style="display:none;" />
+            </label>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;">
+          <button class="action-btn gold-cta" id="btn-save-floor-modal" style="flex:1;grid-column:auto;">
+            💾 Guardar Piso y Abrir Vista en Planta
+          </button>
+          <button class="action-btn" id="btn-delete-floor-modal" style="display:none;color:#f87171;border-color:rgba(239,68,68,0.45);">
+            🗑️ Eliminar Piso
+          </button>
+          <button class="action-btn" id="btn-cancel-floor-modal">Cancelar</button>
+        </div>
+
+        <!-- Lista rápida para editar o eliminar pisos existentes -->
+        <div style="border-top:1px solid rgba(212,175,55,0.2);padding-top:9px;display:flex;flex-direction:column;gap:5px;">
+          <strong style="font-size:11px;color:var(--gold-bright);">📋 Pisos / Niveles Existentes (Editar o Eliminar)</strong>
+          <div id="existing-floors-manage-list" style="display:flex;flex-direction:column;gap:4px;max-height:150px;overflow-y:auto;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL 1: CREAR / EDITAR POLÍGONO + LÍNEAS ILIMITADAS + BOTONES ILIMITADOS ==================== -->
+    <div class="modal-backdrop" id="modal-polygon-editor">
+      <div class="luxury-modal wide" style="max-width:680px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h3 style="font-family:var(--font-display);color:var(--gold-bright);font-size:15.5px;">✏️ Configurar Polígono, Panel, Líneas y Botones</h3>
+          <button class="icon-btn" id="btn-close-poly-modal">✕</button>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="field-col"><label for="poly-input-name">Título Destacado (Fuente Grande):</label><input type="text" id="poly-input-name" value="Departamento 9-01" /></div>
+          <div class="field-col"><label for="poly-input-btn-text">Texto del Botón sobre el Polígono:</label><input type="text" id="poly-input-btn-text" value="Dpto 9-01 · 150 m²" /></div>
+        </div>
+
+        <!-- Mostrar u Ocultar Disponibilidad (Verde / Naranja / Rojo) -->
+        <div style="background:rgba(255,255,255,0.03);border:1px solid var(--gold-border);border-radius:9px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+          <label class="toggle-switch">
+            <input type="checkbox" id="poly-input-show-avail" checked />
+            <span style="color:var(--gold-bright);">Mostrar Disponibilidad (Botones Verde / Naranja / Rojo)</span>
+          </label>
+          <select id="poly-input-status" style="background:rgba(255,255,255,0.08);border:1px solid var(--gold-border);color:#fff;padding:5px 9px;border-radius:7px;font-size:11px;">
+            <option value="available">🟢 Disponible (Verde)</option>
+            <option value="reserved">🟠 Reservado (Naranja)</option>
+            <option value="sold">🔴 Vendido (Rojo)</option>
+          </select>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="field-col"><label for="poly-input-area">Área Base (m²):</label><input type="number" id="poly-input-area" value="150" /></div>
+          <div class="field-col"><label for="poly-input-price">Precio Base (USD):</label><input type="number" id="poly-input-price" value="168000" step="1000" /></div>
+        </div>
+        <div class="form-grid-2">
+          <div class="field-col"><label for="poly-input-beds">Cuartos:</label><input type="number" id="poly-input-beds" value="3" /></div>
+          <div class="field-col"><label for="poly-input-baths">Baños / Cocinas:</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+              <input type="number" id="poly-input-baths" value="2" title="Baños" />
+              <input type="number" id="poly-input-kitchens" value="1" title="Cocinas" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Nivel Destino + Opción directa de Crear Piso -->
+        <div class="form-grid-2">
+          <div class="field-col">
+            <label for="poly-input-target-level">Piso / Nivel Destino al Entrar:</label>
+            <select id="poly-input-target-level"></select>
+          </div>
+          <div class="field-col" style="justify-content:flex-end;">
+            <button type="button" class="action-btn" id="btn-poly-modal-create-floor">
+              🏗️ Crear Nuevo Piso para este Polígono
+            </button>
+          </div>
+        </div>
+
+        <!-- CONSTRUCTOR DE LÍNEAS ILIMITADAS (Texto + Número + Unidad O Descripción Libre) -->
+        <div style="background:rgba(212,175,55,0.05);border:1px solid var(--gold-border);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:7px;">
+          <strong style="font-size:11.5px;color:var(--gold-bright);">📝 Líneas de Descripción / Ambientes / Unidades (Ilimitadas)</strong>
+          <div id="poly-custom-lines-list" style="display:flex;flex-direction:column;gap:4px;"></div>
+
+          <div style="display:grid;grid-template-columns:1.1fr 1.3fr 0.7fr 0.7fr auto;gap:5px;align-items:end;">
+            <div class="field-col">
+              <label for="new-line-type">Tipo:</label>
+              <select id="new-line-type">
+                <option value="metric">Dato (Texto + Nº + Unid.)</option>
+                <option value="text">Descripción Libre</option>
+              </select>
+            </div>
+            <div class="field-col">
+              <label for="new-line-label">Texto / Ambiente:</label>
+              <input type="text" id="new-line-label" placeholder="Ej: Baño o Vista..." />
+            </div>
+            <div class="field-col" id="new-line-num-wrap">
+              <label for="new-line-number">Número:</label>
+              <input type="text" id="new-line-number" placeholder="120" />
+            </div>
+            <div class="field-col" id="new-line-unit-wrap">
+              <label for="new-line-unit">Unidad:</label>
+              <input type="text" id="new-line-unit" placeholder="m²" />
+            </div>
+            <button type="button" class="action-btn gold-cta" id="btn-add-custom-line" style="grid-column:auto;padding:7px 10px;">➕</button>
+          </div>
+        </div>
+
+        <!-- CONSTRUCTOR DE BOTONES ILIMITADOS (Llevar a Foto Render Normal o Vista 360°) -->
+        <div style="background:rgba(255,255,255,0.03);border:1px solid var(--gold-border);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:7px;">
+          <strong style="font-size:11.5px;color:var(--gold-bright);">🔘 Botones Personalizados del Panel (Foto Render o Vista 360° — Ilimitados)</strong>
+          <div id="poly-custom-buttons-list" style="display:flex;flex-direction:column;gap:4px;"></div>
+
+          <div class="form-grid-2">
+            <div class="field-col">
+              <label for="new-btn-label">Texto del Botón:</label>
+              <input type="text" id="new-btn-label" placeholder="Ej: Ver Render Cocina / Ir a 360° Sala" />
+            </div>
+            <div class="field-col">
+              <label for="new-btn-action-type">Al hacer clic abre:</label>
+              <select id="new-btn-action-type">
+                <option value="photo">🖼️ Foto Render Normal (Subir Foto)</option>
+                <option value="tour360">🌐 Vista 360° (Subir o Elegir 360°)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <label class="action-btn" style="cursor:pointer;flex:1;">
+              ⬆️ <span id="new-btn-file-lbl">Subir Foto / Panorama 360° asignado</span>
+              <input type="file" id="new-btn-upload-file" accept="image/*" style="display:none;" />
+            </label>
+            <select id="new-btn-existing-360" style="display:none;flex:1;background:rgba(255,255,255,0.06);border:1px solid var(--gold-border);color:#fff;padding:7px;border-radius:8px;font-size:11px;"></select>
+          </div>
+
+          <!-- Opción: Mostrar punto interactivo personalizable (color + texto) sobre la planta o solo lista -->
+          <div style="background:rgba(212,175,55,0.06);border:1px solid rgba(212,175,55,0.24);border-radius:8px;padding:7px 9px;display:flex;flex-direction:column;gap:6px;">
+            <label class="toggle-switch">
+              <input type="checkbox" id="new-btn-show-on-plan" />
+              <span style="color:var(--gold-bright);">📍 Mostrar también como punto personalizable sobre la planta (clic en planta)</span>
+            </label>
+            <div id="new-btn-plan-point-opts" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;">
+              <label style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--ink-silver);">
+                Color del punto:
+                <input type="color" id="new-btn-pin-color" value="#d4af37" style="width:28px;height:24px;border:none;background:transparent;cursor:pointer;" />
+              </label>
+              <button type="button" class="glass-pill-btn active" id="btn-pick-plan-point" style="height:26px;font-size:10px;">
+                📍 Ubicar Punto en Planta
+              </button>
+              <span id="new-btn-point-coords-lbl" style="font-size:10px;color:var(--gold-bright);">Ubicación: Automática (centro)</span>
+            </div>
+          </div>
+
+          <button type="button" class="action-btn gold-cta" id="btn-add-custom-button" style="grid-column:auto;padding:7px 12px;">
+            ➕ Añadir Botón al Panel / Planta
+          </button>
+        </div>
+
+        <div style="display:flex;gap:8px;">
+          <button class="action-btn gold-cta" id="btn-save-polygon-modal" style="flex:1;grid-column:auto;">💾 Guardar Polígono y Panel</button>
+          <button class="action-btn" id="btn-cancel-poly-modal">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL 2: PROGRAMAR BOTÓN DE PISO / FLECHA 360° ==================== -->
+    <div class="modal-backdrop" id="modal-hotspot360-editor">
+      <div class="luxury-modal">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h3 id="hs360-modal-title" style="font-family:var(--font-display);color:var(--gold-bright);font-size:15px;">
+            ⭕ Programar Botón de Piso / Flecha 360°
+          </h3>
+          <button class="icon-btn" id="btn-close-hs360-modal">✕</button>
+        </div>
+        <div class="field-col">
+          <label for="hs360-input-arrow">1. Estilo del Botón 360°:</label>
+          <select id="hs360-input-arrow">
+            <option value="floor-ring" selected>⭕ Botón en Piso (Anillo Blanco Concéntrico — Estilo Recorrido)</option>
+            <option value="up">⬆️ Flecha Grande Avanzar</option>
+            <option value="up-right">↗️ Flecha Diagonal Derecha</option>
+            <option value="up-left">↖️ Flecha Diagonal Izquierda</option>
+            <option value="door">🚪 Ingresar a Ambiente</option>
+            <option value="back">🔄 Flecha Regresar</option>
+          </select>
+        </div>
+        <div class="field-col">
+          <label for="hs360-input-label">2. Texto Editable Encima del Botón:</label>
+          <input type="text" id="hs360-input-label" value="Ir a Cocina" />
+        </div>
+        <div class="field-col">
+          <label for="hs360-input-target">3. Vista 360° de Destino:</label>
+          <select id="hs360-input-target"></select>
+        </div>
+        <div style="background:rgba(212,175,55,0.06);border:1px solid var(--gold-border);border-radius:10px;padding:10px;">
+          <div style="font-size:10.5px;color:var(--gold-bright);margin-bottom:5px;font-weight:700;">➕ O sube una nueva imagen 360° para este piso:</div>
+          <div class="form-grid-2">
+            <input type="text" id="hs360-new-room-name" placeholder="Nombre del nuevo ambiente" />
+            <label class="action-btn" style="cursor:pointer;">🖼️ Subir 360° HD<input type="file" id="hs360-upload-new-target" accept="image/*" style="display:none;" /></label>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="action-btn gold-cta" id="btn-save-hs360-modal" style="flex:1;grid-column:auto;">✅ Guardar Botón 360°</button>
+          <button class="action-btn" id="btn-cancel-hs360-modal">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL: AVANCE DE OBRA ==================== -->
+    <div class="modal-backdrop" id="modal-avance-obra">
+      <div class="luxury-modal" style="max-width:440px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <span style="font-size:9.5px;color:var(--gold-bright);letter-spacing:1.4px;text-transform:uppercase;font-weight:700;">ESTADO CONSTRUCTIVO</span>
+            <h3 style="font-family:var(--font-display);color:var(--ink-white);font-size:17px;">Avance de Obra</h3>
+          </div>
+          <button class="icon-btn" id="btn-close-avance-modal">✕</button>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+          <span style="font-size:12px;color:var(--ink-silver);">Progreso general ejecutado</span>
+          <strong style="font-family:var(--font-display);font-size:32px;color:var(--gold-bright);line-height:1;">
+            <span id="avance-modal-pct">68</span><small style="font-size:18px;">%</small>
+          </strong>
+        </div>
+        <div class="progress-bar-track"><div class="progress-bar-fill" id="avance-modal-bar" style="width:68%;"></div></div>
+        <div class="form-grid-2" style="background:rgba(255,255,255,0.03);border:1px solid var(--gold-border);border-radius:10px;padding:10px;">
+          <div><span style="font-size:10px;color:var(--ink-silver);display:block;">Entrega Estimada</span><strong id="avance-modal-delivery" style="font-size:12.5px;color:var(--gold-bright);">Diciembre 2026</strong></div>
+          <div><span style="font-size:10px;color:var(--ink-silver);display:block;">Etapa Actual</span><strong id="avance-modal-stage" style="font-size:12.5px;color:var(--ink-white);">Terminaciones &amp; Fachada</strong></div>
+        </div>
+        <div style="border-top:1px solid rgba(212,175,55,0.2);padding-top:10px;display:flex;flex-direction:column;gap:8px;" data-editor-only>
+          <strong style="font-size:11px;color:var(--gold-bright);">✏️ Actualizar Avance (Solo Editor)</strong>
+          <div class="control-group"><label><span>Porcentaje de Avance</span><span id="avance-edit-lbl">68%</span></label><input type="range" id="avance-input-pct" min="0" max="100" step="1" value="68" /></div>
+          <div class="form-grid-2">
+            <div class="field-col"><label for="avance-input-delivery">Entrega:</label><input type="text" id="avance-input-delivery" value="Diciembre 2026" /></div>
+            <div class="field-col"><label for="avance-input-stage">Etapa:</label><input type="text" id="avance-input-stage" value="Terminaciones & Fachada" /></div>
+          </div>
+          <button class="action-btn gold-cta" id="btn-save-avance" style="grid-column:auto;">💾 Guardar Avance</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL 3: GALERÍA DE VISTAS RENDERIZADAS ==================== -->
+    <div class="modal-backdrop" id="modal-renders-gallery">
+      <div class="luxury-modal wide">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <div>
+            <span style="font-size:9.5px;color:var(--gold-bright);letter-spacing:1px;font-weight:700;">PORTAFOLIO EN CALIDAD NATIVA</span>
+            <h3 style="font-family:var(--font-display);color:var(--ink-white);font-size:17px;">🖼️ Vistas Renderizadas</h3>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <label class="glass-pill-btn active" style="cursor:pointer;" data-editor-only>
+              ➕ Añadir Render
+              <input type="file" id="input-add-gallery-render" accept="image/*" multiple style="display:none;" />
+            </label>
+            <button class="icon-btn" id="btn-close-gallery-modal">✕</button>
+          </div>
+        </div>
+        <div style="position:relative;width:100%;height:56vh;background:#040406;border-radius:12px;overflow:hidden;border:1px solid var(--gold-border);">
+          <img id="gallery-main-img" src="./sample-assets/render-amenities.jpg" alt="Vista Renderizada" style="width:100%;height:100%;object-fit:contain;" />
+          <div style="position:absolute;bottom:10px;left:12px;background:rgba(5,5,7,0.88);border:1px solid var(--gold-border);padding:5px 12px;border-radius:99px;">
+            <strong id="gallery-main-caption" style="color:var(--gold-bright);font-size:11.5px;">Rooftop &amp; Piscina</strong>
+          </div>
+        </div>
+        <div id="gallery-thumbs-row" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;"></div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL 4: GESTOR DE TRANSICIONES (SOLO EDITOR) ==================== -->
+    <div class="modal-backdrop" id="modal-transitions-manager">
+      <div class="luxury-modal wide" style="max-width:720px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <span class="dropdown-role-badge">Solo Personas con Permiso Editor</span>
+            <h3 style="font-family:var(--font-display);color:var(--gold-bright);font-size:16px;margin-top:4px;">🎬 Gestor de Videos de Transición</h3>
+          </div>
+          <button class="icon-btn" id="btn-close-transitions-modal">✕</button>
+        </div>
+        <div style="background:rgba(212,175,55,0.08);border:1px solid var(--gold-border-strong);border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:10px;">
+          <div>
+            <strong style="font-size:12px;color:var(--gold-bright);">Interruptor Global de Transiciones</strong>
+            <p style="font-size:10.5px;color:var(--ink-silver);">Si lo desactivas, todos los cambios de vista serán instantáneos.</p>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-global-transitions" checked />
+            <span id="lbl-global-transitions" style="color:#4ade80;">ACTIVADAS</span>
+          </label>
+        </div>
+
+        <!-- Creador Dinámico de Transiciones (Edificio → Piso o Piso → Piso) -->
+        <div style="background:rgba(255,255,255,0.03);border:1px solid var(--gold-border);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px;">
+          <strong style="font-size:11.5px;color:var(--gold-bright);">➕ Añadir Transición entre Edificio y Pisos / Piso a Piso</strong>
+          <div style="display:grid;grid-template-columns:1fr 1fr 0.9fr auto;gap:6px;align-items:end;">
+            <div class="field-col">
+              <label for="trans-new-from">Desde (Origen):</label>
+              <select id="trans-new-from"></select>
+            </div>
+            <div class="field-col">
+              <label for="trans-new-to">Hacia (Destino):</label>
+              <select id="trans-new-to"></select>
+            </div>
+            <div class="field-col">
+              <label for="trans-new-type">Tipo:</label>
+              <select id="trans-new-type">
+                <option value="video">🎬 Video</option>
+                <option value="two_images">🖼️ 2 Imágenes</option>
+                <option value="none">⚡ Directo</option>
+              </select>
+            </div>
+            <button type="button" class="action-btn gold-cta" id="btn-add-custom-transition" style="grid-column:auto;padding:7px 11px;">➕ Crear</button>
+          </div>
+        </div>
+
+        <div id="transitions-list-container" style="display:flex;flex-direction:column;gap:7px;"></div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL 6: PUNTO DE REFERENCIA MAPA ==================== -->
+    <div class="modal-backdrop" id="modal-poi-editor">
+      <div class="luxury-modal" style="max-width:460px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h3 style="font-family:var(--font-display);color:var(--gold-bright);font-size:15px;">📍 Guardar Punto de Referencia Visual</h3>
+          <button class="icon-btn" id="btn-close-poi-modal">✕</button>
+        </div>
+        <div class="field-col"><label for="poi-input-name">Nombre del Punto:</label><input type="text" id="poi-input-name" placeholder="Ej: Ventura Mall, Parque Urbano..." /></div>
+        <div class="form-grid-2">
+          <div class="field-col">
+            <label for="poi-input-icon">Icono Visual:</label>
+            <select id="poi-input-icon">
+              <option value="🛍️">🛍️ Mall / Shopping</option>
+              <option value="🌳">🌳 Parque / Plaza</option>
+              <option value="✈️">✈️ Aeropuerto</option>
+              <option value="🏥">🏥 Clínica / Hospital</option>
+              <option value="🎓">🎓 Colegio / Universidad</option>
+              <option value="🍽️">🍽️ Gastronomía / Café</option>
+              <option value="🏢">🏢 Acceso / Torre</option>
+              <option value="📍">📍 Referencia General</option>
+            </select>
+          </div>
+          <div class="field-col">
+            <label for="poi-input-color">Color del Marcador:</label>
+            <select id="poi-input-color">
+              <option value="#d4af37">🟡 Oro Champagne</option>
+              <option value="#22c55e">🟢 Esmeralda</option>
+              <option value="#38bdf8">🔵 Celeste</option>
+              <option value="#f97316">🟠 Naranja</option>
+              <option value="#f43f5e">🔴 Rubí</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-col"><label for="poi-input-note">Distancia / Descripción:</label><input type="text" id="poi-input-note" placeholder="Ej: 3 min · 850 m" /></div>
+        <div class="form-grid-2">
+          <div class="field-col"><label for="poi-input-lat">Latitud:</label><input type="number" step="0.000001" id="poi-input-lat" /></div>
+          <div class="field-col"><label for="poi-input-lng">Longitud:</label><input type="number" step="0.000001" id="poi-input-lng" /></div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="action-btn gold-cta" id="btn-save-poi-modal" style="flex:1;grid-column:auto;">💾 Guardar Punto</button>
+          <button class="action-btn" id="btn-cancel-poi-modal">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL: ASIGNAR POLÍGONOS (PISOS 3D / ACABADOS) ==================== -->
+    <div class="modal-backdrop" id="modal-assign-polygons">
+      <div class="luxury-modal" style="max-width:480px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <span class="dropdown-role-badge">VÍNCULO INTERACTIVO</span>
+            <h3 id="assign-poly-title" style="font-family:var(--font-display);color:var(--gold-bright);font-size:15px;margin-top:4px;">🔗 Asignar Polígonos</h3>
+          </div>
+          <button class="icon-btn" id="btn-close-assign-polygons">✕</button>
+        </div>
+        <p id="assign-poly-sub" style="font-size:11px;color:var(--ink-silver);line-height:1.4;">Marca los rectángulos/polígonos de vista exterior o plantas que abrirán esta vista directamente:</p>
+        <input type="search" id="assign-poly-search" placeholder="Filtrar polígono o nivel..." style="width:100%;padding:7px 11px;border-radius:9px;border:1px solid var(--gold-border);background:rgba(255,255,255,0.06);color:var(--ink-white);font-size:11.5px;" />
+        <div id="assign-poly-list" class="assign-poly-list"></div>
+        <div style="display:flex;gap:8px;">
+          <button class="action-btn gold-cta" id="btn-save-assign-polygons" style="flex:1;grid-column:auto;">💾 Guardar Asignación</button>
+          <button class="action-btn" id="btn-cancel-assign-polygons">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL 7: CONFIGURACIÓN DEL PROYECTO (EDIFICIO, LOGO + OPACIDAD, WHATSAPP, ÁREAS DISPONIBLES) ==================== -->
+    <div class="modal-backdrop" id="modal-project-settings">
+      <div class="luxury-modal wide" style="max-width:560px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h3 style="font-family:var(--font-display);color:var(--gold-bright);font-size:15.5px;">⚙️ Configuración del Edificio, Logo, Opacidad y WhatsApp</h3>
+          <button class="icon-btn" id="btn-close-proj-modal">✕</button>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="field-col">
+            <label for="proj-input-building">Nombre del Edificio (debajo de SALO SHOWROOM y en Ubicación):</label>
+            <input type="text" id="proj-input-building" value="Torre Pocito 3D" />
+          </div>
+          <div class="field-col">
+            <label for="proj-input-code-ro">Código Único del Proyecto:</label>
+            <input type="text" id="proj-input-code-ro" value="SALO-001" readonly style="opacity:0.75;font-family:monospace;font-weight:700;color:var(--gold-bright);" />
+          </div>
+        </div>
+        <div class="field-col"><label for="proj-input-sub">Subtítulo / Descripción Corta:</label><input type="text" id="proj-input-sub" value="Showroom Interactivo 3D · 360° · Plantas" /></div>
+
+        <!-- Logo Pequeño (SOLO Centro encima de vistas exteriores O Esquina inferior derecha) + Opacidad -->
+        <div style="background:rgba(212,175,55,0.06);border:1px solid var(--gold-border);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <strong style="font-size:11.5px;color:var(--gold-bright);">🏷️ Logo del Proyecto (Posición, Tamaño y Opacidad)</strong>
+            <label class="toggle-switch">
+              <input type="checkbox" id="proj-input-show-logo" />
+              <span>Mostrar Logo</span>
+            </label>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <label class="action-btn gold-cta" style="cursor:pointer;flex:1;grid-column:auto;">
+              🖼️ Subir Logo (.PNG / .SVG / .WEBP)
+              <input type="file" id="proj-upload-logo" accept="image/*" style="display:none;" />
+            </label>
+            <button type="button" class="action-btn" id="btn-remove-proj-logo" style="color:#f87171;">🗑️ Quitar</button>
+          </div>
+          <div class="form-grid-2">
+            <div class="control-group">
+              <label><span>Tamaño del Logo</span><span id="lbl-logo-size" style="color:var(--gold-bright);">48 px</span></label>
+              <input type="range" id="proj-input-logo-size" min="24" max="140" step="2" value="48" />
+            </div>
+            <div class="control-group">
+              <label><span>Opacidad del Logo</span><span id="lbl-logo-opacity" style="color:var(--gold-bright);">100%</span></label>
+              <input type="range" id="proj-input-logo-opacity" min="10" max="100" step="5" value="100" />
+            </div>
+          </div>
+          <div class="field-col">
+            <label for="proj-input-logo-pos">Ubicación del Logo:</label>
+            <select id="proj-input-logo-pos">
+              <option value="pos-above-exterior">Centro · Encima de Vistas de Exterior</option>
+              <option value="pos-bottom-right">Esquina Inferior Derecha</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Número de WhatsApp y Enlace de Contacto del Proyecto -->
+        <div style="background:rgba(34,197,94,0.07);border:1px solid rgba(34,197,94,0.35);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:7px;">
+          <strong style="font-size:11.5px;color:#4ade80;">💬 WhatsApp de Ventas del Proyecto</strong>
+          <div class="form-grid-2">
+            <div class="field-col"><label for="proj-input-wa-phone">Número WhatsApp (con código país):</label><input type="text" id="proj-input-wa-phone" placeholder="Ej: 59170000000" value="59170000000" /></div>
+            <div class="field-col"><label for="proj-input-wa-custom-url">O Enlace Personalizado (opcional):</label><input type="text" id="proj-input-wa-custom-url" placeholder="https://wa.me/..." /></div>
+          </div>
+          <div class="field-col"><label for="proj-input-wa-msg">Mensaje Predeterminado:</label><input type="text" id="proj-input-wa-msg" value="Hola, deseo recibir información sobre el proyecto." /></div>
+        </div>
+
+        <!-- Configuración de Publicación & Pestaña Áreas disponibles ($) -->
+        <div style="background:rgba(255,255,255,0.03);border:1px solid var(--gold-border);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:7px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <strong style="font-size:11.5px;color:var(--gold-bright);">🌐 Estado al Publicar en la Web</strong>
+            <label class="toggle-switch">
+              <input type="checkbox" id="proj-input-published" checked />
+              <span>Listo para publicar</span>
+            </label>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(255,255,255,0.08);padding-top:7px;">
+            <strong style="font-size:11.5px;color:var(--gold-bright);">💎 Pestaña "Áreas disponibles ($)"</strong>
+            <label class="toggle-switch">
+              <input type="checkbox" id="proj-input-show-units" checked />
+              <span>Mostrar Pestaña</span>
+            </label>
+          </div>
+          <div class="field-col">
+            <label for="proj-input-units-mode">Modo de Visualización:</label>
+            <select id="proj-input-units-mode">
+              <option value="departments">🚪 Por Departamentos</option>
+              <option value="levels">🏢 Por Niveles</option>
+              <option value="house">🏡 Casa Total</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="action-btn gold-cta" id="btn-save-proj-modal" style="grid-column:auto;">
+          💾 Guardar Toda la Configuración
+        </button>
+      </div>
+    </div>
+  </div><!-- /.showroom-shell -->
+
+  <!-- ==================== MODALES GLOBALES (ACTIVOS EN PORTAL Y SHOWROOM) ==================== -->
+
+  <!-- LIGHTBOX FULLSCREEN PARA BOTONES DE FOTO RENDER Y EJEMPLOS DE EDIFICIOS -->
+  <div class="photo-lightbox-backdrop" id="modal-photo-viewer">
+    <button class="global-back-btn visible" id="btn-close-photo-viewer" style="top:18px;left:18px;">
+      ← Volver Atrás
+    </button>
+    <img id="photo-viewer-img" src="" alt="Vista Renderizada" />
+    <div style="margin-top:12px;background:rgba(8,8,12,0.88);border:1px solid var(--gold-border);padding:6px 16px;border-radius:99px;">
+      <strong id="photo-viewer-caption" style="color:var(--gold-bright);font-size:13px;">Vista Renderizada</strong>
+    </div>
+  </div>
+
+  <!-- MODAL: CREAR NUEVO PROYECTO (DESDE PORTAL SALO · SOLO EDITOR) -->
+  <div class="modal-backdrop" id="modal-new-project">
+    <div class="luxury-modal" style="max-width:490px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <span class="dropdown-role-badge">SALO SHOWROOM · NUEVO PROYECTO</span>
+          <h3 style="font-family:var(--font-display);color:var(--gold-bright);font-size:16px;margin-top:4px;">🏗️ Crear Nuevo Proyecto</h3>
+        </div>
+        <button class="icon-btn" id="btn-close-new-project">✕</button>
+      </div>
+      <div class="field-col">
+        <label for="np-input-building">Nombre del Edificio / Proyecto:</label>
+        <input type="text" id="np-input-building" placeholder="Ej: Edificio Mirador Real" />
+      </div>
+      <div class="form-grid-2">
+        <div class="field-col">
+          <label for="np-input-code">Código Único de Acceso:</label>
+          <input type="text" id="np-input-code" placeholder="SALO-002" style="text-transform:uppercase;font-family:monospace;font-weight:700;" />
+        </div>
+        <div class="field-col">
+          <label for="np-input-wa">WhatsApp Ventas (Opcional):</label>
+          <input type="text" id="np-input-wa" value="59173080076" />
+        </div>
+      </div>
+      <div class="field-col">
+        <label for="np-input-subtitle">Ciudad / Subtítulo:</label>
+        <input type="text" id="np-input-subtitle" placeholder="Ej: Santa Cruz · Equipetrol · Departamentos 2 y 3 Dorm." />
+      </div>
+      <div style="background:rgba(212,175,55,0.06);border:1px solid var(--gold-border);border-radius:10px;padding:9px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span id="np-cover-lbl" style="font-size:10.5px;color:var(--ink-silver);">Portada: Render predeterminado o sube tu foto</span>
+        <label class="glass-pill-btn active" style="cursor:pointer;">
+          🖼️ Subir Portada
+          <input type="file" id="np-upload-cover" accept="image/*" style="display:none;" />
+        </label>
+      </div>
+      <label class="toggle-switch" style="justify-content:space-between;padding:4px 2px;">
+        <span style="font-size:11px;color:var(--ink-silver);">Estado inicial (los borradores quedan solo en tu PC hasta marcar Publicar):</span>
+        <span style="display:flex;align-items:center;gap:6px;">
+          <input type="checkbox" id="np-input-published" />
+          <strong style="font-size:11px;color:var(--gold-bright);">Incluir al publicar</strong>
+        </span>
+      </label>
+      <div style="display:flex;gap:8px;">
+        <button class="action-btn gold-cta" id="btn-confirm-new-project" style="flex:1;grid-column:auto;">✅ Crear y Abrir Editor del Proyecto</button>
+        <button class="action-btn" id="btn-cancel-new-project">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NUBE, GOOGLE DRIVE (MULTI-CORREO) & PUBLICACIÓN WEB GRATIS -->
+  <div class="modal-backdrop" id="modal-cloud-publish">
+    <div class="luxury-modal wide" style="max-width:660px;max-height:88vh;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <span class="dropdown-role-badge">PUBLICACIÓN 24/7 GRATIS · DRIVE · SHEETS</span>
+          <h3 style="font-family:var(--font-display);color:var(--gold-bright);font-size:16px;margin-top:4px;">☁️ Publicar Showroom, Visitas a Sheets y Respaldo Drive</h3>
+        </div>
+        <button class="icon-btn" id="btn-close-cloud-modal">✕</button>
+      </div>
+
+      <div style="display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--gold-border);padding-bottom:8px;">
+        <button type="button" class="glass-pill-btn active" data-cloud-tab="publish">📦 Publicar Ahora</button>
+        <button type="button" class="glass-pill-btn" data-cloud-tab="accounts">⚙️ Cuentas GitHub &amp; Correos Drive</button>
+        <button type="button" class="glass-pill-btn" data-cloud-tab="guide">📖 Guía Paso a Paso (y Google Sites)</button>
+      </div>
+
+      <!-- TAB 1: PUBLICAR -->
+      <div id="cloud-panel-publish" style="display:flex;flex-direction:column;gap:10px;">
+        <div style="background:rgba(212,175,55,0.06);border:1px solid var(--gold-border);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;">
+          <strong style="font-size:11.5px;color:var(--gold-bright);">🏛️ Elige qué proyectos publicar y cuáles dejar en Borrador (solo en tu PC):</strong>
+          <div id="cloud-projects-checklist" style="display:flex;flex-direction:column;gap:5px;max-height:170px;overflow-y:auto;"></div>
+        </div>
+
+        <div id="cloud-bigfile-warning" style="display:none;background:rgba(249,115,22,0.12);border:1px solid rgba(249,115,22,0.45);border-radius:10px;padding:9px;font-size:11px;color:#fdba74;line-height:1.45;"></div>
+
+        <div style="display:flex;flex-direction:column;gap:5px;padding:8px;border:1px solid rgba(255,255,255,0.08);border-radius:10px;background:rgba(255,255,255,0.02);">
+          <label class="toggle-switch" style="justify-content:flex-start;gap:8px;">
+            <input type="checkbox" id="cloud-opt-upload-pages" checked />
+            <span style="font-size:11px;">Publicar web, datos JSON y archivos livianos (≤ 3 MB) en <b>GitHub Pages</b></span>
+          </label>
+          <label class="toggle-switch" style="justify-content:flex-start;gap:8px;">
+            <input type="checkbox" id="cloud-opt-upload-releases" checked />
+            <span style="font-size:11px;">Subir fotos 4K, panoramas 360°, videos y .GLB (≤ 2 GiB) a <b>GitHub Releases + Worker</b></span>
+          </label>
+          <label class="toggle-switch" style="justify-content:flex-start;gap:8px;">
+            <input type="checkbox" id="cloud-opt-backup-drive" checked />
+            <span style="font-size:11px;">Respaldar archivos en <b>Google Drive</b> del correo activo (<span id="cloud-publish-drive-lbl" style="color:var(--gold-bright);">sin configurar</span>)</span>
+          </label>
+        </div>
+
+        <button type="button" class="action-btn gold-cta" id="btn-cloud-publish-now" style="grid-column:auto;padding:11px;font-size:12.5px;">
+          🚀 Publicar en la Nube Ahora
+        </button>
+
+        <div id="cloud-progress-box" style="display:none;flex-direction:column;gap:6px;padding:10px;border-radius:10px;border:1px solid var(--gold-border);background:rgba(0,0,0,0.45);">
+          <span id="cloud-progress-status" style="font-size:11px;color:var(--gold-bright);font-weight:700;">Preparando…</span>
+          <div class="model3d-loading-track"><div class="model3d-loading-bar" id="cloud-progress-bar"></div></div>
+          <pre id="cloud-publish-log" class="cloud-log-box"></pre>
+        </div>
+        <div id="cloud-publish-result" style="display:none;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.45);border-radius:10px;padding:10px;font-size:11px;color:#bbf7d0;line-height:1.5;"></div>
+      </div>
+
+      <!-- TAB 2: CUENTAS GITHUB + WORKER + CORREOS DRIVE -->
+      <div id="cloud-panel-accounts" style="display:none;flex-direction:column;gap:11px;">
+        <div style="background:rgba(255,255,255,0.03);border:1px solid var(--gold-border);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:7px;">
+          <strong style="font-size:11.5px;color:var(--gold-bright);">1. Hosting Web Gratis (GitHub Pages + Releases + Cloudflare Worker)</strong>
+          <div class="form-grid-2">
+            <div class="field-col"><label for="cloud-gh-owner">Usuario GitHub:</label><input type="text" id="cloud-gh-owner" placeholder="ej: salo-bolivia" /></div>
+            <div class="field-col"><label for="cloud-gh-repo">Nombre del Repositorio:</label><input type="text" id="cloud-gh-repo" value="salo-showroom" /></div>
+          </div>
+          <div class="form-grid-2">
+            <div class="field-col"><label for="cloud-gh-branch">Rama (Branch):</label><input type="text" id="cloud-gh-branch" value="main" /></div>
+            <div class="field-col"><label for="cloud-gh-token">Token GitHub (solo en esta PC):</label><input type="password" id="cloud-gh-token" placeholder="github_pat_..." /></div>
+          </div>
+          <div class="field-col">
+            <label for="cloud-cf-worker">URL de tu Cloudflare Worker gratis (para archivos 360° / .GLB &gt; 3 MB):</label>
+            <input type="text" id="cloud-cf-worker" placeholder="https://salo-proxy.tu-usuario.workers.dev" />
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <button type="button" class="action-btn" id="btn-cloud-test-github">🔍 Probar Repositorio GitHub</button>
+            <span id="cloud-gh-status" style="font-size:10.5px;color:var(--ink-silver);"></span>
+          </div>
+        </div>
+
+        <div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.35);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+            <strong style="font-size:11.5px;color:#4ade80;">2. Correo de Google Drive &amp; Hoja de Visitas (Excel / Sheets)</strong>
+            <span id="cloud-active-drive-badge" class="code-tag">Ningún correo seleccionado</span>
+          </div>
+          <p style="font-size:10.5px;color:var(--ink-silver);">El correo elegido recibe la hoja Google Sheets "Visitas SALO Showroom" (exportable a Excel) y los respaldos de archivos. Puedes guardar varios correos y alternar aquí:</p>
+          <div id="cloud-drive-profiles-list" style="display:flex;flex-direction:column;gap:5px;"></div>
+
+          <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:8px;display:flex;flex-direction:column;gap:6px;">
+            <div class="form-grid-2">
+              <div class="field-col"><label for="cloud-drv-label">Nombre / Correo Google:</label><input type="text" id="cloud-drv-label" placeholder="Ej: Salo Personal (mi@gmail.com)" /></div>
+              <div class="field-col">
+                <label for="cloud-drv-secret">Clave Secreta de Subidas:</label>
+                <div style="display:flex;gap:4px;">
+                  <input type="text" id="cloud-drv-secret" placeholder="Generar o escribir clave..." style="flex:1;min-width:0;" />
+                  <button type="button" class="glass-pill-btn" id="btn-cloud-gen-secret" title="Generar clave aleatoria">🎲</button>
+                </div>
+              </div>
+            </div>
+            <div class="field-col"><label for="cloud-drv-url">URL Web App (/exec) de Apps Script de ese correo:</label><input type="text" id="cloud-drv-url" placeholder="https://script.google.com/macros/s/.../exec" /></div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button type="button" class="action-btn gold-cta" id="btn-cloud-save-drive-profile" style="grid-column:auto;padding:7px 12px;">➕ Guardar y Usar Este Correo</button>
+              <button type="button" class="action-btn" id="btn-cloud-test-drive">🔍 Probar Correo / Apps Script</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: GUÍA PASO A PASO -->
+      <div id="cloud-panel-guide" style="display:none;flex-direction:column;gap:10px;font-size:11px;color:var(--ink-silver);line-height:1.5;">
+        <div class="assign-poly-group">
+          <div class="assign-poly-group-title">Paso 1 · GitHub Gratis (Pages + Releases)</div>
+          <p>1) Crea cuenta gratis en <b>github.com</b> y crea un repositorio público llamado <code>salo-showroom</code> marcando <b>"Add a README file"</b>.<br/>
+          2) Ve a <b>Settings → Pages</b> del repo y activa <b>Branch: main / (root)</b>.<br/>
+          3) En tu perfil GitHub → <b>Settings → Developer settings → Personal access tokens → Fine-grained tokens</b>, crea un token solo para ese repo con permiso <b>Contents: Read and write</b>.</p>
+        </div>
+
+        <div class="assign-poly-group">
+          <div class="assign-poly-group-title" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>Paso 2 · Cloudflare Worker Gratis (sin tarjeta, para .GLB y 360° pesados)</span>
+            <button type="button" class="glass-pill-btn" id="btn-copy-worker-code">📋 Copiar código</button>
+          </div>
+          <p>Crea cuenta gratis en <b>dash.cloudflare.com</b> → <b>Workers &amp; Pages → Create Worker</b>, pega este código y dale <b>Deploy</b>:</p>
+          <pre id="cloud-copy-worker-src" class="cloud-code-box"></pre>
+        </div>
+
+        <div class="assign-poly-group">
+          <div class="assign-poly-group-title" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>Paso 3 · Google Apps Script (en el correo Gmail que elijas)</span>
+            <button type="button" class="glass-pill-btn" id="btn-copy-gas-code">📋 Copiar Code.gs</button>
+          </div>
+          <p>Abre <b>script.google.com</b> con el correo deseado → Nuevo proyecto → pega este código (ya incluye tu clave secreta activa) → <b>Implementar → Nueva implementación → Aplicación web → Ejecutar como: Yo · Acceso: Cualquier persona</b>:</p>
+          <pre id="cloud-copy-gas-src" class="cloud-code-box"></pre>
+        </div>
+
+        <div class="assign-poly-group">
+          <div class="assign-poly-group-title">Paso 4 · Incrustar en Google Sites (opcional)</div>
+          <p>Si quieres una dirección de Google Sites: abre <b>sites.google.com</b> → crea un sitio → <b>Insertar → Incorporar → Por URL</b> → pega tu enlace de GitHub Pages (<code>https://tu-usuario.github.io/salo-showroom/</code>) y estira el cuadro a toda la pantalla.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CUENTAS DE EDITOR & VISTA PÚBLICA -->
+  <div class="modal-backdrop" id="modal-editor-auth">
+    <div class="luxury-modal" style="max-width:460px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h3 style="font-family:var(--font-display);color:var(--gold-bright);font-size:15.5px;">🔐 Acceso Cuenta de Editor / Vista Pública</h3>
+        <button class="icon-btn" id="btn-close-auth-modal">✕</button>
+      </div>
+      <form id="auth-login-section" style="display:flex;flex-direction:column;gap:10px;" onsubmit="return false;">
+        <p style="font-size:11.5px;color:var(--ink-silver);line-height:1.45;">
+          Estás en <b>Vista Público General</b>. Ingresa una cuenta autorizada de Editor para habilitar la edición.
+        </p>
+        <div class="field-col"><label for="auth-input-user">Usuario Editor:</label><input type="text" id="auth-input-user" value="admin" autocomplete="username" /></div>
+        <div class="field-col"><label for="auth-input-pin">Contraseña / PIN:</label><input type="password" id="auth-input-pin" placeholder="Clave (Demo: 1234)" autocomplete="current-password" /></div>
+        <div id="auth-error-msg" style="display:none;color:#f87171;font-size:11px;font-weight:600;">❌ Credenciales incorrectas.</div>
+        <button type="submit" class="action-btn gold-cta" id="btn-submit-editor-login" style="grid-column:auto;">🔓 Desbloquear Cuenta de Editor</button>
+      </form>
+      <div id="auth-manage-section" style="display:none;flex-direction:column;gap:10px;">
+        <div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.45);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:7px;">
+          <strong style="font-size:12px;color:#4ade80;">🛡️ Sesión Activa: Editor (<span id="auth-active-user">admin</span>)</strong>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="action-btn gold-cta" id="btn-enter-public-mode" style="flex:1;grid-column:auto;">👁️ Cambiar a Vista Público General</button>
+            <button class="action-btn" id="btn-copy-public-link" style="flex:1;">🔗 Copiar Enlace Público</button>
+          </div>
+          <div style="font-size:10px;color:var(--ink-silver);">Enlace clientes: <code id="public-url-preview" style="color:var(--gold-bright);">?mode=public</code></div>
+        </div>
+        <div style="border-top:1px solid rgba(212,175,55,0.2);padding-top:8px;display:flex;flex-direction:column;gap:7px;">
+          <strong style="font-size:11.5px;color:var(--gold-bright);">👥 Personas con Permiso de Editor</strong>
+          <div id="authorized-editors-list" style="display:flex;flex-direction:column;gap:5px;"></div>
+          <div class="form-grid-2" style="margin-top:4px;">
+            <div class="field-col"><label for="new-editor-user">Nuevo Usuario:</label><input type="text" id="new-editor-user" placeholder="Ej: arquitecto" /></div>
+            <div class="field-col"><label for="new-editor-pin">Clave / PIN:</label><input type="text" id="new-editor-pin" placeholder="Ej: 5678" /></div>
+          </div>
+          <button class="action-btn" id="btn-add-editor-account">➕ Autorizar Nuevo Editor</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="toast-banner" id="toast-banner"></div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

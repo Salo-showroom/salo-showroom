@@ -1,0 +1,38 @@
+{
+  "publishVersion": "1795030899537",
+  "publishedAt": "2026-11-18T19:41:39.537Z",
+  "visitsScriptUrl": "https://script.google.com/macros/s/AKfycbz4XDuDUinem9hZzjQrFKxP2dZjrP1VekhQ3lmwHcDwnKuUOkYtPLiWNrWshdSMT6t9/exec",
+  "projects": [
+    {
+      "code": "SALO-002",
+      "buildingName": "VIVIENDA FAMILIAR",
+      "subtitle": "Showroom Interactivo 3D · 360° · Plantas",
+      "whatsappPhone": "59167134994",
+      "published": true,
+      "coverUrl": "https://noisy-bread-2236.salazarlopezalcidesmario.workers.dev/Salo-showroom/salo-showroom/releases/download/media-SALO-002/lvl-day-facade-1795008537783.png",
+      "createdAt": "2026-11-18"
+    }
+  ],
+  "examplePhotos": [
+    {
+      "id": "ex-1795026742140-pg8e",
+      "title": "00 fachada noche",
+      "url": "https://noisy-bread-2236.salazarlopezalcidesmario.workers.dev/Salo-showroom/salo-showroom/releases/download/portal-media/portal-example-ex-1795026742140-pg8e.png"
+    },
+    {
+      "id": "ex-1795026722720-39iy",
+      "title": "Casa Moderna con Montañas Nevadas",
+      "url": "./media/PORTAL/portal-example-ex-1795026722720-39iy.png"
+    },
+    {
+      "id": "ex-1795026699857-ksoe",
+      "title": "Fachada editada 2",
+      "url": "./media/PORTAL/portal-example-ex-1795026699857-ksoe.png"
+    },
+    {
+      "id": "ex-1795026677355-uagw",
+      "title": "propuesta fachada vivienda",
+      "url": "./media/PORTAL/portal-example-ex-1795026677355-uagw.jpg"
+    }
+  ]
+}
