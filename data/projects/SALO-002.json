@@ -316,56 +316,87 @@
   ],
   "floors3D": [
     {
-      "id": "f3d-1",
-      "num": 1,
-      "name": "Planta Baja (1°)",
-      "badge": "25%",
-      "heightCut": 2.4,
+      "id": "f3d-0",
+      "num": 0,
+      "name": "Edificio Completo",
+      "badge": "Todos",
+      "heightCut": 16.5,
       "camPos": [
-        15.626363396012794,
-        5.371947712778833,
-        16.828391349552238
-      ],
-      "lookAt": [
-        8.881784197001252e-16,
-        1.1720613191517453,
-        -8.881784197001252e-16
-      ],
-      "assignedUnitIds": [
-        "u-poly-1794979116344"
-      ]
-    },
-    {
-      "id": "f3d-1794979706383",
-      "num": 1,
-      "name": "Piso 2",
-      "badge": "Nivel 2",
-      "heightCut": 4,
-      "camPos": [
-        10.75,
-        11.31,
-        16.1
+        19,
+        15,
+        21
       ],
       "lookAt": [
         0,
-        2.93,
+        5.5,
         0
       ]
     },
     {
-      "id": "f3d-1794979748744",
-      "num": 2,
-      "name": "Piso 3",
-      "badge": "Nivel 3",
-      "heightCut": 5.3,
+      "id": "f3d-4",
+      "num": 4,
+      "name": "Piso 4° · Penthouse",
+      "badge": "Nivel 4",
+      "heightCut": 13.8,
       "camPos": [
-        8.46,
-        18.22,
-        10.87
+        10,
+        16.5,
+        11
       ],
       "lookAt": [
         0,
-        2.93,
+        10.2,
+        -1
+      ]
+    },
+    {
+      "id": "f3d-3",
+      "num": 3,
+      "name": "Piso 3° · Suites",
+      "badge": "Nivel 3",
+      "heightCut": 10.1,
+      "camPos": [
+        10,
+        13,
+        11
+      ],
+      "lookAt": [
+        0,
+        6.8,
+        -1
+      ]
+    },
+    {
+      "id": "f3d-2",
+      "num": 2,
+      "name": "Piso 2° · Tipo",
+      "badge": "Nivel 2",
+      "heightCut": 6.7,
+      "camPos": [
+        10,
+        9.8,
+        11
+      ],
+      "lookAt": [
+        0,
+        3.4,
+        -1
+      ]
+    },
+    {
+      "id": "f3d-1",
+      "num": 1,
+      "name": "Piso 1° · Planta Baja",
+      "badge": "Nivel 1",
+      "heightCut": 3.3,
+      "camPos": [
+        11,
+        7.2,
+        13
+      ],
+      "lookAt": [
+        0,
+        0.8,
         0
       ]
     }
@@ -1277,9 +1308,9 @@
     ]
   },
   "customModel3D": {
-    "name": "Modelo Sketchup Ed Sra Cahuana.glb",
-    "ext": "glb",
-    "url": "https://noisy-bread-2236.salazarlopezalcidesmario.workers.dev/Salo-showroom/salo-showroom/releases/download/media-SALO-002/model3d-1794979633406.glb",
+    "name": null,
+    "ext": null,
+    "url": null,
     "mtlUrl": null,
     "mediaKey": null,
     "mtlMediaKey": null
