@@ -7,6 +7,9 @@ import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
 import {
   isPublishedRuntime,
+  normalizeAccessCode,
+  hashAccessCode,
+  findUniqueAccessCodeConflict,
   loadCloudConfig,
   saveCloudConfig,
   getActiveDriveProfile,
@@ -148,8 +151,11 @@ const defaultPortalState = {
   projects: [
     {
       code: 'SALO-001',
+      accessCode: '',
+      accessCodeHash: null,
+      requiresCode: false,
       buildingName: 'Torre Pocito 3D',
-      subtitle: 'Santa Cruz · Showroom Interactivo 3D · 360° · Plantas',
+      subtitle: 'Santa Cruz · Showroom Interactivo 3D · Panorámica · Plantas',
       coverUrl: './sample-assets/exterior-tower.webp',
       coverMediaKey: null,
       published: true,
@@ -186,13 +192,25 @@ const defaultFloors3DConfig = [
 /* ==========================================================================
    DEFAULT PROJECT STATE (SALO SHOWROOM v7)
    ========================================================================== */
+function escapeHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 const defaultState = {
   project: {
     code: 'SALO-001',
+    accessCode: '',
+    accessCodeHash: null,
+    requiresCode: false,
     shortName: 'SALO SHOWROOM',
     buildingName: 'Torre Pocito 3D',
     fullTitle: 'SALO SHOWROOM · Torre Pocito 3D',
-    subtitle: 'Showroom Interactivo 3D · 360° · Plantas',
+    subtitle: 'Showroom Interactivo 3D · Panorámica · Plantas',
     logoUrl: null,
     logoMediaKey: null,
     showLogo: false,
@@ -212,6 +230,9 @@ const defaultState = {
   unitsConfig: {
     showTab: true,
     displayMode: 'departments'
+  },
+  model3dConfig: {
+    showTab: true
   },
   avance: {
     percent: 68,
@@ -445,16 +466,30 @@ function isEditor() {
 function createFreshProjectState(meta) {
   const s = structuredClone(defaultState);
   s.project.code = meta.code;
+  s.project.accessCode = meta.accessCode || '';
+  s.project.accessCodeHash = meta.accessCodeHash || null;
+  s.project.requiresCode = Boolean(meta.requiresCode);
   s.project.shortName = 'SALO SHOWROOM';
   s.project.buildingName = meta.buildingName || 'Nuevo Edificio';
   s.project.fullTitle = `SALO SHOWROOM · ${s.project.buildingName}`;
-  s.project.subtitle = meta.subtitle || 'Showroom Interactivo 3D · 360° · Plantas';
+  s.project.subtitle = meta.subtitle || 'Showroom Interactivo 3D · Panorámica · Plantas';
   s.project.whatsappPhone = meta.whatsappPhone || '59173080076';
   if (meta.coverUrl) {
     s.exteriorAngles[0].photo = meta.coverUrl;
     s.exteriorAngles[0].mediaKey = meta.coverMediaKey || null;
+    if (meta.coverMediaKey || !String(meta.coverUrl).startsWith('./sample-assets/')) {
+      s.exteriorAngles[0].nightPhoto = null;
+      s.exteriorAngles[0].nightMediaKey = null;
+    }
     const fac = s.levels.find((l) => l.id === 'facade');
-    if (fac) { fac.dayPhoto = meta.coverUrl; fac.dayMediaKey = meta.coverMediaKey || null; }
+    if (fac) {
+      fac.dayPhoto = meta.coverUrl;
+      fac.dayMediaKey = meta.coverMediaKey || null;
+      if (meta.coverMediaKey || !String(meta.coverUrl).startsWith('./sample-assets/')) {
+        fac.nightPhoto = null;
+        fac.nightMediaKey = null;
+      }
+    }
   }
   s.auth = portalState.auth;
   return s;
@@ -471,7 +506,17 @@ function loadPortalState() {
           portalState.auth.editors = structuredClone(defaultPortalState.auth.editors);
         }
       }
-      if (Array.isArray(saved.projects) && saved.projects.length > 0) portalState.projects = normalizeSampleAssetPathsDeep(saved.projects);
+      if (Array.isArray(saved.projects) && saved.projects.length > 0) {
+        portalState.projects = normalizeSampleAssetPathsDeep(saved.projects).map((p) => {
+          const ac = normalizeAccessCode(p.accessCode || '');
+          return {
+            ...p,
+            accessCode: ac,
+            accessCodeHash: p.accessCodeHash || null,
+            requiresCode: p.requiresCode !== undefined ? Boolean(p.requiresCode && (p.accessCodeHash || ac)) : Boolean(ac)
+          };
+        });
+      }
       if (Array.isArray(saved.examplePhotos) && saved.examplePhotos.length > 0) portalState.examplePhotos = normalizeSampleAssetPathsDeep(saved.examplePhotos);
       if (saved.activeProjectCode) portalState.activeProjectCode = saved.activeProjectCode;
     }
@@ -514,6 +559,7 @@ function applyLoadedProjectData(rawSaved, code, meta) {
   }
   if (saved.intro) state.intro = { ...state.intro, ...saved.intro };
   if (saved.unitsConfig) state.unitsConfig = { ...state.unitsConfig, ...saved.unitsConfig };
+  if (saved.model3dConfig) state.model3dConfig = { ...state.model3dConfig, ...saved.model3dConfig };
   if (saved.avance) state.avance = { ...state.avance, ...saved.avance };
   if (Array.isArray(saved.exteriorAngles) && saved.exteriorAngles.length > 0) state.exteriorAngles = saved.exteriorAngles;
   if (Array.isArray(saved.levels) && saved.levels.length > 0) state.levels = saved.levels;
@@ -585,12 +631,13 @@ function savePersistedState() {
     };
     const cleanAngles = state.exteriorAngles.map((a) => ({
       ...a,
-      photo: (a.photo && a.photo.startsWith('blob:')) ? './sample-assets/exterior-tower.webp' : a.photo
+      photo: (a.photo && a.photo.startsWith('blob:')) ? './sample-assets/exterior-tower.webp' : a.photo,
+      nightPhoto: (a.nightPhoto && a.nightPhoto.startsWith('blob:')) ? null : (a.nightPhoto ?? null)
     }));
     const cleanLevels = state.levels.map((l) => ({
       ...l,
       dayPhoto: (l.dayPhoto && l.dayPhoto.startsWith('blob:')) ? './sample-assets/floor-piso9-3d.jpg' : l.dayPhoto,
-      nightPhoto: (l.nightPhoto && l.nightPhoto.startsWith('blob:')) ? './sample-assets/render-nocturno.jpg' : l.nightPhoto,
+      nightPhoto: (l.nightPhoto && l.nightPhoto.startsWith('blob:')) ? null : (l.nightPhoto ?? null),
       transImg1: (l.transImg1 && l.transImg1.startsWith('blob:')) ? null : l.transImg1,
       transImg2: (l.transImg2 && l.transImg2.startsWith('blob:')) ? null : l.transImg2
     }));
@@ -598,7 +645,8 @@ function savePersistedState() {
       ...u,
       customButtons: (u.customButtons || []).map((cb) => ({
         ...cb,
-        photoUrl: (cb.photoUrl && cb.photoUrl.startsWith('blob:')) ? null : cb.photoUrl
+        photoUrl: (cb.photoUrl && cb.photoUrl.startsWith('blob:')) ? null : cb.photoUrl,
+        nightPhotoUrl: (cb.nightPhotoUrl && cb.nightPhotoUrl.startsWith('blob:')) ? null : (cb.nightPhotoUrl ?? null)
       }))
     }));
     const cleanTransitions = {
@@ -609,8 +657,16 @@ function savePersistedState() {
         img2Url: (sl.img2Url && sl.img2Url.startsWith('blob:')) ? null : sl.img2Url
       }))
     };
-    const cleanGallery = state.renderedViewsGallery.map((g) => ({ ...g, url: (g.url && g.url.startsWith('blob:')) ? '' : g.url }));
-    const cleanRooms = state.rooms360.map((r) => ({ ...r, customImageUrl: (r.customImageUrl && r.customImageUrl.startsWith('blob:')) ? null : r.customImageUrl }));
+    const cleanGallery = state.renderedViewsGallery.map((g) => ({
+      ...g,
+      url: (g.url && g.url.startsWith('blob:')) ? '' : g.url,
+      nightUrl: (g.nightUrl && g.nightUrl.startsWith('blob:')) ? null : (g.nightUrl ?? null)
+    }));
+    const cleanRooms = state.rooms360.map((r) => ({
+      ...r,
+      customImageUrl: (r.customImageUrl && r.customImageUrl.startsWith('blob:')) ? null : r.customImageUrl,
+      customNightImageUrl: (r.customNightImageUrl && r.customNightImageUrl.startsWith('blob:')) ? null : (r.customNightImageUrl ?? null)
+    }));
     const cleanFinishes = {
       activeTabId: state.finishes.activeTabId,
       tabs: state.finishes.tabs.map((t) => ({
@@ -623,6 +679,7 @@ function savePersistedState() {
       project: cleanProject,
       intro: state.intro,
       unitsConfig: state.unitsConfig,
+      model3dConfig: state.model3dConfig,
       avance: state.avance,
       exteriorAngles: cleanAngles,
       levels: cleanLevels,
@@ -664,6 +721,7 @@ async function hydrateMediaFromIndexedDB() {
   if (state.intro.mediaKey) await getMediaUrl(state.intro.mediaKey);
   for (const ang of state.exteriorAngles) {
     if (ang.mediaKey) { const u = await getMediaUrl(ang.mediaKey); if (u) ang.photo = u; }
+    if (ang.nightMediaKey) { const u = await getMediaUrl(ang.nightMediaKey); if (u) ang.nightPhoto = u; }
   }
   for (const lvl of state.levels) {
     if (lvl.dayMediaKey) { const u = await getMediaUrl(lvl.dayMediaKey); if (u) lvl.dayPhoto = u; }
@@ -675,13 +733,16 @@ async function hydrateMediaFromIndexedDB() {
   for (const u of state.units) {
     for (const cb of (u.customButtons || [])) {
       if (cb.photoMediaKey) { const url = await getMediaUrl(cb.photoMediaKey); if (url) cb.photoUrl = url; }
+      if (cb.nightPhotoMediaKey) { const nu = await getMediaUrl(cb.nightPhotoMediaKey); if (nu) cb.nightPhotoUrl = nu; }
     }
   }
   for (const rv of state.renderedViewsGallery) {
     if (rv.mediaKey) { const u = await getMediaUrl(rv.mediaKey); if (u) rv.url = u; }
+    if (rv.nightMediaKey) { const nu = await getMediaUrl(rv.nightMediaKey); if (nu) rv.nightUrl = nu; }
   }
   for (const room of state.rooms360) {
     if (room.mediaKey) { const u = await getMediaUrl(room.mediaKey); if (u) room.customImageUrl = u; }
+    if (room.nightMediaKey) { const nu = await getMediaUrl(room.nightMediaKey); if (nu) room.customNightImageUrl = nu; }
   }
   for (const tab of state.finishes.tabs) {
     for (const item of tab.items) {
@@ -761,54 +822,144 @@ function syncPortalEditorTabUI() {
   }
 }
 
+let pendingGateProject = null;
+
+function openProjectCodeGate(projMeta, forceRole = null) {
+  const modal = document.getElementById('modal-project-code-gate');
+  if (!modal || !projMeta) return;
+  pendingGateProject = { projMeta, forceRole };
+  const bEl = document.getElementById('gate-code-building');
+  const inp = document.getElementById('gate-code-input');
+  const errEl = document.getElementById('gate-code-error');
+  if (bEl) bEl.textContent = projMeta.buildingName || 'este proyecto';
+  if (errEl) errEl.style.display = 'none';
+  if (inp) {
+    inp.value = '';
+    setTimeout(() => inp.focus(), 60);
+  }
+  modal.classList.add('open');
+}
+
+async function verifyAndSubmitCodeGate() {
+  if (!pendingGateProject?.projMeta) return;
+  const { projMeta, forceRole } = pendingGateProject;
+  const inp = document.getElementById('gate-code-input');
+  const errEl = document.getElementById('gate-code-error');
+  const raw = inp?.value || '';
+  const norm = normalizeAccessCode(raw);
+  const typedHash = await hashAccessCode(norm);
+
+  const matchesHash = Boolean(typedHash && projMeta.accessCodeHash && typedHash === String(projMeta.accessCodeHash).toLowerCase());
+  const matchesPlainLocal = Boolean(!isPublishedRuntime() && norm && projMeta.accessCode && normalizeAccessCode(projMeta.accessCode) === norm);
+
+  if (!matchesHash && !matchesPlainLocal) {
+    if (errEl) errEl.style.display = 'block';
+    return;
+  }
+
+  if (errEl) errEl.style.display = 'none';
+  document.getElementById('modal-project-code-gate')?.classList.remove('open');
+  pendingGateProject = null;
+  await openProjectByCode(projMeta.code, forceRole);
+}
+
+async function requestProjectAccessAndOpen(projMeta, forceRole = null) {
+  if (!projMeta) return false;
+  const effectivePublic = isPublishedRuntime() || forceRole === 'public' || !isEditor();
+  const mustGate = Boolean(projMeta.requiresCode) && effectivePublic;
+  if (!mustGate) {
+    return openProjectByCode(projMeta.code, forceRole);
+  }
+  openProjectCodeGate(projMeta, forceRole);
+  return false;
+}
+
+async function openProjectBySecretPortalInput(rawInput) {
+  const errEl = document.getElementById('portal-code-error');
+  const norm = normalizeAccessCode(rawInput);
+  if (!norm) {
+    if (errEl) errEl.style.display = 'block';
+    return false;
+  }
+  const inputHash = await hashAccessCode(norm);
+  let match = portalState.projects.find((p) => {
+    if (!p.requiresCode) return false;
+    if (inputHash && p.accessCodeHash && String(p.accessCodeHash).toLowerCase() === inputHash) return true;
+    return !isPublishedRuntime() && p.accessCode && normalizeAccessCode(p.accessCode) === norm;
+  });
+  if (!match && isEditor()) {
+    match = portalState.projects.find((p) => String(p.code || '').toUpperCase() === norm);
+  }
+  if (!match) {
+    if (errEl) errEl.style.display = 'block';
+    showToast('Código incorrecto o proyecto no encontrado');
+    return false;
+  }
+  if (errEl) errEl.style.display = 'none';
+  return openProjectByCode(match.code);
+}
+
 function renderPortalProjects() {
   const grid = document.getElementById('portal-projects-grid');
   const countBadge = document.getElementById('portal-projects-count');
   if (!grid) return;
   const query = (document.getElementById('portal-search-input')?.value || '').trim().toLowerCase();
+  const editorMode = isEditor();
 
   const filtered = portalState.projects.filter((p) => {
     if (!query) return true;
-    return (p.buildingName || '').toLowerCase().includes(query)
-      || (p.code || '').toLowerCase().includes(query)
+    const baseMatch = (p.buildingName || '').toLowerCase().includes(query)
       || (p.subtitle || '').toLowerCase().includes(query);
+    if (!editorMode) return baseMatch;
+    return baseMatch
+      || (p.code || '').toLowerCase().includes(query)
+      || (p.accessCode || '').toLowerCase().includes(query);
   });
 
   if (countBadge) countBadge.textContent = `${filtered.length} ${filtered.length === 1 ? 'Proyecto' : 'Proyectos'}`;
   grid.innerHTML = '';
 
   if (filtered.length === 0) {
-    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--ink-silver);border:1px dashed var(--gold-border);border-radius:14px;">No se encontraron proyectos con "${query}".</div>`;
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--ink-silver);border:1px dashed var(--gold-border);border-radius:14px;">No se encontraron proyectos con "${escapeHtml(query)}".</div>`;
     return;
   }
 
   filtered.forEach((proj) => {
     const isPublished = proj.published !== false;
+    const isLocked = Boolean(proj.requiresCode);
+    const pillText = editorMode
+      ? (isLocked ? `🔑 ${proj.accessCode || 'Protegido'} (${proj.code})` : `🔓 Demo abierto (${proj.code})`)
+      : (isLocked ? '🔒 Con código' : '🔓 Demo abierto');
+    const safeCode = escapeHtml(proj.code);
+    const safeName = escapeHtml(proj.buildingName);
+    const safeSub = escapeHtml(proj.subtitle || 'Showroom Interactivo 3D · Panorámica · Plantas');
+    const safeCover = escapeHtml(proj.coverUrl || './sample-assets/exterior-tower.webp');
+
     const card = document.createElement('article');
     card.className = 'portal-project-card';
     card.innerHTML = `
       <div class="portal-project-cover">
-        <img src="${proj.coverUrl || './sample-assets/exterior-tower.webp'}" alt="${proj.buildingName}" />
-        <span class="portal-project-code-pill">🔑 ${proj.code}</span>
-        ${isEditor() ? `<span class="portal-pub-badge ${isPublished ? 'pub' : 'draft'}">${isPublished ? '🟢 PUBLICADO' : '📝 BORRADOR (PC)'}</span>` : ''}
+        <img src="${safeCover}" alt="${safeName}" />
+        <span class="portal-project-code-pill">${escapeHtml(pillText)}</span>
+        ${editorMode ? `<span class="portal-pub-badge ${isPublished ? 'pub' : 'draft'}">${isPublished ? '🟢 PUBLICADO' : '📝 BORRADOR (PC)'}</span>` : ''}
       </div>
       <div class="portal-project-body">
         <div>
           <span style="font-size:9.5px;color:var(--gold-bright);letter-spacing:1.2px;font-weight:700;">SALO SHOWROOM</span>
-          <h4 style="font-family:var(--font-display);font-size:17px;color:var(--ink-white);margin-top:2px;">${proj.buildingName}</h4>
-          <p style="font-size:11px;color:var(--ink-silver);margin-top:3px;">${proj.subtitle || 'Showroom Interactivo 3D · 360° · Plantas'}</p>
+          <h4 style="font-family:var(--font-display);font-size:17px;color:var(--ink-white);margin-top:2px;">${safeName}</h4>
+          <p style="font-size:11px;color:var(--ink-silver);margin-top:3px;">${safeSub}</p>
         </div>
         <div style="margin-top:auto;display:flex;gap:6px;flex-wrap:wrap;">
-          <button class="action-btn gold-cta" data-open-proj="${proj.code}" style="flex:1;grid-column:auto;padding:8px 10px;">
-            ${isEditor() ? '✏️ Abrir / Editar' : '👁️ Ver Showroom'}
+          <button class="action-btn gold-cta" data-open-proj="${safeCode}" style="flex:1;grid-column:auto;padding:8px 10px;">
+            ${editorMode ? '✏️ Abrir / Editar' : (isLocked ? '🔒 Ver Showroom' : '👁️ Ver Showroom')}
           </button>
-          ${isEditor() ? `<button class="action-btn" data-toggle-pub="${proj.code}" title="${isPublished ? 'Pasar a Borrador (no sale en la web pública)' : 'Marcar listo para publicar'}" style="padding:8px 9px;font-size:10.5px;">${isPublished ? '🟢' : '📝'}</button>` : ''}
-          <button class="action-btn" data-copy-proj="${proj.code}" title="Copiar enlace y código" style="padding:8px 10px;">🔗</button>
-          ${(isEditor() && portalState.projects.length > 1) ? `<button class="action-btn" data-del-proj="${proj.code}" title="Eliminar proyecto" style="padding:8px 10px;color:#f87171;border-color:rgba(239,68,68,0.4);">🗑️</button>` : ''}
+          ${editorMode ? `<button class="action-btn" data-toggle-pub="${safeCode}" title="${isPublished ? 'Pasar a Borrador (no sale en la web pública)' : 'Marcar listo para publicar'}" style="padding:8px 9px;font-size:10.5px;">${isPublished ? '🟢' : '📝'}</button>` : ''}
+          <button class="action-btn" data-copy-proj="${safeCode}" title="Copiar enlace del proyecto" style="padding:8px 10px;">🔗</button>
+          ${(editorMode && portalState.projects.length > 1) ? `<button class="action-btn" data-del-proj="${safeCode}" title="Eliminar proyecto" style="padding:8px 10px;color:#f87171;border-color:rgba(239,68,68,0.4);">🗑️</button>` : ''}
         </div>
       </div>
     `;
-    card.querySelector('[data-open-proj]').addEventListener('click', () => openProjectByCode(proj.code));
+    card.querySelector('[data-open-proj]').addEventListener('click', () => requestProjectAccessAndOpen(proj));
     const pubBtn = card.querySelector('[data-toggle-pub]');
     if (pubBtn) {
       pubBtn.addEventListener('click', () => {
@@ -821,7 +972,7 @@ function renderPortalProjects() {
     card.querySelector('[data-copy-proj]').addEventListener('click', () => {
       const link = `${window.location.origin}${window.location.pathname}?project=${encodeURIComponent(proj.code)}&mode=public`;
       navigator.clipboard?.writeText(link).catch(() => {});
-      showToast(`🔗 Código ${proj.code} y enlace público copiados`);
+      showToast('🔗 Enlace público del proyecto copiado');
     });
     const delBtn = card.querySelector('[data-del-proj]');
     if (delBtn) {
@@ -926,13 +1077,22 @@ async function openProjectByCode(rawCode, forceRole = null) {
 
 let newProjectCoverDraft = { url: null, mediaKey: null };
 
+function nextInternalProjectCode() {
+  let n = portalState.projects.length + 1;
+  let candidate = `SALO-${String(n).padStart(3, '0')}`;
+  while (portalState.projects.some((p) => String(p.code || '').toUpperCase() === candidate)) {
+    n += 1;
+    candidate = `SALO-${String(n).padStart(3, '0')}`;
+  }
+  return candidate;
+}
+
 function openNewProjectModal() {
   if (!isEditor()) { showToast('Inicia sesión como Editor para crear proyectos'); return; }
   newProjectCoverDraft = { url: null, mediaKey: null };
-  const nextNum = String(portalState.projects.length + 1).padStart(3, '0');
   document.getElementById('np-input-building').value = '';
-  document.getElementById('np-input-code').value = `SALO-${nextNum}`;
-  document.getElementById('np-input-subtitle').value = 'Showroom Interactivo 3D · 360° · Plantas';
+  document.getElementById('np-input-code').value = '';
+  document.getElementById('np-input-subtitle').value = 'Showroom Interactivo 3D · Panorámica · Plantas';
   document.getElementById('np-input-wa').value = '59173080076';
   const pubCb = document.getElementById('np-input-published');
   if (pubCb) pubCb.checked = false;
@@ -943,17 +1103,26 @@ function openNewProjectModal() {
 async function createNewProjectFromModal() {
   if (!isEditor()) return;
   const buildingName = document.getElementById('np-input-building').value.trim() || `Edificio SALO ${portalState.projects.length + 1}`;
-  let code = document.getElementById('np-input-code').value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
-  if (!code) code = `SALO-${String(Date.now()).slice(-4)}`;
-  if (portalState.projects.some((p) => p.code.toUpperCase() === code)) {
-    code = `${code}-${String(Date.now()).slice(-2)}`;
+  const accessCode = normalizeAccessCode(document.getElementById('np-input-code').value);
+  const accessCodeHash = await hashAccessCode(accessCode);
+
+  const conflict = findUniqueAccessCodeConflict(portalState.projects, accessCode, accessCodeHash, null);
+  if (conflict) {
+    showToast(`❌ El código "${accessCode}" ya lo usa "${conflict.buildingName}". Elige otro código único.`);
+    return;
   }
-  const subtitle = document.getElementById('np-input-subtitle').value.trim() || 'Showroom Interactivo 3D · 360° · Plantas';
+
+  const code = nextInternalProjectCode();
+  const subtitle = document.getElementById('np-input-subtitle').value.trim() || 'Showroom Interactivo 3D · Panorámica · Plantas';
   const whatsappPhone = document.getElementById('np-input-wa').value.trim() || '59173080076';
   const published = !!document.getElementById('np-input-published')?.checked;
+  const requiresCode = Boolean(accessCodeHash);
 
   const newMeta = {
     code,
+    accessCode,
+    accessCodeHash,
+    requiresCode,
     buildingName,
     subtitle,
     whatsappPhone,
@@ -969,7 +1138,7 @@ async function createNewProjectFromModal() {
   savePortalState();
   renderPortalProjects();
   document.getElementById('modal-new-project')?.classList.remove('open');
-  showToast(`Proyecto "${buildingName}" (${code}) creado`);
+  showToast(requiresCode ? `Proyecto "${buildingName}" creado (código privado activo)` : `Proyecto "${buildingName}" creado (demo abierto)`);
   await openProjectByCode(code, 'editor');
 }
 
@@ -1090,6 +1259,26 @@ function syncUnitsTabVisibilityUI() {
   }
 }
 
+function syncModel3DTabVisibilityUI() {
+  const showTab = state.model3dConfig?.showTab !== false;
+  const navBtn = document.getElementById('nav-model3d');
+  const drawerLink = document.querySelector('[data-drawer-nav="model3d"]');
+  const unitBtn = document.getElementById('btn-drawer-go-3d-floor');
+  const visibleInNav = showTab || isEditor();
+
+  if (navBtn) {
+    navBtn.style.display = visibleInNav ? '' : 'none';
+    navBtn.style.opacity = (!showTab && isEditor()) ? '0.45' : '1';
+    navBtn.title = (!showTab && isEditor()) ? 'Oculta al público (Visible solo para Editor)' : 'Maqueta 3D';
+  }
+  if (drawerLink) drawerLink.style.display = visibleInNav ? '' : 'none';
+  if (unitBtn) unitBtn.style.display = visibleInNav ? '' : 'none';
+
+  if (!showTab && !isEditor() && state.activeView === 'model3d') {
+    switchView('masterplan', false, true);
+  }
+}
+
 function syncProjectBrandingUI() {
   const buildingName = state.project.buildingName || 'Torre Pocito 3D';
   state.project.shortName = 'SALO SHOWROOM';
@@ -1106,7 +1295,7 @@ function syncProjectBrandingUI() {
   if (tabNameEl) tabNameEl.textContent = 'SALO SHOWROOM';
   if (bldgSubEl) bldgSubEl.textContent = buildingName;
   if (titleEl) titleEl.textContent = `SALO SHOWROOM · ${buildingName}`;
-  if (subEl) subEl.textContent = state.project.subtitle || 'Showroom Interactivo 3D · 360° · Plantas';
+  if (subEl) subEl.textContent = state.project.subtitle || 'Showroom Interactivo 3D · Panorámica · Plantas';
   if (codeEl) codeEl.textContent = `Código: ${state.project.code || 'SALO-001'}`;
   if (menuTitle) menuTitle.textContent = buildingName;
   if (introTitle) introTitle.textContent = buildingName;
@@ -1117,6 +1306,7 @@ function syncProjectBrandingUI() {
   }
   syncProjectLogoUI();
   syncUnitsTabVisibilityUI();
+  syncModel3DTabVisibilityUI();
 }
 
 function syncAvanceUI() {
@@ -1166,6 +1356,7 @@ function applyRoleUI() {
   }
 
   syncUnitsTabVisibilityUI();
+  syncModel3DTabVisibilityUI();
   syncPortalEditorTabUI();
   renderPortalProjects();
   renderPortalExamples();
@@ -1177,6 +1368,7 @@ function applyRoleUI() {
   renderLocationPoiList();
   renderMasterplanOverlays();
   syncHotspots360DOM();
+  renderTour360FloorsPanel();
 }
 
 function openAuthModal() {
@@ -1261,12 +1453,10 @@ function drawMasterplanRender() {
   const activeLevel = state.levels.find((l) => l.id === state.activeLevelId) || state.levels[0];
 
   let photoUrl = '';
-  let needsNightFilter = false;
 
   if (isExterior) {
     const ang = state.exteriorAngles[state.exteriorAngleIndex] || state.exteriorAngles[0];
     photoUrl = (state.isNightMode && ang.nightPhoto) ? ang.nightPhoto : ang.photo;
-    needsNightFilter = state.isNightMode && ang.nightPhoto === ang.photo;
     const showPortal = state.exteriorAngleIndex === 0 && activeLevel.hasTour360 !== false;
     if (portalEl) {
       portalEl.style.display = showPortal ? 'block' : 'none';
@@ -1283,7 +1473,6 @@ function drawMasterplanRender() {
     photoUrl = activeLevel.dayPhoto;
     if (state.is2DPlanMode && activeLevel.plan2DPhoto) photoUrl = activeLevel.plan2DPhoto;
     else if (state.isNightMode && activeLevel.nightPhoto) photoUrl = activeLevel.nightPhoto;
-    needsNightFilter = state.isNightMode && !state.is2DPlanMode && activeLevel.nightPhoto === activeLevel.dayPhoto;
     if (portalEl) {
       // Show 360 portal on floor only if floor has 360 enabled AND has rooms or user enabled it
       if (activeLevel.hasTour360 !== false) {
@@ -1301,7 +1490,7 @@ function drawMasterplanRender() {
 
   customImg.src = photoUrl;
   customImg.style.display = 'block';
-  customImg.style.filter = needsNightFilter ? 'brightness(0.56) contrast(1.2) saturate(1.15)' : 'none';
+  customImg.style.filter = 'none';
   const nav360Btn = document.getElementById('nav-tour360');
   if (nav360Btn) {
     const show360Nav = isExterior ? true : (activeLevel.hasTour360 !== false);
@@ -1385,6 +1574,7 @@ function renderExteriorViewsManagerList() {
   if (!list) return;
   list.innerHTML = '';
   state.exteriorAngles.forEach((ang, idx) => {
+    const hasNight = Boolean(ang.nightMediaKey || (ang.nightPhoto && ang.nightPhoto !== ang.photo));
     const row = document.createElement('div');
     row.className = 'builder-item-row';
     row.innerHTML = `
@@ -1394,11 +1584,13 @@ function renderExteriorViewsManagerList() {
           <strong style="font-size:11.5px;color:${idx === 0 ? 'var(--gold-bright)' : 'var(--ink-white)'};display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
             ${idx === 0 ? '⭐ Vista Principal · ' : `Vista #${idx + 1} · `}${ang.label}
           </strong>
-          <span style="font-size:9.5px;color:var(--ink-silver);">${ang.mediaKey ? 'Calidad nativa (IndexedDB)' : 'Imagen ejemplo'}</span>
+          <span style="font-size:9.5px;color:var(--ink-silver);">${ang.mediaKey ? 'Calidad nativa (IndexedDB)' : 'Imagen ejemplo'}${hasNight ? ' · 🌙 Con nocturna' : ''}</span>
         </div>
       </div>
-      <div style="display:flex;gap:4px;flex-shrink:0;">
+      <div style="display:flex;gap:4px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">
         <button class="glass-pill-btn" data-ext-view="${idx}" style="height:24px;padding:0 8px;font-size:10px;">👁️ Ver</button>
+        <label class="glass-pill-btn" style="height:24px;padding:0 8px;font-size:10px;cursor:pointer;" title="Subir vista nocturna opcional">🌙 ${hasNight ? 'Cambiar' : 'Nocturna'}<input type="file" accept="image/*" style="display:none;" data-ext-night-input="${idx}" /></label>
+        ${hasNight ? `<button class="glass-pill-btn" data-ext-del-night="${idx}" style="height:24px;padding:0 7px;font-size:10px;color:#fdba74;" title="Quitar vista nocturna">✕🌙</button>` : ''}
         ${idx > 0 ? `<button class="glass-pill-btn" data-ext-make-main="${idx}" style="height:24px;padding:0 8px;font-size:10px;" title="Hacer vista principal">⭐</button>` : ''}
         ${state.exteriorAngles.length > 1 ? `<button class="glass-pill-btn" data-ext-del="${idx}" style="height:24px;padding:0 7px;font-size:10px;color:#f87171;">🗑️</button>` : ''}
       </div>
@@ -1410,13 +1602,57 @@ function renderExteriorViewsManagerList() {
       renderMasterplanOverlays();
       document.getElementById('modal-exterior-manager').classList.remove('open');
     });
+    const nightInput = row.querySelector('[data-ext-night-input]');
+    if (nightInput) {
+      nightInput.addEventListener('change', async (e) => {
+        if (!isEditor()) return;
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const key = `ext-night-${idx}-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`;
+        const url = await saveMediaBlob(key, file);
+        ang.nightPhoto = url;
+        ang.nightMediaKey = key;
+        if (idx === 0) {
+          const facadeLvl = state.levels.find((l) => l.id === 'facade');
+          if (facadeLvl) { facadeLvl.nightPhoto = url; facadeLvl.nightMediaKey = key; }
+        }
+        state.activeLevelId = 'facade';
+        state.exteriorAngleIndex = idx;
+        savePersistedState();
+        renderExteriorViewsManagerList();
+        drawMasterplanRender();
+        showToast(`Vista nocturna cargada en ${ang.label}`);
+        e.target.value = '';
+      });
+    }
+    const delNightBtn = row.querySelector('[data-ext-del-night]');
+    if (delNightBtn) {
+      delNightBtn.addEventListener('click', () => {
+        if (!isEditor()) return;
+        ang.nightPhoto = null;
+        ang.nightMediaKey = null;
+        if (idx === 0) {
+          const facadeLvl = state.levels.find((l) => l.id === 'facade');
+          if (facadeLvl) { facadeLvl.nightPhoto = null; facadeLvl.nightMediaKey = null; }
+        }
+        savePersistedState();
+        renderExteriorViewsManagerList();
+        drawMasterplanRender();
+        showToast('Vista nocturna eliminada');
+      });
+    }
     const mkMain = row.querySelector('[data-ext-make-main]');
     if (mkMain) {
       mkMain.addEventListener('click', () => {
         const [moved] = state.exteriorAngles.splice(idx, 1);
         state.exteriorAngles.unshift(moved);
         const facadeLvl = state.levels.find((l) => l.id === 'facade');
-        if (facadeLvl) { facadeLvl.dayPhoto = moved.photo; facadeLvl.dayMediaKey = moved.mediaKey || null; }
+        if (facadeLvl) {
+          facadeLvl.dayPhoto = moved.photo;
+          facadeLvl.dayMediaKey = moved.mediaKey || null;
+          facadeLvl.nightPhoto = moved.nightPhoto || null;
+          facadeLvl.nightMediaKey = moved.nightMediaKey || null;
+        }
         state.exteriorAngleIndex = 0;
         savePersistedState();
         renderExteriorViewsManagerList();
@@ -1429,6 +1665,16 @@ function renderExteriorViewsManagerList() {
       delBtn.addEventListener('click', () => {
         state.exteriorAngles.splice(idx, 1);
         state.exteriorAngleIndex = Math.min(state.exteriorAngleIndex, state.exteriorAngles.length - 1);
+        if (idx === 0 && state.exteriorAngles[0]) {
+          const facadeLvl = state.levels.find((l) => l.id === 'facade');
+          const nextMain = state.exteriorAngles[0];
+          if (facadeLvl) {
+            facadeLvl.dayPhoto = nextMain.photo;
+            facadeLvl.dayMediaKey = nextMain.mediaKey || null;
+            facadeLvl.nightPhoto = nextMain.nightPhoto || null;
+            facadeLvl.nightMediaKey = nextMain.nightMediaKey || null;
+          }
+        }
         savePersistedState();
         renderExteriorViewsManagerList();
         drawMasterplanRender();
@@ -1766,7 +2012,8 @@ function renderMasterplanOverlays() {
           await openFloorTour360(scopeLvl, cb.targetRoom360Id || null, true);
         } else {
           const photoSrc = cb.photoMediaKey ? (await getMediaUrl(cb.photoMediaKey)) || cb.photoUrl : cb.photoUrl;
-          if (photoSrc) openPhotoLightbox(photoSrc, cb.label);
+          const nightSrc = cb.nightPhotoMediaKey ? (await getMediaUrl(cb.nightPhotoMediaKey)) || cb.nightPhotoUrl : (cb.nightPhotoUrl || null);
+          if (photoSrc) openPhotoLightbox(photoSrc, cb.label, nightSrc);
           else showToast('Este punto aún no tiene una foto render asignada');
         }
       });
@@ -1962,6 +2209,7 @@ function triggerPolygonTargetTransition(unit) {
 /* --- FLOOR CREATOR / EDITOR / DELETE MODAL --- */
 let floorDraft = {
   planPhotoUrl: null, planPhotoKey: null,
+  nightPhotoUrl: null, nightPhotoKey: null,
   transVideoKey: null, transVideoName: null,
   transImg1Url: null, transImg1Key: null,
   transImg2Url: null, transImg2Key: null,
@@ -1996,6 +2244,7 @@ function deleteFloorById(levelId) {
   drawMasterplanRender();
   renderMasterplanOverlays();
   renderExistingFloorsManageList();
+  renderTour360FloorsPanel();
   showToast(`Nivel "${lvl.name}" eliminado`);
 }
 
@@ -2029,9 +2278,15 @@ function renderExistingFloorsManageList() {
 function openFloorCreatorModal(existingLevel = null, options = {}) {
   if (!isEditor()) { showToast('Solo cuentas de Editor pueden crear o eliminar pisos'); return; }
   state.editingFloorId = existingLevel ? existingLevel.id : null;
+  const hasRealNight = Boolean(
+    existingLevel?.nightMediaKey
+    || (existingLevel?.nightPhoto && existingLevel.nightPhoto !== existingLevel.dayPhoto)
+  );
   floorDraft = {
     planPhotoUrl: existingLevel?.dayPhoto || null,
     planPhotoKey: existingLevel?.dayMediaKey || null,
+    nightPhotoUrl: hasRealNight ? (existingLevel?.nightPhoto || null) : null,
+    nightPhotoKey: existingLevel?.nightMediaKey || null,
     transVideoKey: existingLevel?.transitionMediaKey || null,
     transVideoName: existingLevel?.transitionVideoName || null,
     transImg1Url: existingLevel?.transImg1 || null,
@@ -2053,6 +2308,10 @@ function openFloorCreatorModal(existingLevel = null, options = {}) {
   document.getElementById('floor-twoimg-1-lbl').textContent = floorDraft.transImg1Url ? '✅ Imagen 1 lista' : 'Sin seleccionar';
   document.getElementById('floor-twoimg-2-lbl').textContent = floorDraft.transImg2Url ? '✅ Imagen 2 lista' : 'Sin seleccionar';
   document.getElementById('floor-plan-photo-lbl').textContent = floorDraft.planPhotoKey ? '✅ Fotografía en planta cargada' : 'Se usará render de planta predeterminado o sube tu foto';
+  const nightLbl = document.getElementById('floor-night-photo-lbl');
+  if (nightLbl) nightLbl.textContent = floorDraft.nightPhotoUrl ? '✅ Vista nocturna cargada' : 'Opcional: si no se sube, el modo Noche mantiene la foto principal sin oscurecer';
+  const clrNightBtn = document.getElementById('btn-floor-clear-night');
+  if (clrNightBtn) clrNightBtn.style.display = floorDraft.nightPhotoUrl ? 'inline-flex' : 'none';
   document.getElementById('floor-360-initial-lbl').textContent = 'Opcional: sube ya la 1ra imagen 360° de este piso';
   const delBtn = document.getElementById('btn-delete-floor-modal');
   if (delBtn) delBtn.style.display = (existingLevel && existingLevel.id !== 'facade') ? 'inline-flex' : 'none';
@@ -2077,7 +2336,20 @@ function saveFloorFromModal() {
       lvl.badge = badge;
       lvl.transitionType = transitionType;
       lvl.hasTour360 = hasTour360;
-      if (floorDraft.planPhotoUrl) { lvl.dayPhoto = floorDraft.planPhotoUrl; lvl.nightPhoto = floorDraft.planPhotoUrl; lvl.dayMediaKey = floorDraft.planPhotoKey; }
+      if (floorDraft.planPhotoUrl) {
+        lvl.dayPhoto = floorDraft.planPhotoUrl;
+        lvl.dayMediaKey = floorDraft.planPhotoKey;
+      }
+      lvl.nightPhoto = floorDraft.nightPhotoUrl || null;
+      lvl.nightMediaKey = floorDraft.nightPhotoKey || null;
+      if (lvl.id === 'facade' && state.exteriorAngles[0]) {
+        if (floorDraft.planPhotoUrl) {
+          state.exteriorAngles[0].photo = floorDraft.planPhotoUrl;
+          state.exteriorAngles[0].mediaKey = floorDraft.planPhotoKey;
+        }
+        state.exteriorAngles[0].nightPhoto = lvl.nightPhoto;
+        state.exteriorAngles[0].nightMediaKey = lvl.nightMediaKey;
+      }
       lvl.transitionMediaKey = floorDraft.transVideoKey;
       lvl.transitionVideoName = floorDraft.transVideoName;
       lvl.transImg1 = floorDraft.transImg1Url;
@@ -2093,10 +2365,10 @@ function saveFloorFromModal() {
       badge,
       floorNum: state.levels.length,
       dayPhoto: floorDraft.planPhotoUrl || './sample-assets/floor-piso9-3d.jpg',
-      nightPhoto: floorDraft.planPhotoUrl || './sample-assets/floor-piso9-3d.jpg',
+      nightPhoto: floorDraft.nightPhotoUrl || null,
       plan2DPhoto: floorDraft.planPhotoUrl || './sample-assets/floor-piso9-plan.webp',
       dayMediaKey: floorDraft.planPhotoKey || null,
-      nightMediaKey: floorDraft.planPhotoKey || null,
+      nightMediaKey: floorDraft.nightPhotoKey || null,
       hasTour360,
       transitionType,
       transitionMediaKey: floorDraft.transVideoKey || null,
@@ -2162,6 +2434,7 @@ function saveFloorFromModal() {
 
   savePersistedState();
   renderLevelsSidebar();
+  renderTour360FloorsPanel();
   document.getElementById('modal-floor-creator')?.classList.remove('open');
 
   if (floorDraft.linkToPolygonModal) {
@@ -2344,28 +2617,111 @@ function renderTransitionsManagerRows() {
 /* ==========================================================================
    4. UNIT DRAWER, PHOTO LIGHTBOX & DYNAMIC POLYGON / LINES / BUTTONS EDITOR
    ========================================================================== */
-function openPhotoLightbox(url, caption = 'Vista Renderizada') {
+let activeLightboxState = { dayUrl: null, nightUrl: null, caption: 'Vista Renderizada' };
+
+function syncDayNightButtonsUI() {
+  const isNight = !!state.isNightMode;
+  const dnIcon = document.getElementById('day-night-icon');
+  if (dnIcon) dnIcon.textContent = isNight ? '🌙' : '☀️';
+  document.getElementById('btn-day-night')?.classList.toggle('active', isNight);
+
+  const btn360 = document.getElementById('btn-360-day-night');
+  if (btn360) {
+    btn360.textContent = isNight ? '🌙' : '☀️';
+    btn360.classList.toggle('active', isNight);
+  }
+
+  const btnGal = document.getElementById('btn-gallery-day-night');
+  if (btnGal) {
+    btnGal.textContent = isNight ? '🌙 Noche' : '☀️ Día';
+    btnGal.classList.toggle('active', isNight);
+  }
+
+  const btnLb = document.getElementById('btn-photo-viewer-day-night');
+  if (btnLb) {
+    btnLb.textContent = isNight ? '🌙 Modo Noche' : '☀️ Modo Día';
+    btnLb.classList.toggle('active', isNight);
+  }
+}
+
+function syncPhotoLightboxImage() {
+  const img = document.getElementById('photo-viewer-img');
+  const toggleBtn = document.getElementById('btn-photo-viewer-day-night');
+  if (!img || !activeLightboxState.dayUrl) return;
+  const hasNight = Boolean(activeLightboxState.nightUrl);
+  img.src = (state.isNightMode && hasNight) ? activeLightboxState.nightUrl : activeLightboxState.dayUrl;
+  img.style.filter = 'none';
+  if (toggleBtn) {
+    toggleBtn.style.display = hasNight ? 'inline-flex' : 'none';
+    toggleBtn.classList.toggle('visible', hasNight);
+  }
+  syncDayNightButtonsUI();
+}
+
+function toggleDayNightMode(forcedNight = null) {
+  state.isNightMode = (typeof forcedNight === 'boolean') ? forcedNight : !state.isNightMode;
+  syncDayNightButtonsUI();
+  drawMasterplanRender();
+  if (tour360.sphereMesh) loadRoom360(state.activeRoom360Id);
+  if (document.getElementById('modal-renders-gallery')?.classList.contains('open')) renderGalleryModalContent();
+  if (document.getElementById('modal-photo-viewer')?.classList.contains('open')) syncPhotoLightboxImage();
+}
+
+function openPhotoLightbox(url, caption = 'Vista Renderizada', nightUrl = null) {
   const modal = document.getElementById('modal-photo-viewer');
   const img = document.getElementById('photo-viewer-img');
   const cap = document.getElementById('photo-viewer-caption');
   if (!modal || !img || !url) return;
-  img.src = url;
+  activeLightboxState = { dayUrl: url, nightUrl: nightUrl || null, caption };
   if (cap) cap.textContent = caption;
+  syncPhotoLightboxImage();
   modal.classList.add('open');
 }
 
 function getRooms360ForScope(levelId = null) {
   if (!levelId || levelId === 'facade' || levelId === 'masterplan') return state.rooms360;
-  const scoped = state.rooms360.filter((r) => r.levelId === levelId);
-  return scoped.length > 0 ? scoped : state.rooms360;
+  return state.rooms360.filter((r) => r.levelId === levelId);
+}
+
+function renderTour360FloorsPanel() {
+  const stack = document.getElementById('tour360-floors-stack');
+  if (!stack) return;
+  stack.innerHTML = '';
+
+  const allBtn = document.createElement('button');
+  allBtn.type = 'button';
+  allBtn.className = `tour360-floor-btn ${!state.activeTour360LevelId ? 'active' : ''}`;
+  allBtn.dataset.tourFloorId = 'all';
+  allBtn.innerHTML = `<span>🌐 Todos los pisos</span><small>${state.rooms360.length}</small>`;
+  allBtn.addEventListener('click', () => openFloorTour360(null, null, false));
+  stack.appendChild(allBtn);
+
+  const realLevels = (state.levels || []).filter((l) => l && l.id !== 'facade' && l.id !== 'masterplan');
+  const editorMode = isEditor();
+
+  realLevels.forEach((lvl) => {
+    const roomsInFloor = state.rooms360.filter((r) => r.levelId === lvl.id);
+    if (!editorMode && (lvl.hasTour360 === false || roomsInFloor.length === 0)) return;
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    const isAct = state.activeTour360LevelId === lvl.id;
+    btn.className = `tour360-floor-btn ${isAct ? 'active' : ''} ${roomsInFloor.length === 0 ? 'is-empty' : ''}`;
+    btn.dataset.tourFloorId = lvl.id;
+    const countTxt = lvl.hasTour360 === false ? '🚫' : String(roomsInFloor.length);
+    btn.innerHTML = `<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(lvl.name || lvl.badge)}</span><small>${countTxt}</small>`;
+    btn.title = lvl.name;
+    btn.addEventListener('click', () => openFloorTour360(lvl.id, null, false));
+    stack.appendChild(btn);
+  });
 }
 
 async function openFloorTour360(levelId = null, preferredRoomId = null, allowTransition = true) {
   const targetScope = (levelId && levelId !== 'facade' && levelId !== 'masterplan') ? levelId : null;
   if (targetScope) {
     const lvl = state.levels.find((l) => l.id === targetScope);
-    if (lvl && lvl.hasTour360 === false) {
-      showToast(`El recorrido 360° está desactivado en ${lvl.name}`);
+    if (lvl && lvl.hasTour360 === false && !isEditor()) {
+      showToast(`La panorámica está desactivada en ${lvl.name}`);
       return;
     }
   }
@@ -2374,9 +2730,11 @@ async function openFloorTour360(levelId = null, preferredRoomId = null, allowTra
   const scopedRooms = getRooms360ForScope(targetScope);
   const chosenRoom = (preferredRoomId && scopedRooms.find((r) => r.id === preferredRoomId))
     || (preferredRoomId && state.rooms360.find((r) => r.id === preferredRoomId))
-    || scopedRooms[0];
+    || scopedRooms[0]
+    || null;
   await switchView('tour360', allowTransition, true);
-  if (chosenRoom) loadRoom360(chosenRoom.id);
+  loadRoom360(chosenRoom ? chosenRoom.id : null);
+  renderTour360FloorsPanel();
 }
 
 function selectUnit(unitId, ensureOpen = false) {
@@ -2458,7 +2816,8 @@ function selectUnit(unitId, ensureOpen = false) {
           await openFloorTour360(scopeLvl, cb.targetRoom360Id || null, true);
         } else {
           const photoSrc = cb.photoMediaKey ? (await getMediaUrl(cb.photoMediaKey)) || cb.photoUrl : cb.photoUrl;
-          if (photoSrc) openPhotoLightbox(photoSrc, cb.label);
+          const nightSrc = cb.nightPhotoMediaKey ? (await getMediaUrl(cb.nightPhotoMediaKey)) || cb.nightPhotoUrl : (cb.nightPhotoUrl || null);
+          if (photoSrc) openPhotoLightbox(photoSrc, cb.label, nightSrc);
           else showToast('Este botón aún no tiene una foto asignada');
         }
       });
@@ -2511,6 +2870,7 @@ function stepMasterplanLevel(dir) {
 let draftCustomLines = [];
 let draftCustomButtons = [];
 let pendingNewBtnFile = { url: null, mediaKey: null, name: null };
+let pendingNewBtnNightFile = { url: null, mediaKey: null, name: null };
 let pendingNewBtnPoint = null;
 
 function syncNewLineTypeInputs() {
@@ -2525,6 +2885,9 @@ function syncNewBtnTypeUI() {
   const t = document.getElementById('new-btn-action-type')?.value || 'photo';
   const sel360 = document.getElementById('new-btn-existing-360');
   const lbl = document.getElementById('new-btn-file-lbl');
+  const nightWrap = document.getElementById('new-btn-night-upload-wrap');
+  const clrNightBtn = document.getElementById('btn-clear-new-btn-night');
+  const nightLbl = document.getElementById('new-btn-night-file-lbl');
   if (sel360) {
     sel360.style.display = t === 'tour360' ? 'block' : 'none';
     if (t === 'tour360') {
@@ -2540,6 +2903,9 @@ function syncNewBtnTypeUI() {
   if (lbl && !pendingNewBtnFile.name) {
     lbl.textContent = t === 'tour360' ? 'Subir nueva foto 360° (opcional)' : 'Subir Foto Render asignada';
   }
+  if (nightWrap) nightWrap.style.display = t === 'photo' ? 'inline-flex' : 'none';
+  if (clrNightBtn) clrNightBtn.style.display = (t === 'photo' && pendingNewBtnNightFile.url) ? 'inline-flex' : 'none';
+  if (nightLbl) nightLbl.textContent = pendingNewBtnNightFile.name ? `🌙 ${pendingNewBtnNightFile.name}` : 'Subir Nocturna (Opcional)';
 }
 
 function renderDraftCustomLines() {
@@ -2577,11 +2943,12 @@ function renderDraftCustomButtons() {
     const row = document.createElement('div');
     row.className = 'builder-item-row';
     const badge = btn.actionType === 'tour360' ? '🌐 Vista 360°' : '🖼️ Foto Render';
+    const nightTag = btn.nightPhotoUrl ? ' · 🌙 Nocturna' : '';
     const planTag = btn.showOnPlan
       ? ` · <span style="display:inline-flex;align-items:center;gap:4px;"><i style="width:9px;height:9px;border-radius:50%;background:${btn.pinColor || '#d4af37'};display:inline-block;border:1px solid #fff;"></i>Punto en Planta</span>`
       : ' · Lista';
     row.innerHTML = `
-      <span><strong style="color:var(--gold-bright);">${btn.label}</strong> <small style="opacity:0.78;">(${badge}${planTag})</small></span>
+      <span><strong style="color:var(--gold-bright);">${btn.label}</strong> <small style="opacity:0.78;">(${badge}${nightTag}${planTag})</small></span>
       <button type="button" class="icon-btn" data-rm-btn="${idx}" style="width:22px;height:22px;color:#f87171;">✕</button>
     `;
     row.querySelector('[data-rm-btn]').addEventListener('click', () => {
@@ -2605,12 +2972,17 @@ function openPolygonEditorModal(existingUnit = null) {
   });
 
   pendingNewBtnFile = { url: null, mediaKey: null, name: null };
+  pendingNewBtnNightFile = { url: null, mediaKey: null, name: null };
   pendingNewBtnPoint = null;
   document.getElementById('new-line-label').value = '';
   document.getElementById('new-line-number').value = '';
   document.getElementById('new-line-unit').value = 'm²';
   document.getElementById('new-btn-label').value = '';
   document.getElementById('new-btn-file-lbl').textContent = 'Subir Foto Render asignada';
+  const nBtnLbl = document.getElementById('new-btn-night-file-lbl');
+  if (nBtnLbl) nBtnLbl.textContent = 'Subir Nocturna (Opcional)';
+  const clrNightBtn = document.getElementById('btn-clear-new-btn-night');
+  if (clrNightBtn) clrNightBtn.style.display = 'none';
   const showPlanCb = document.getElementById('new-btn-show-on-plan');
   const planOpts = document.getElementById('new-btn-plan-point-opts');
   const ptLbl = document.getElementById('new-btn-point-coords-lbl');
@@ -2703,20 +3075,32 @@ function savePolygonFromModal() {
   document.getElementById('modal-polygon-editor').classList.remove('open');
 }
 
+let activeGalleryItemId = null;
+
 function renderGalleryModalContent(activeId = null) {
   const mainImg = document.getElementById('gallery-main-img');
   const mainCap = document.getElementById('gallery-main-caption');
   const row = document.getElementById('gallery-thumbs-row');
   if (!mainImg || !row) return;
 
-  const current = state.renderedViewsGallery.find((g) => g.id === activeId) || state.renderedViewsGallery[0];
-  if (current) { mainImg.src = current.url; mainCap.textContent = current.title; }
+  const targetId = activeId || activeGalleryItemId;
+  const current = state.renderedViewsGallery.find((g) => g.id === targetId) || state.renderedViewsGallery[0];
+  activeGalleryItemId = current?.id || null;
+  if (current) {
+    mainImg.src = (state.isNightMode && current.nightUrl) ? current.nightUrl : current.url;
+    mainImg.style.filter = 'none';
+    mainCap.textContent = current.title;
+  }
+
+  const clrNightBtn = document.getElementById('btn-clear-gallery-night');
+  if (clrNightBtn) clrNightBtn.style.display = current?.nightUrl ? 'inline-flex' : 'none';
+  syncDayNightButtonsUI();
 
   row.innerHTML = '';
   state.renderedViewsGallery.forEach((item) => {
     const btn = document.createElement('button');
     btn.className = `room-thumb-card ${current?.id === item.id ? 'active' : ''}`;
-    btn.innerHTML = `<img src="${item.url}" alt="" style="width:44px;height:30px;object-fit:cover;border-radius:5px;" /> <span>${item.title}</span>`;
+    btn.innerHTML = `<img src="${item.url}" alt="" style="width:44px;height:30px;object-fit:cover;border-radius:5px;" /> <span>${item.title}${item.nightUrl ? ' 🌙' : ''}</span>`;
     btn.addEventListener('click', () => renderGalleryModalContent(item.id));
     row.appendChild(btn);
   });
@@ -2758,8 +3142,96 @@ let tour360 = {
   onPointerDownX: 0,
   onPointerDownY: 0,
   autoRotate: true,
-  hotspotElements: []
+  hotspotElements: [],
+  gyroEnabled: false,
+  gyroAutoAttempted: false,
+  gyroListenerBound: false,
+  gyroBaselineAlpha: null,
+  gyroBaselineBeta: null,
+  gyroBaselineGamma: null,
+  gyroBaseLon: 0,
+  gyroBaseLat: 0,
+  gyroLastMoveAt: 0,
+  loadSeq: 0
 };
+
+function handleTour360DeviceOrientation(e) {
+  if (!tour360.gyroEnabled || state.activeView !== 'tour360') return;
+  if (e.alpha == null && e.beta == null && e.gamma == null) return;
+  const alpha = Number(e.alpha) || 0;
+  const beta = Number(e.beta) || 0;
+  const gamma = Number(e.gamma) || 0;
+
+  if (tour360.gyroBaselineAlpha === null) {
+    tour360.gyroBaselineAlpha = alpha;
+    tour360.gyroBaselineBeta = beta;
+    tour360.gyroBaselineGamma = gamma;
+    tour360.gyroBaseLon = tour360.lon;
+    tour360.gyroBaseLat = tour360.lat;
+    return;
+  }
+
+  let dAlpha = alpha - tour360.gyroBaselineAlpha;
+  while (dAlpha > 180) dAlpha -= 360;
+  while (dAlpha < -180) dAlpha += 360;
+  const dBeta = beta - tour360.gyroBaselineBeta;
+  const dGamma = gamma - tour360.gyroBaselineGamma;
+
+  if (!tour360.isUserInteracting) {
+    const rawAngle = window.screen?.orientation?.angle ?? window.orientation ?? 0;
+    const orientAngle = ((Math.round(Number(rawAngle) || 0) % 360) + 360) % 360;
+    let adjPitch = dBeta;
+    if (orientAngle === 90) adjPitch = -dGamma;
+    else if (orientAngle === 270) adjPitch = dGamma;
+    else if (orientAngle === 180) adjPitch = -dBeta;
+    tour360.lon = tour360.gyroBaseLon - dAlpha;
+    tour360.lat = Math.max(-85, Math.min(85, tour360.gyroBaseLat + adjPitch * 0.85));
+    if (Math.abs(dAlpha) > 0.4 || Math.abs(adjPitch) > 0.4) {
+      tour360.gyroLastMoveAt = Date.now();
+    }
+  }
+}
+
+async function toggleTour360Gyroscope(forceState = null, fromUserTap = false) {
+  const btn = document.getElementById('btn-360-gyro');
+  if (typeof window.DeviceOrientationEvent === 'undefined') {
+    if (fromUserTap) showToast('Este navegador no reporta sensor de movimiento');
+    return false;
+  }
+  const wantEnable = forceState === null ? !tour360.gyroEnabled : Boolean(forceState);
+  if (wantEnable) {
+    if (fromUserTap && typeof window.DeviceOrientationEvent.requestPermission === 'function') {
+      try {
+        const perm = await window.DeviceOrientationEvent.requestPermission();
+        if (perm !== 'granted') {
+          showToast('Permiso de sensor denegado');
+          return false;
+        }
+      } catch (_) {
+        showToast('No se pudo solicitar permiso del sensor');
+        return false;
+      }
+    }
+    if (!tour360.gyroListenerBound) {
+      window.addEventListener('deviceorientation', handleTour360DeviceOrientation);
+      tour360.gyroListenerBound = true;
+    }
+    tour360.gyroBaselineAlpha = null;
+    tour360.gyroBaselineBeta = null;
+    tour360.gyroBaselineGamma = null;
+    tour360.gyroEnabled = true;
+    btn?.classList.add('active');
+    if (fromUserTap) showToast('📱 Sensor giroscópico activado');
+    return true;
+  }
+  tour360.gyroEnabled = false;
+  tour360.gyroBaselineAlpha = null;
+  tour360.gyroBaselineBeta = null;
+  tour360.gyroBaselineGamma = null;
+  btn?.classList.remove('active');
+  if (fromUserTap) showToast('Sensor giroscópico desactivado');
+  return false;
+}
 
 function generateEquirectangularPanoramaTexture(room, isNight) {
   const canvas = document.createElement('canvas');
@@ -2904,6 +3376,11 @@ function initTour360Viewer() {
   });
 
   window.addEventListener('pointerup', () => {
+    if (tour360.isUserInteracting && tour360.gyroEnabled) {
+      tour360.gyroBaselineAlpha = null;
+      tour360.gyroBaselineBeta = null;
+      tour360.gyroBaselineGamma = null;
+    }
     tour360.isUserInteracting = false;
     domEl.style.cursor = (isEditor() && state.isPlacingHotspot360) ? 'crosshair' : 'grab';
   });
@@ -2927,26 +3404,37 @@ function stepRoom360(dir) {
 }
 
 function loadRoom360(roomId) {
+  const reqSeq = ++tour360.loadSeq;
   state.activeRoom360Id = roomId;
-  const scoped = getRooms360ForScope(state.activeTour360LevelId);
-  const room = state.rooms360.find((r) => r.id === roomId) || scoped[0] || state.rooms360[0];
-  if (!room || !tour360.sphereMesh) return;
-  state.activeRoom360Id = room.id;
-
-  const ctxLbl = document.getElementById('tour360-floor-context');
-  if (ctxLbl) {
-    if (state.activeTour360LevelId) {
-      const lvl = state.levels.find((l) => l.id === state.activeTour360LevelId);
-      ctxLbl.textContent = lvl ? `360° · ${lvl.badge || lvl.name}` : 'Recorrido 360° HD';
-    } else {
-      ctxLbl.textContent = 'Recorrido 360° HD';
+  let scoped = getRooms360ForScope(state.activeTour360LevelId);
+  let room = null;
+  if (roomId) {
+    room = scoped.find((r) => r.id === roomId) || state.rooms360.find((r) => r.id === roomId) || null;
+    if (room && state.activeTour360LevelId && room.levelId !== state.activeTour360LevelId) {
+      state.activeTour360LevelId = room.levelId || null;
+      scoped = getRooms360ForScope(state.activeTour360LevelId);
     }
   }
+  if (!room) {
+    room = scoped[0] || (!state.activeTour360LevelId ? state.rooms360[0] : null);
+  }
 
-  document.getElementById('tour360-current-room-title').textContent = room.name;
+  const ctxLbl = document.getElementById('tour360-floor-context');
+  const activeLvl = state.activeTour360LevelId
+    ? state.levels.find((l) => l.id === state.activeTour360LevelId)
+    : null;
+
+  if (ctxLbl) {
+    ctxLbl.textContent = activeLvl ? `Panorámica · ${activeLvl.name || activeLvl.badge}` : 'Panorámica HD';
+  }
+
+  const titleEl = document.getElementById('tour360-current-room-title');
   const qualityEl = document.getElementById('tour360-quality-badge');
+  const containerEl = document.getElementById('tour360-container');
+  const clrNight360 = document.getElementById('btn-clear-360-night');
 
   const applyTex = (tex, badgeText) => {
+    if (!tour360.sphereMesh) return;
     if (tour360.currentTexture && tour360.currentTexture !== tex) tour360.currentTexture.dispose();
     tour360.currentTexture = tex;
     tour360.sphereMesh.material.map = tex;
@@ -2954,18 +3442,53 @@ function loadRoom360(roomId) {
     if (qualityEl) qualityEl.textContent = badgeText;
   };
 
-  if (room.customImageUrl) {
-    loadLossless360Texture(room.customImageUrl, (tex, nw, nh) => {
+  if (!room || !tour360.sphereMesh) {
+    if (clrNight360) clrNight360.style.display = 'none';
+    if (containerEl) containerEl.dataset.loadedTexUrl = 'empty';
+    if (titleEl) titleEl.textContent = activeLvl ? `Sin vistas 360° en ${activeLvl.name}` : 'Sin vistas 360°';
+    if (tour360.sphereMesh) {
+      const emptyTex = generateEquirectangularPanoramaTexture({
+        name: activeLvl?.name || 'Piso sin Panorámica',
+        subtitle: isEditor() ? 'Sube una foto 360° desde el panel izquierdo' : 'Sin vistas disponibles aún',
+        themeColor: '#121216'
+      }, false);
+      applyTex(emptyTex, 'Sin imagen 360° en este piso');
+    }
+    syncDayNightButtonsUI();
+    renderNumbered360Bar();
+    syncHotspots360DOM();
+    renderTour360FloorsPanel();
+    return;
+  }
+
+  state.activeRoom360Id = room.id;
+  if (titleEl) titleEl.textContent = room.name;
+  if (clrNight360) clrNight360.style.display = room.customNightImageUrl ? 'inline-flex' : 'none';
+
+  const targetUrl = (state.isNightMode && room.customNightImageUrl)
+    ? room.customNightImageUrl
+    : (room.customImageUrl || null);
+
+  if (targetUrl) {
+    if (containerEl) containerEl.dataset.loadedTexUrl = targetUrl;
+    loadLossless360Texture(targetUrl, (tex, nw, nh) => {
+      if (reqSeq !== tour360.loadSeq) {
+        tex.dispose();
+        return;
+      }
       const aniso = tour360.renderer ? tour360.renderer.capabilities.getMaxAnisotropy() : 16;
       applyTex(tex, `Calidad Original: ${nw} × ${nh} px · AF ${aniso}x`);
     });
   } else {
+    if (containerEl) containerEl.dataset.loadedTexUrl = `procedural-${state.isNightMode ? 'night' : 'day'}`;
     const tex = generateEquirectangularPanoramaTexture(room, state.isNightMode);
     applyTex(tex, 'Panorama 4K Demo · Calidad Nativa Sin Compresión');
   }
 
+  syncDayNightButtonsUI();
   renderNumbered360Bar();
   syncHotspots360DOM();
+  renderTour360FloorsPanel();
 }
 
 function renderNumbered360Bar() {
@@ -4044,16 +4567,61 @@ function initFinishesComparator() {
   const stage = document.getElementById('finishes-stage');
   const leftLayer = document.getElementById('finish-layer-left');
   const divider = document.getElementById('finish-split-divider');
+  let activePointerId = null;
+  let startedOnDivider = false;
   let dragging = false;
+  let downX = 0;
+
   const updateSplit = (clientX) => {
     const rect = stage.getBoundingClientRect();
+    if (!rect.width) return;
     const pct = Math.max(2, Math.min(98, ((clientX - rect.left) / rect.width) * 100));
     leftLayer.style.clipPath = `polygon(0 0, ${pct}% 0, ${pct}% 100%, 0 100%)`;
     divider.style.left = `${pct}%`;
   };
-  stage.addEventListener('pointerdown', (e) => { dragging = true; updateSplit(e.clientX); });
-  window.addEventListener('pointermove', (e) => { if (dragging) updateSplit(e.clientX); });
-  window.addEventListener('pointerup', () => { dragging = false; });
+
+  divider.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    activePointerId = e.pointerId;
+    startedOnDivider = true;
+    dragging = true;
+    downX = e.clientX;
+    try { divider.setPointerCapture(e.pointerId); } catch (_) {}
+    updateSplit(e.clientX);
+  });
+
+  stage.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('#finish-split-divider')) return;
+    if (activePointerId !== null) return;
+    activePointerId = e.pointerId;
+    startedOnDivider = false;
+    dragging = false;
+    downX = e.clientX;
+    try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+
+  const handleMove = (e) => {
+    if (activePointerId === null || e.pointerId !== activePointerId) return;
+    if (!startedOnDivider && !dragging) {
+      if (Math.abs(e.clientX - downX) <= 6) return;
+      dragging = true;
+    }
+    if (dragging) {
+      e.preventDefault();
+      updateSplit(e.clientX);
+    }
+  };
+  const handleUp = (e) => {
+    if (e.pointerId !== activePointerId) return;
+    activePointerId = null;
+    startedOnDivider = false;
+    dragging = false;
+  };
+  window.addEventListener('pointermove', handleMove, { passive: false });
+  window.addEventListener('pointerup', handleUp);
+  window.addEventListener('pointercancel', handleUp);
+  stage.addEventListener('touchmove', (e) => { if (e.touches.length <= 1) e.preventDefault(); }, { passive: false });
 
   document.getElementById('select-finish-left').addEventListener('change', (e) => {
     const tab = getActiveFinishTab(); tab.leftId = e.target.value; savePersistedState();
@@ -4113,8 +4681,90 @@ function initFinishesComparator() {
 const locationMap = {
   centerLat: -17.783327, centerLng: -63.182140, zoom: 15,
   dragging: false, dragMoved: false, dragStartX: 0, dragStartY: 0, dragStartLat: 0, dragStartLng: 0,
-  isPlacingPoi: false, tileCache: new Map(), labelCache: new Map()
+  isPlacingPoi: false, tileCache: new Map(), labelCache: new Map(),
+  listenersBound: false, hasAutoFitted: false, activePointers: new Map(), pinchStartDist: 0, pinchStartZoom: 15
 };
+
+function setLocationMapZoom(newZoom) {
+  const z = Math.max(3, Math.min(18, Math.round(Number(newZoom) || 15)));
+  locationMap.zoom = z;
+  state.location.zoom = z;
+  const slider = document.getElementById('slider-map-zoom');
+  if (slider) slider.value = String(z);
+  renderLocationMap();
+}
+
+function fitLocationMapBounds() {
+  const stage = document.getElementById('location-map-stage');
+  const pts = [{ lat: Number(state.location.lat), lng: Number(state.location.lng) }];
+  (state.location.pois || []).forEach((p) => {
+    const la = Number(p.lat), ln = Number(p.lng);
+    if (Number.isFinite(la) && Number.isFinite(ln)) pts.push({ lat: la, lng: ln });
+  });
+  const valid = pts.filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+  if (valid.length === 0) return;
+
+  const hasStage = Boolean(stage && stage.clientWidth > 50);
+  const w = hasStage ? stage.clientWidth : (window.innerWidth || 1024);
+  const h = hasStage ? stage.clientHeight : (window.innerHeight || 768);
+
+  const sidebar = document.getElementById('location-sidebar');
+  const rail = document.querySelector('.location-zoom-rail');
+  const topBar = document.querySelector('.top-bar');
+  const sidebarOpen = Boolean(hasStage && sidebar && !sidebar.classList.contains('minimized') && sidebar.offsetWidth > 0);
+  const rawLeftInset = sidebarOpen ? (sidebar.offsetWidth + 32) : 44;
+  const leftInset = hasStage ? Math.min(rawLeftInset, Math.round(w * 0.48)) : 44;
+  const rightInset = (hasStage && rail && rail.offsetWidth > 0) ? (rail.offsetWidth + 36) : 64;
+  const topChrome = topBar ? Math.max(80, Math.round(topBar.getBoundingClientRect().bottom)) : 80;
+  const topInset = Math.min(Math.round(h * 0.38), topChrome + 72);
+  const bottomInset = 68;
+  const safeW = Math.max(150, w - leftInset - rightInset);
+  const safeH = Math.max(140, h - topInset - bottomInset);
+
+  let midLat = valid[0].lat;
+  let midLng = valid[0].lng;
+  let bestZoom = Math.max(3, Math.min(18, Math.round(Number(state.location.zoom) || 15)));
+
+  if (valid.length > 1) {
+    let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+    valid.forEach((p) => {
+      if (p.lat < minLat) minLat = p.lat;
+      if (p.lat > maxLat) maxLat = p.lat;
+      if (p.lng < minLng) minLng = p.lng;
+      if (p.lng > maxLng) maxLng = p.lng;
+    });
+    midLat = (minLat + maxLat) / 2;
+    midLng = (minLng + maxLng) / 2;
+
+    bestZoom = 15;
+    for (let z = 18; z >= 3; z--) {
+      const pTopLeft = latLngToWorldPx(maxLat, minLng, z);
+      const pBottomRight = latLngToWorldPx(minLat, maxLng, z);
+      const spanX = Math.abs(pBottomRight.x - pTopLeft.x);
+      const spanY = Math.abs(pBottomRight.y - pTopLeft.y);
+      if (spanX <= safeW && spanY <= safeH) {
+        bestZoom = z;
+        break;
+      }
+      bestZoom = z;
+    }
+  }
+
+  if (hasStage) {
+    const safeCenterX = leftInset + safeW / 2;
+    const safeCenterY = topInset + safeH / 2;
+    const midW = latLngToWorldPx(midLat, midLng, bestZoom);
+    const shifted = worldPxToLatLng(midW.x + (w / 2 - safeCenterX), midW.y + (h / 2 - safeCenterY), bestZoom);
+    locationMap.centerLat = Math.max(-80, Math.min(80, shifted.lat));
+    locationMap.centerLng = shifted.lng;
+    locationMap.hasAutoFitted = true;
+  } else {
+    locationMap.centerLat = midLat;
+    locationMap.centerLng = midLng;
+  }
+
+  setLocationMapZoom(bestZoom);
+}
 
 function latLngToWorldPx(lat, lng, zoom) {
   const scale = 256 * Math.pow(2, zoom);
@@ -4190,6 +4840,8 @@ function renderLocationMap() {
   drawLayer(locationMap.tileCache, (zz, yy, xx) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zz}/${yy}/${xx}`);
   drawLayer(locationMap.labelCache, (zz, yy, xx) => `https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/${zz}/${yy}/${xx}`);
   document.getElementById('map-zoom-label').textContent = `Z${z}`;
+  const zSlider = document.getElementById('slider-map-zoom');
+  if (zSlider && Number(zSlider.value) !== z) zSlider.value = String(z);
   renderLocationMarkers(topLeftX, topLeftY, z);
 }
 
@@ -4252,57 +4904,102 @@ function renderLocationPoiList() {
 }
 
 function initLocationMap() {
+  locationMap.hasAutoFitted = false;
   locationMap.centerLat = state.location.lat;
   locationMap.centerLng = state.location.lng;
   locationMap.zoom = state.location.zoom || 15;
   const stage = document.getElementById('location-map-stage');
   if (!stage) return;
 
-  stage.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.map-poi-marker')) return;
-    locationMap.dragging = true; locationMap.dragMoved = false;
-    locationMap.dragStartX = e.clientX; locationMap.dragStartY = e.clientY;
-    locationMap.dragStartLat = locationMap.centerLat; locationMap.dragStartLng = locationMap.centerLng;
-  });
-  window.addEventListener('pointermove', (e) => {
-    if (state.activeView !== 'location') return;
-    const rect = stage.getBoundingClientRect();
-    const z = Math.round(locationMap.zoom);
-    const centerW = latLngToWorldPx(locationMap.centerLat, locationMap.centerLng, z);
-    const ll = worldPxToLatLng(centerW.x - rect.width / 2 + (e.clientX - rect.left), centerW.y - rect.height / 2 + (e.clientY - rect.top), z);
-    const readout = document.getElementById('map-cursor-coords');
-    if (readout) readout.textContent = `Lat: ${ll.lat.toFixed(5)} · Lng: ${ll.lng.toFixed(5)}`;
-    if (!locationMap.dragging) return;
-    const dx = e.clientX - locationMap.dragStartX, dy = e.clientY - locationMap.dragStartY;
-    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) locationMap.dragMoved = true;
-    const startW = latLngToWorldPx(locationMap.dragStartLat, locationMap.dragStartLng, z);
-    const newLL = worldPxToLatLng(startW.x - dx, startW.y - dy, z);
-    locationMap.centerLat = Math.max(-80, Math.min(80, newLL.lat));
-    locationMap.centerLng = newLL.lng;
-    renderLocationMap();
-  });
-  window.addEventListener('pointerup', (e) => {
-    if (!locationMap.dragging) return;
-    locationMap.dragging = false;
-    if (!locationMap.dragMoved && isEditor() && locationMap.isPlacingPoi) {
+  if (!locationMap.listenersBound) {
+    locationMap.listenersBound = true;
+    const pinchDist = () => {
+      const pts = [...locationMap.activePointers.values()];
+      if (pts.length < 2) return 0;
+      return Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    };
+
+    stage.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('.map-poi-marker, .location-zoom-rail')) return;
+      e.preventDefault();
+      locationMap.activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (locationMap.activePointers.size === 2) {
+        locationMap.dragging = false;
+        locationMap.pinchStartDist = pinchDist();
+        locationMap.pinchStartZoom = locationMap.zoom;
+        return;
+      }
+      locationMap.dragging = true; locationMap.dragMoved = false;
+      locationMap.dragStartX = e.clientX; locationMap.dragStartY = e.clientY;
+      locationMap.dragStartLat = locationMap.centerLat; locationMap.dragStartLng = locationMap.centerLng;
+    });
+    window.addEventListener('pointermove', (e) => {
+      if (locationMap.activePointers.has(e.pointerId)) {
+        locationMap.activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      }
+      if (state.activeView !== 'location') return;
+      if (locationMap.activePointers.size >= 2 && locationMap.pinchStartDist > 0) {
+        e.preventDefault();
+        const ratio = pinchDist() / locationMap.pinchStartDist;
+        const delta = Math.round(Math.log2(Math.max(0.25, Math.min(4, ratio))) * 1.5);
+        const nextZ = Math.max(3, Math.min(18, Math.round(locationMap.pinchStartZoom + delta)));
+        if (nextZ !== locationMap.zoom) setLocationMapZoom(nextZ);
+        return;
+      }
       const rect = stage.getBoundingClientRect();
       const z = Math.round(locationMap.zoom);
       const centerW = latLngToWorldPx(locationMap.centerLat, locationMap.centerLng, z);
       const ll = worldPxToLatLng(centerW.x - rect.width / 2 + (e.clientX - rect.left), centerW.y - rect.height / 2 + (e.clientY - rect.top), z);
-      document.getElementById('poi-input-name').value = '';
-      document.getElementById('poi-input-note').value = '';
-      document.getElementById('poi-input-lat').value = ll.lat.toFixed(6);
-      document.getElementById('poi-input-lng').value = ll.lng.toFixed(6);
-      document.getElementById('modal-poi-editor').classList.add('open');
-    }
-  });
-  stage.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    locationMap.zoom = Math.max(3, Math.min(18, locationMap.zoom + (e.deltaY < 0 ? 1 : -1)));
-    state.location.zoom = locationMap.zoom;
-    renderLocationMap();
-  }, { passive: false });
+      const readout = document.getElementById('map-cursor-coords');
+      if (readout) readout.textContent = `Lat: ${ll.lat.toFixed(5)} · Lng: ${ll.lng.toFixed(5)}`;
+      if (!locationMap.dragging) return;
+      e.preventDefault();
+      const dx = e.clientX - locationMap.dragStartX, dy = e.clientY - locationMap.dragStartY;
+      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) locationMap.dragMoved = true;
+      const startW = latLngToWorldPx(locationMap.dragStartLat, locationMap.dragStartLng, z);
+      const newLL = worldPxToLatLng(startW.x - dx, startW.y - dy, z);
+      locationMap.centerLat = Math.max(-80, Math.min(80, newLL.lat));
+      locationMap.centerLng = newLL.lng;
+      renderLocationMap();
+    }, { passive: false });
+    const endMapPointer = (e) => {
+      locationMap.activePointers.delete(e.pointerId);
+      if (locationMap.activePointers.size === 1) {
+        locationMap.pinchStartDist = 0;
+        const rem = [...locationMap.activePointers.values()][0];
+        locationMap.dragging = true;
+        locationMap.dragMoved = true;
+        locationMap.dragStartX = rem.x;
+        locationMap.dragStartY = rem.y;
+        locationMap.dragStartLat = locationMap.centerLat;
+        locationMap.dragStartLng = locationMap.centerLng;
+        return;
+      }
+      if (locationMap.activePointers.size < 2) locationMap.pinchStartDist = 0;
+      if (!locationMap.dragging) return;
+      locationMap.dragging = false;
+      if (!locationMap.dragMoved && isEditor() && locationMap.isPlacingPoi && state.activeView === 'location') {
+        const rect = stage.getBoundingClientRect();
+        const z = Math.round(locationMap.zoom);
+        const centerW = latLngToWorldPx(locationMap.centerLat, locationMap.centerLng, z);
+        const ll = worldPxToLatLng(centerW.x - rect.width / 2 + (e.clientX - rect.left), centerW.y - rect.height / 2 + (e.clientY - rect.top), z);
+        document.getElementById('poi-input-name').value = '';
+        document.getElementById('poi-input-note').value = '';
+        document.getElementById('poi-input-lat').value = ll.lat.toFixed(6);
+        document.getElementById('poi-input-lng').value = ll.lng.toFixed(6);
+        document.getElementById('modal-poi-editor').classList.add('open');
+      }
+    };
+    window.addEventListener('pointerup', endMapPointer);
+    window.addEventListener('pointercancel', endMapPointer);
+    stage.addEventListener('touchmove', (e) => { e.preventDefault(); }, { passive: false });
+    stage.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      setLocationMapZoom(locationMap.zoom + (e.deltaY < 0 ? 1 : -1));
+    }, { passive: false });
+  }
   renderLocationPoiList();
+  fitLocationMapBounds();
 }
 
 /* ==========================================================================
@@ -4487,6 +5184,10 @@ async function switchView(viewName, allowTransition = false, skipHistory = false
     showToast('La pestaña de Unidades está oculta');
     return;
   }
+  if (viewName === 'model3d' && state.model3dConfig?.showTab === false && !isEditor()) {
+    showToast('La Maqueta 3D está oculta en este proyecto');
+    return;
+  }
 
   if (!skipHistory && state.activeView !== viewName) pushNavHistory();
 
@@ -4504,6 +5205,14 @@ async function switchView(viewName, allowTransition = false, skipHistory = false
       tour360.camera.updateProjectionMatrix();
       tour360.renderer.setSize(c.clientWidth, c.clientHeight);
       renderNumbered360Bar();
+      renderTour360FloorsPanel();
+      if (('ontouchstart' in window || navigator.maxTouchPoints > 0)
+        && typeof window.DeviceOrientationEvent !== 'undefined'
+        && typeof window.DeviceOrientationEvent.requestPermission !== 'function'
+        && !tour360.gyroEnabled && !tour360.gyroAutoAttempted) {
+        tour360.gyroAutoAttempted = true;
+        toggleTour360Gyroscope(true, false);
+      }
     }
     if (viewName === 'model3d' && model3d.renderer) {
       const c = document.getElementById('model3d-canvas-container');
@@ -4512,7 +5221,10 @@ async function switchView(viewName, allowTransition = false, skipHistory = false
       model3d.renderer.setSize(c.clientWidth, c.clientHeight);
     }
     if (viewName === 'finishes') renderActiveFinishTabControlsAndImages();
-    if (viewName === 'location') renderLocationMap();
+    if (viewName === 'location') {
+      if (!locationMap.hasAutoFitted) fitLocationMapBounds();
+      else renderLocationMap();
+    }
     if (viewName === 'units') renderUnitsCatalog();
     syncProjectLogoUI();
     updateBackButtonUI();
@@ -4568,11 +5280,22 @@ function bindEvents() {
   document.getElementById('btn-portal-goto-editor-login')?.addEventListener('click', () => switchPortalTab('editors'));
   document.getElementById('btn-portal-open-code')?.addEventListener('click', () => {
     const code = document.getElementById('portal-code-input')?.value || '';
-    openProjectByCode(code);
+    openProjectBySecretPortalInput(code);
   });
   document.getElementById('portal-code-input')?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') openProjectByCode(e.target.value);
+    if (e.key === 'Enter') openProjectBySecretPortalInput(e.target.value);
   });
+  document.getElementById('gate-code-form')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    verifyAndSubmitCodeGate();
+  });
+  document.getElementById('btn-gate-code-submit')?.addEventListener('click', verifyAndSubmitCodeGate);
+  const closeCodeGate = () => {
+    pendingGateProject = null;
+    document.getElementById('modal-project-code-gate')?.classList.remove('open');
+  };
+  document.getElementById('btn-close-code-gate')?.addEventListener('click', closeCodeGate);
+  document.getElementById('btn-cancel-code-gate')?.addEventListener('click', closeCodeGate);
   document.getElementById('portal-search-input')?.addEventListener('input', renderPortalProjects);
 
   document.getElementById('btn-portal-create-project')?.addEventListener('click', openNewProjectModal);
@@ -4765,10 +5488,15 @@ function bindEvents() {
     if (state.exteriorAngles[0]) {
       state.exteriorAngles[0].photo = url;
       state.exteriorAngles[0].mediaKey = key;
+      if (!state.exteriorAngles[0].nightMediaKey) state.exteriorAngles[0].nightPhoto = null;
       state.exteriorAngles[0].label = file.name.replace(/\.[^.]+$/, '') || 'Fachada Principal';
     }
     const facadeLvl = state.levels.find((l) => l.id === 'facade');
-    if (facadeLvl) { facadeLvl.dayPhoto = url; facadeLvl.dayMediaKey = key; }
+    if (facadeLvl) {
+      facadeLvl.dayPhoto = url;
+      facadeLvl.dayMediaKey = key;
+      if (!facadeLvl.nightMediaKey) facadeLvl.nightPhoto = null;
+    }
     state.activeLevelId = 'facade';
     state.exteriorAngleIndex = 0;
     savePersistedState();
@@ -4790,8 +5518,9 @@ function bindEvents() {
         angleDeg: state.exteriorAngles.length * 45,
         label: file.name.replace(/\.[^.]+$/, '') || `Exterior ${state.exteriorAngles.length + 1}`,
         photo: url,
-        nightPhoto: url,
-        mediaKey: key
+        nightPhoto: null,
+        mediaKey: key,
+        nightMediaKey: null
       });
     }
     savePersistedState();
@@ -4824,15 +5553,34 @@ function bindEvents() {
     const key = `floor-plan-${lvl.id}-${Date.now()}`;
     const url = await saveMediaBlob(key, file);
     lvl.dayPhoto = url;
-    lvl.nightPhoto = url;
     lvl.dayMediaKey = key;
+    if (!lvl.nightMediaKey) lvl.nightPhoto = null;
     if (lvl.id === 'facade' && state.exteriorAngles[0]) {
       state.exteriorAngles[0].photo = url;
       state.exteriorAngles[0].mediaKey = key;
+      if (!state.exteriorAngles[0].nightMediaKey) state.exteriorAngles[0].nightPhoto = null;
     }
     savePersistedState();
     drawMasterplanRender();
     showToast(`Fotografía en planta guardada en ${lvl.name}`);
+    e.target.value = '';
+  });
+  document.getElementById('input-upload-floor-night-direct')?.addEventListener('change', async (e) => {
+    if (!isEditor()) return;
+    const file = e.target.files[0]; if (!file) return;
+    const lvl = state.levels.find((l) => l.id === state.activeLevelId);
+    if (!lvl) return;
+    const key = `floor-night-${lvl.id}-${Date.now()}`;
+    const url = await saveMediaBlob(key, file);
+    lvl.nightPhoto = url;
+    lvl.nightMediaKey = key;
+    if (lvl.id === 'facade') {
+      const ang = state.exteriorAngles[state.exteriorAngleIndex] || state.exteriorAngles[0];
+      if (ang) { ang.nightPhoto = url; ang.nightMediaKey = key; }
+    }
+    savePersistedState();
+    toggleDayNightMode(true);
+    showToast(`Vista nocturna cargada en ${lvl.name}`);
     e.target.value = '';
   });
   document.getElementById('floor-input-trans-type')?.addEventListener('change', syncFloorTransTypeUI);
@@ -4869,6 +5617,26 @@ function bindEvents() {
     floorDraft.planPhotoUrl = await saveMediaBlob(key, file);
     floorDraft.planPhotoKey = key;
     document.getElementById('floor-plan-photo-lbl').textContent = `✅ ${file.name}`;
+    e.target.value = '';
+  });
+  document.getElementById('floor-input-night-file')?.addEventListener('change', async (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const key = `floor-night-photo-${Date.now()}`;
+    floorDraft.nightPhotoUrl = await saveMediaBlob(key, file);
+    floorDraft.nightPhotoKey = key;
+    const lbl = document.getElementById('floor-night-photo-lbl');
+    if (lbl) lbl.textContent = `✅ ${file.name}`;
+    const clr = document.getElementById('btn-floor-clear-night');
+    if (clr) clr.style.display = 'inline-flex';
+    e.target.value = '';
+  });
+  document.getElementById('btn-floor-clear-night')?.addEventListener('click', () => {
+    floorDraft.nightPhotoUrl = null;
+    floorDraft.nightPhotoKey = null;
+    const lbl = document.getElementById('floor-night-photo-lbl');
+    if (lbl) lbl.textContent = 'Opcional: si no se sube, el modo Noche mantiene la foto principal sin oscurecer';
+    const clr = document.getElementById('btn-floor-clear-night');
+    if (clr) clr.style.display = 'none';
   });
   document.getElementById('floor-upload-initial-360')?.addEventListener('change', async (e) => {
     const file = e.target.files[0]; if (!file) return;
@@ -4885,8 +5653,11 @@ function bindEvents() {
   // Project Settings Modal (Building Name, Logo 2 Pos + Size + Opacity, WhatsApp, Áreas disponibles)
   const openProjectSettingsModal = () => {
     if (!isEditor()) return;
+    const meta = portalState.projects.find((p) => p.code.toUpperCase() === (state.project.code || '').toUpperCase());
     document.getElementById('proj-input-building').value = state.project.buildingName || '';
     document.getElementById('proj-input-code-ro').value = state.project.code || 'SALO-001';
+    const accInp = document.getElementById('proj-input-access-code');
+    if (accInp) accInp.value = meta?.accessCode ?? state.project.accessCode ?? '';
     document.getElementById('proj-input-sub').value = state.project.subtitle || '';
     document.getElementById('proj-input-show-logo').checked = !!state.project.showLogo;
     document.getElementById('proj-input-logo-size').value = String(state.project.logoSizePx || 48);
@@ -4897,9 +5668,10 @@ function bindEvents() {
     document.getElementById('proj-input-wa-phone').value = state.project.whatsappPhone || '';
     document.getElementById('proj-input-wa-custom-url').value = state.project.whatsappCustomUrl || '';
     document.getElementById('proj-input-wa-msg').value = state.project.whatsappMessage || '';
+    const m3dCb = document.getElementById('proj-input-show-model3d');
+    if (m3dCb) m3dCb.checked = state.model3dConfig?.showTab !== false;
     document.getElementById('proj-input-show-units').checked = state.unitsConfig?.showTab !== false;
     document.getElementById('proj-input-units-mode').value = state.unitsConfig?.displayMode || 'departments';
-    const meta = portalState.projects.find((p) => p.code.toUpperCase() === (state.project.code || '').toUpperCase());
     const pubCb = document.getElementById('proj-input-published');
     if (pubCb) pubCb.checked = meta ? meta.published !== false : true;
     document.getElementById('modal-project-settings').classList.add('open');
@@ -4951,12 +5723,24 @@ function bindEvents() {
     state.project.showLogo = e.target.checked;
     syncProjectLogoUI();
   });
-  document.getElementById('btn-save-proj-modal').addEventListener('click', () => {
+  document.getElementById('btn-save-proj-modal').addEventListener('click', async () => {
     if (!isEditor()) return;
+    const accInp = document.getElementById('proj-input-access-code');
+    const accessCode = accInp ? normalizeAccessCode(accInp.value) : (state.project.accessCode || '');
+    const accessCodeHash = await hashAccessCode(accessCode);
+    const conflict = findUniqueAccessCodeConflict(portalState.projects, accessCode, accessCodeHash, state.project.code);
+    if (conflict) {
+      showToast(`❌ El código "${accessCode}" ya está en uso en "${conflict.buildingName}". Usa uno único.`);
+      return;
+    }
+
     state.project.buildingName = document.getElementById('proj-input-building').value.trim() || 'Proyecto SALO';
     state.project.shortName = 'SALO SHOWROOM';
     state.project.fullTitle = `SALO SHOWROOM · ${state.project.buildingName}`;
     state.project.subtitle = document.getElementById('proj-input-sub').value.trim() || '';
+    state.project.accessCode = accessCode;
+    state.project.accessCodeHash = accessCodeHash;
+    state.project.requiresCode = Boolean(accessCodeHash);
     state.project.showLogo = document.getElementById('proj-input-show-logo').checked;
     state.project.logoSizePx = Number(document.getElementById('proj-input-logo-size').value) || 48;
     state.project.logoOpacity = Number(document.getElementById('proj-input-logo-opacity').value) || 100;
@@ -4964,11 +5748,21 @@ function bindEvents() {
     state.project.whatsappPhone = document.getElementById('proj-input-wa-phone').value.trim();
     state.project.whatsappCustomUrl = document.getElementById('proj-input-wa-custom-url').value.trim();
     state.project.whatsappMessage = document.getElementById('proj-input-wa-msg').value.trim();
+    const m3dCb = document.getElementById('proj-input-show-model3d');
+    if (m3dCb) {
+      if (!state.model3dConfig) state.model3dConfig = { showTab: true };
+      state.model3dConfig.showTab = m3dCb.checked;
+    }
     state.unitsConfig.showTab = document.getElementById('proj-input-show-units').checked;
     state.unitsConfig.displayMode = document.getElementById('proj-input-units-mode').value || 'departments';
     const pubCb = document.getElementById('proj-input-published');
     const meta = portalState.projects.find((p) => p.code.toUpperCase() === (state.project.code || '').toUpperCase());
-    if (meta && pubCb) meta.published = pubCb.checked;
+    if (meta) {
+      meta.accessCode = accessCode;
+      meta.accessCodeHash = accessCodeHash;
+      meta.requiresCode = Boolean(accessCodeHash);
+      if (pubCb) meta.published = pubCb.checked;
+    }
     savePersistedState();
     renderPortalProjects();
     syncProjectBrandingUI();
@@ -5041,16 +5835,44 @@ function bindEvents() {
   // Renders Gallery
   document.getElementById('btn-drawer-open-renders').addEventListener('click', openRenders);
   document.getElementById('btn-close-gallery-modal').addEventListener('click', () => document.getElementById('modal-renders-gallery').classList.remove('open'));
+  document.getElementById('btn-gallery-day-night')?.addEventListener('click', () => toggleDayNightMode());
   document.getElementById('input-add-gallery-render').addEventListener('change', async (e) => {
     if (!isEditor()) return;
     for (const file of Array.from(e.target.files || [])) {
       const id = `rv-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
       const mediaKey = `gallery-${id}`;
       const url = await saveMediaBlob(mediaKey, file);
-      state.renderedViewsGallery.unshift({ id, title: file.name.replace(/\.[^.]+$/, ''), url, mediaKey });
+      state.renderedViewsGallery.unshift({ id, title: file.name.replace(/\.[^.]+$/, ''), url, mediaKey, nightUrl: null, nightMediaKey: null });
       renderGalleryModalContent(id);
     }
     savePersistedState(); showToast('Renders guardados en calidad nativa');
+    e.target.value = '';
+  });
+  document.getElementById('input-upload-gallery-night')?.addEventListener('change', async (e) => {
+    if (!isEditor()) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const current = state.renderedViewsGallery.find((g) => g.id === activeGalleryItemId) || state.renderedViewsGallery[0];
+    if (!current) return;
+    const key = `gallery-night-${current.id}-${Date.now()}`;
+    const url = await saveMediaBlob(key, file);
+    current.nightUrl = url;
+    current.nightMediaKey = key;
+    savePersistedState();
+    toggleDayNightMode(true);
+    renderGalleryModalContent(current.id);
+    showToast(`Vista nocturna cargada en "${current.title}"`);
+    e.target.value = '';
+  });
+  document.getElementById('btn-clear-gallery-night')?.addEventListener('click', () => {
+    if (!isEditor()) return;
+    const current = state.renderedViewsGallery.find((g) => g.id === activeGalleryItemId) || state.renderedViewsGallery[0];
+    if (!current) return;
+    current.nightUrl = null;
+    current.nightMediaKey = null;
+    savePersistedState();
+    renderGalleryModalContent(current.id);
+    showToast('Vista nocturna eliminada de la vista');
   });
 
   // Transitions Manager
@@ -5116,13 +5938,9 @@ function bindEvents() {
   });
 
   // Day / Night
-  document.getElementById('btn-day-night').addEventListener('click', () => {
-    state.isNightMode = !state.isNightMode;
-    document.getElementById('day-night-icon').textContent = state.isNightMode ? '🌙' : '☀️';
-    document.getElementById('btn-day-night').classList.toggle('active', state.isNightMode);
-    drawMasterplanRender();
-    loadRoom360(state.activeRoom360Id);
-  });
+  document.getElementById('btn-day-night').addEventListener('click', () => toggleDayNightMode());
+  document.getElementById('btn-photo-viewer-day-night')?.addEventListener('click', () => toggleDayNightMode());
+  document.getElementById('btn-360-day-night')?.addEventListener('click', () => toggleDayNightMode());
 
   // Image Framing ("Encuadre")
   const adjPopover = document.getElementById('image-adjust-popover');
@@ -5152,12 +5970,29 @@ function bindEvents() {
     const url = await saveMediaBlob(key, file);
     if (state.activeLevelId === 'facade') {
       const ang = state.exteriorAngles[state.exteriorAngleIndex];
-      if (ang) { ang.photo = url; ang.mediaKey = key; }
+      if (ang) {
+        ang.photo = url;
+        ang.mediaKey = key;
+        if (!ang.nightMediaKey) ang.nightPhoto = null;
+      }
+      if (state.exteriorAngleIndex === 0) {
+        const facadeLvl = state.levels.find((l) => l.id === 'facade');
+        if (facadeLvl) {
+          facadeLvl.dayPhoto = url;
+          facadeLvl.dayMediaKey = key;
+          if (!facadeLvl.nightMediaKey) facadeLvl.nightPhoto = null;
+        }
+      }
     } else {
       const lvl = state.levels.find((l) => l.id === state.activeLevelId);
-      if (lvl) { lvl.dayPhoto = url; lvl.dayMediaKey = key; }
+      if (lvl) {
+        lvl.dayPhoto = url;
+        lvl.dayMediaKey = key;
+        if (!lvl.nightMediaKey) lvl.nightPhoto = null;
+      }
     }
     savePersistedState(); drawMasterplanRender(); showToast('Foto guardada en calidad original');
+    e.target.value = '';
   });
 
   // Polygon Drawing
@@ -5299,6 +6134,18 @@ function bindEvents() {
     document.getElementById('new-btn-file-lbl').textContent = `✅ ${file.name}`;
     e.target.value = '';
   });
+  document.getElementById('new-btn-upload-night-file')?.addEventListener('change', async (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const key = `custom-btn-night-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const url = await saveMediaBlob(key, file);
+    pendingNewBtnNightFile = { url, mediaKey: key, name: file.name };
+    syncNewBtnTypeUI();
+    e.target.value = '';
+  });
+  document.getElementById('btn-clear-new-btn-night')?.addEventListener('click', () => {
+    pendingNewBtnNightFile = { url: null, mediaKey: null, name: null };
+    syncNewBtnTypeUI();
+  });
   document.getElementById('btn-add-custom-button')?.addEventListener('click', () => {
     const label = document.getElementById('new-btn-label').value.trim();
     const actionType = document.getElementById('new-btn-action-type').value;
@@ -5321,6 +6168,8 @@ function bindEvents() {
           themeColor: '#161410',
           customImageUrl: pendingNewBtnFile.url,
           mediaKey: pendingNewBtnFile.mediaKey,
+          customNightImageUrl: null,
+          nightMediaKey: null,
           hotspots: []
         });
         targetRoom360Id = newRoomId;
@@ -5331,6 +6180,8 @@ function bindEvents() {
         actionType: 'tour360',
         photoUrl: null,
         photoMediaKey: null,
+        nightPhotoUrl: null,
+        nightPhotoMediaKey: null,
         targetRoom360Id: targetRoom360Id || getRooms360ForScope(state.activeLevelId)[0]?.id || state.rooms360[0]?.id || null,
         showOnPlan,
         pinColor,
@@ -5343,6 +6194,8 @@ function bindEvents() {
         actionType: 'photo',
         photoUrl: pendingNewBtnFile.url || './sample-assets/render-interior-1.jpg',
         photoMediaKey: pendingNewBtnFile.mediaKey || null,
+        nightPhotoUrl: pendingNewBtnNightFile.url || null,
+        nightPhotoMediaKey: pendingNewBtnNightFile.mediaKey || null,
         targetRoom360Id: null,
         showOnPlan,
         pinColor,
@@ -5351,8 +6204,11 @@ function bindEvents() {
     }
 
     pendingNewBtnFile = { url: null, mediaKey: null, name: null };
+    pendingNewBtnNightFile = { url: null, mediaKey: null, name: null };
     pendingNewBtnPoint = null;
     document.getElementById('new-btn-label').value = '';
+    const fileLbl = document.getElementById('new-btn-file-lbl');
+    if (fileLbl) fileLbl.textContent = 'Subir Foto Render asignada';
     const showPlanCb = document.getElementById('new-btn-show-on-plan');
     const planOpts = document.getElementById('new-btn-plan-point-opts');
     const ptLbl = document.getElementById('new-btn-point-coords-lbl');
@@ -5738,6 +6594,20 @@ function bindEvents() {
   };
   document.getElementById('btn-360-autorotate').addEventListener('click', toggle360AutoRotate);
   document.getElementById('btn-360-autorotate-icon').addEventListener('click', toggle360AutoRotate);
+  document.getElementById('btn-360-gyro')?.addEventListener('click', () => toggleTour360Gyroscope(null, true));
+  const t360Panel = document.getElementById('tour360-floors-panel');
+  const t360Restore = document.getElementById('restore-360-floors');
+  const view360El = document.getElementById('view-tour360');
+  document.getElementById('btn-min-360-floors')?.addEventListener('click', () => {
+    t360Panel?.classList.add('minimized');
+    t360Restore?.classList.add('visible');
+    view360El?.classList.add('tour360-floors-hidden');
+  });
+  t360Restore?.addEventListener('click', () => {
+    t360Panel?.classList.remove('minimized');
+    t360Restore?.classList.remove('visible');
+    view360El?.classList.remove('tour360-floors-hidden');
+  });
   document.getElementById('btn-360-exit-exterior').addEventListener('click', goBackHistory);
 
   document.getElementById('btn-360-add-hotspot').addEventListener('click', (e) => {
@@ -5804,7 +6674,14 @@ function bindEvents() {
     const scopeLvl = state.activeTour360LevelId || (state.activeLevelId !== 'facade' ? state.activeLevelId : null);
     const prevRoomId = state.activeRoom360Id || 'living';
     state.rooms360.push({
-      id: newId, levelId: scopeLvl, name: title, subtitle: 'Panorama 360° Calidad Original', customImageUrl: url, mediaKey,
+      id: newId,
+      levelId: scopeLvl,
+      name: title,
+      subtitle: 'Panorama 360° Calidad Original',
+      customImageUrl: url,
+      mediaKey,
+      customNightImageUrl: null,
+      nightMediaKey: null,
       hotspots: [{ arrow: 'floor-ring', lon: 0, lat: -14, targetRoomId: prevRoomId, label: 'Volver' }]
     });
     savePersistedState();
@@ -5812,8 +6689,42 @@ function bindEvents() {
     loadRoom360(newId);
     showToast(`Panorama "${title}" cargado en calidad nativa`);
   };
+  const handle360NightUpload = async (file) => {
+    if (!isEditor() || !file) return;
+    const scoped = getRooms360ForScope(state.activeTour360LevelId);
+    if (state.activeTour360LevelId && scoped.length === 0) {
+      showToast('Primero sube una imagen 360° para este piso');
+      return;
+    }
+    const targetRoom = scoped.find((r) => r.id === state.activeRoom360Id)
+      || scoped[0]
+      || state.rooms360.find((r) => r.id === state.activeRoom360Id)
+      || state.rooms360[0];
+    if (!targetRoom) { showToast('Primero sube o elige un panorama 360°'); return; }
+    const nightKey = `pano360-night-${targetRoom.id}-${Date.now()}`;
+    const url = await saveMediaBlob(nightKey, file);
+    targetRoom.customNightImageUrl = url;
+    targetRoom.nightMediaKey = nightKey;
+    savePersistedState();
+    await switchView('tour360', false, true);
+    state.activeRoom360Id = targetRoom.id;
+    toggleDayNightMode(true);
+    showToast(`360° Nocturna cargada en "${targetRoom.name}"`);
+  };
   document.getElementById('input-upload-360-inline').addEventListener('change', (e) => { handle360Upload(e.target.files[0]); e.target.value = ''; });
+  document.getElementById('input-upload-360-night-inline')?.addEventListener('change', (e) => { handle360NightUpload(e.target.files[0]); e.target.value = ''; });
+  document.getElementById('btn-clear-360-night')?.addEventListener('click', () => {
+    if (!isEditor()) return;
+    const targetRoom = state.rooms360.find((r) => r.id === state.activeRoom360Id);
+    if (!targetRoom) return;
+    targetRoom.customNightImageUrl = null;
+    targetRoom.nightMediaKey = null;
+    savePersistedState();
+    loadRoom360(targetRoom.id);
+    showToast(`360° nocturna quitada de "${targetRoom.name}"`);
+  });
   document.getElementById('studio-upload-360').addEventListener('change', (e) => { handle360Upload(e.target.files[0], document.getElementById('studio-360-name').value); e.target.value = ''; });
+  document.getElementById('studio-upload-360-night')?.addEventListener('change', (e) => { handle360NightUpload(e.target.files[0]); e.target.value = ''; });
 
   // 3D Controls (Editable Floors & Editable Direct Cameras)
   const step3DFloor = (delta) => {
@@ -5921,7 +6832,7 @@ function bindEvents() {
     state.location.lat = lat; state.location.lng = lng; locationMap.centerLat = lat; locationMap.centerLng = lng;
     savePersistedState(); renderLocationPoiList(); renderLocationMap(); showToast('Coordenadas guardadas');
   });
-  document.getElementById('btn-center-project-map').addEventListener('click', () => { locationMap.centerLat = state.location.lat; locationMap.centerLng = state.location.lng; renderLocationMap(); });
+  document.getElementById('btn-center-project-map').addEventListener('click', () => { fitLocationMapBounds(); });
   document.getElementById('btn-open-google-earth').addEventListener('click', () => {
     const lat = parseFloat(document.getElementById('loc-input-lat').value) || state.location.lat;
     const lng = parseFloat(document.getElementById('loc-input-lng').value) || state.location.lng;
@@ -5949,12 +6860,15 @@ function bindEvents() {
     document.getElementById('poi-place-hint').style.display = 'none';
     document.getElementById('location-map-stage').classList.remove('placing-poi');
     document.getElementById('modal-poi-editor').classList.remove('open');
-    savePersistedState(); renderLocationPoiList(); renderLocationMap(); showToast(`Punto "${name}" guardado`);
+    savePersistedState(); renderLocationPoiList(); fitLocationMapBounds(); showToast(`Punto "${name}" guardado`);
   });
   document.getElementById('btn-close-poi-modal').addEventListener('click', () => document.getElementById('modal-poi-editor').classList.remove('open'));
   document.getElementById('btn-cancel-poi-modal').addEventListener('click', () => document.getElementById('modal-poi-editor').classList.remove('open'));
-  document.getElementById('btn-map-zoom-in').addEventListener('click', () => { locationMap.zoom = Math.min(18, locationMap.zoom + 1); renderLocationMap(); });
-  document.getElementById('btn-map-zoom-out').addEventListener('click', () => { locationMap.zoom = Math.max(3, locationMap.zoom - 1); renderLocationMap(); });
+  document.getElementById('btn-map-zoom-in').addEventListener('click', () => setLocationMapZoom(locationMap.zoom + 1));
+  document.getElementById('btn-map-zoom-out').addEventListener('click', () => setLocationMapZoom(locationMap.zoom - 1));
+  document.getElementById('btn-fit-map-bounds')?.addEventListener('click', () => fitLocationMapBounds());
+  document.getElementById('slider-map-zoom')?.addEventListener('input', (e) => setLocationMapZoom(e.target.value));
+  document.getElementById('slider-map-zoom')?.addEventListener('change', (e) => setLocationMapZoom(e.target.value));
 
   // Studio Uploads
   document.getElementById('studio-upload-day-render').addEventListener('change', async (e) => {
@@ -5962,18 +6876,57 @@ function bindEvents() {
     const file = e.target.files[0]; if (!file) return;
     const key = `lvl-day-${state.activeLevelId}-${Date.now()}`;
     const url = await saveMediaBlob(key, file);
-    if (state.activeLevelId === 'facade') { state.exteriorAngles[state.exteriorAngleIndex].photo = url; state.exteriorAngles[state.exteriorAngleIndex].mediaKey = key; }
-    else { const lvl = state.levels.find((l) => l.id === state.activeLevelId); if (lvl) { lvl.dayPhoto = url; lvl.dayMediaKey = key; } }
-    state.isNightMode = false; state.is2DPlanMode = false; savePersistedState();
-    switchView('masterplan'); drawMasterplanRender(); document.getElementById('image-adjust-popover').classList.add('open');
+    if (state.activeLevelId === 'facade') {
+      const ang = state.exteriorAngles[state.exteriorAngleIndex] || state.exteriorAngles[0];
+      if (ang) {
+        ang.photo = url;
+        ang.mediaKey = key;
+        if (!ang.nightMediaKey) ang.nightPhoto = null;
+      }
+      if (state.exteriorAngleIndex === 0) {
+        const facadeLvl = state.levels.find((l) => l.id === 'facade');
+        if (facadeLvl) {
+          facadeLvl.dayPhoto = url;
+          facadeLvl.dayMediaKey = key;
+          if (!facadeLvl.nightMediaKey) facadeLvl.nightPhoto = null;
+        }
+      }
+    } else {
+      const lvl = state.levels.find((l) => l.id === state.activeLevelId);
+      if (lvl) {
+        lvl.dayPhoto = url;
+        lvl.dayMediaKey = key;
+        if (!lvl.nightMediaKey) lvl.nightPhoto = null;
+      }
+    }
+    state.is2DPlanMode = false;
+    savePersistedState();
+    switchView('masterplan');
+    toggleDayNightMode(false);
+    document.getElementById('image-adjust-popover').classList.add('open');
+    e.target.value = '';
   });
   document.getElementById('studio-upload-night-render').addEventListener('change', async (e) => {
     if (!isEditor()) return;
     const file = e.target.files[0]; if (!file) return;
     const key = `lvl-night-${state.activeLevelId}-${Date.now()}`;
     const url = await saveMediaBlob(key, file);
-    const lvl = state.levels.find((l) => l.id === state.activeLevelId); if (lvl) { lvl.nightPhoto = url; lvl.nightMediaKey = key; }
-    state.isNightMode = true; state.is2DPlanMode = false; savePersistedState(); switchView('masterplan'); drawMasterplanRender();
+    if (state.activeLevelId === 'facade') {
+      const ang = state.exteriorAngles[state.exteriorAngleIndex] || state.exteriorAngles[0];
+      if (ang) { ang.nightPhoto = url; ang.nightMediaKey = key; }
+      if (state.exteriorAngleIndex === 0) {
+        const facadeLvl = state.levels.find((l) => l.id === 'facade');
+        if (facadeLvl) { facadeLvl.nightPhoto = url; facadeLvl.nightMediaKey = key; }
+      }
+    } else {
+      const lvl = state.levels.find((l) => l.id === state.activeLevelId);
+      if (lvl) { lvl.nightPhoto = url; lvl.nightMediaKey = key; }
+    }
+    state.is2DPlanMode = false;
+    savePersistedState();
+    switchView('masterplan');
+    toggleDayNightMode(true);
+    e.target.value = '';
   });
 
   ['filter-status', 'filter-beds', 'filter-price'].forEach((id) => document.getElementById(id).addEventListener('input', renderUnitsCatalog));
@@ -6001,7 +6954,7 @@ function bindEvents() {
     const meta = portalState.projects.find((p) => p.code.toUpperCase() === code.toUpperCase()) || {
       code,
       buildingName: state.project.buildingName || 'Torre Imperial SALO',
-      subtitle: state.project.subtitle || 'Showroom Interactivo 3D · 360° · Plantas',
+      subtitle: state.project.subtitle || 'Showroom Interactivo 3D · Panorámica · Plantas',
       whatsappPhone: state.project.whatsappPhone || '59173080076'
     };
     localStorage.removeItem(getProjectStorageKey(code));
@@ -6017,7 +6970,7 @@ function bindEvents() {
   const doExportJson = () => {
     if (!isEditor()) return;
     const payload = {
-      project: state.project, intro: state.intro, unitsConfig: state.unitsConfig, avance: state.avance,
+      project: state.project, intro: state.intro, unitsConfig: state.unitsConfig, model3dConfig: state.model3dConfig, avance: state.avance,
       exteriorAngles: state.exteriorAngles, levels: state.levels, units: state.units, rooms360: state.rooms360,
       visibleFields: state.visibleFields, imageAdjustments: state.imageAdjustments, location: state.location,
       finishes: state.finishes, transitions: state.transitions,
@@ -6033,12 +6986,13 @@ function bindEvents() {
   const doImportJson = (file) => {
     if (!isEditor() || !file) return;
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       try {
         const data = JSON.parse(reader.result);
         if (data.project) state.project = { ...state.project, ...data.project, code: state.project.code };
         if (data.intro) state.intro = { ...state.intro, ...data.intro };
         if (data.unitsConfig) state.unitsConfig = { ...state.unitsConfig, ...data.unitsConfig };
+        if (data.model3dConfig) state.model3dConfig = { ...state.model3dConfig, ...data.model3dConfig };
         if (data.avance) state.avance = { ...state.avance, ...data.avance };
         if (Array.isArray(data.exteriorAngles)) state.exteriorAngles = data.exteriorAngles;
         if (Array.isArray(data.levels)) state.levels = data.levels;
@@ -6051,24 +7005,60 @@ function bindEvents() {
         if (data.transitions) state.transitions = data.transitions;
         if (Array.isArray(data.cameras3D) && data.cameras3D.length > 0) state.cameras3D = data.cameras3D;
         if (Array.isArray(data.floors3D) && data.floors3D.length > 0) state.floors3D = data.floors3D;
-        savePersistedState(); syncProjectBrandingUI(); syncAvanceUI(); renderLevelsSidebar(); drawMasterplanRender(); render3DCamerasList(); render3DFloorSelectorButtons(); renderFinishesTabs(); renderLocationPoiList(); renderUnitsCatalog();
+
+        let accessCode = normalizeAccessCode(state.project.accessCode || '');
+        let accessCodeHash = accessCode ? await hashAccessCode(accessCode) : (state.project.accessCodeHash || null);
+        if (accessCodeHash && findUniqueAccessCodeConflict(portalState.projects, accessCode, accessCodeHash, state.project.code)) {
+          showToast(`⚠️ Código "${accessCode}" en uso por otro proyecto; se limpió en el importado`);
+          accessCode = '';
+          accessCodeHash = null;
+        }
+        const requiresCode = Boolean(accessCodeHash);
+        state.project.accessCode = accessCode;
+        state.project.accessCodeHash = accessCodeHash;
+        state.project.requiresCode = requiresCode;
+
+        const meta = portalState.projects.find((p) => p.code.toUpperCase() === (state.project.code || '').toUpperCase());
+        if (meta) {
+          meta.buildingName = state.project.buildingName || meta.buildingName;
+          meta.subtitle = state.project.subtitle || meta.subtitle;
+          meta.whatsappPhone = state.project.whatsappPhone || meta.whatsappPhone;
+          meta.accessCode = accessCode;
+          meta.accessCodeHash = accessCodeHash;
+          meta.requiresCode = requiresCode;
+        }
+
+        savePersistedState();
+        syncProjectBrandingUI();
+        syncModel3DTabVisibilityUI();
+        syncAvanceUI();
+        renderLevelsSidebar();
+        drawMasterplanRender();
+        render3DCamerasList();
+        render3DFloorSelectorButtons();
+        renderFinishesTabs();
+        renderLocationPoiList();
+        renderUnitsCatalog();
+        renderPortalProjects();
         showToast('Proyecto importado');
       } catch (_) {}
     };
     reader.readAsText(file);
   };
-  document.getElementById('input-import-project').addEventListener('change', (e) => doImportJson(e.target.files[0]));
-  document.getElementById('menu-input-import-project').addEventListener('change', (e) => { closeDropdown(); doImportJson(e.target.files[0]); });
+  document.getElementById('input-import-project').addEventListener('change', (e) => { doImportJson(e.target.files[0]); e.target.value = ''; });
+  document.getElementById('menu-input-import-project').addEventListener('change', (e) => { closeDropdown(); doImportJson(e.target.files[0]); e.target.value = ''; });
 
   // Keyboard Shortcuts (Escape / Arrow Navigation)
   window.addEventListener('keydown', (e) => {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
     if (e.key === 'Escape') {
       document.querySelectorAll('.modal-backdrop.open').forEach((m) => m.classList.remove('open'));
       document.getElementById('modal-photo-viewer')?.classList.remove('open');
       closeMenuDrawer();
       closeDropdown();
-    } else if (e.key === 'Enter' && isEditor() && state.isDrawingPolygon && state.draftPolygonPoints.length >= 3) {
+      return;
+    }
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+    if (e.key === 'Enter' && isEditor() && state.isDrawingPolygon && state.draftPolygonPoints.length >= 3) {
       openPolygonEditorModal(null);
     } else if (state.activeView === 'masterplan') {
       if (e.key === 'ArrowLeft') rotateExteriorFlyby(-1);
@@ -6096,7 +7086,8 @@ function animate() {
   requestAnimationFrame(animate);
 
   if (state.activeView === 'tour360' && tour360.renderer && tour360.camera) {
-    if (!tour360.isUserInteracting && tour360.autoRotate && !state.isPlacingHotspot360) tour360.lon += 0.045;
+    const gyroMoving = tour360.gyroEnabled && (Date.now() - tour360.gyroLastMoveAt) < 4000;
+    if (!tour360.isUserInteracting && tour360.autoRotate && !state.isPlacingHotspot360 && !gyroMoving) tour360.lon += 0.045;
     tour360.lat = Math.max(-85, Math.min(85, tour360.lat));
     const phi = THREE.MathUtils.degToRad(90 - tour360.lat);
     const theta = THREE.MathUtils.degToRad(tour360.lon);
@@ -6179,9 +7170,22 @@ window.addEventListener('DOMContentLoaded', async () => {
   renderPortalExamples();
   syncPortalEditorTabUI();
 
-  const openedDirectly = urlProjectCode && portalState.projects.some((p) => p.code.toUpperCase() === urlProjectCode);
-  if (openedDirectly) {
-    await openProjectByCode(urlProjectCode, (publishedMode || urlMode === 'public') ? 'public' : null);
+  if (!publishedMode) {
+    for (const p of portalState.projects) {
+      if (p.accessCode && !p.accessCodeHash) {
+        p.accessCodeHash = await hashAccessCode(p.accessCode);
+        p.requiresCode = true;
+      }
+    }
+  }
+
+  const matchedUrlMeta = urlProjectCode
+    ? portalState.projects.find((p) => p.code.toUpperCase() === urlProjectCode)
+    : null;
+  const openedDirectly = Boolean(matchedUrlMeta);
+  const forcedDirectRole = (publishedMode || urlMode === 'public') ? 'public' : null;
+  if (openedDirectly && (!matchedUrlMeta.requiresCode || (!forcedDirectRole && isEditor()))) {
+    await openProjectByCode(urlProjectCode, forcedDirectRole);
   } else {
     if (!publishedMode) await hydrateMediaFromIndexedDB();
     render3DCamerasList();
@@ -6196,6 +7200,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     renderUnitsCatalog();
     updateBackButtonUI();
     showScreen('portal');
+    if (openedDirectly && matchedUrlMeta.requiresCode) {
+      await requestProjectAccessAndOpen(matchedUrlMeta, forcedDirectRole);
+    }
   }
 
   if (publishedMode && portalState.visitsScriptUrl) {

@@ -4,6 +4,78 @@
 
 export const CLOUD_CONFIG_STORAGE_KEY = 'salo_cloud_config_v8';
 
+export function normalizeAccessCode(raw) {
+  return String(raw || '').trim().toUpperCase();
+}
+
+function sha256PureJs(str) {
+  const bytes = new TextEncoder().encode(str);
+  const K = new Uint32Array([
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+  ]);
+  const H = new Uint32Array([0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]);
+  const bitLen = bytes.length * 8;
+  const paddedLen = Math.ceil((bytes.length + 9) / 64) * 64;
+  const padded = new Uint8Array(paddedLen);
+  padded.set(bytes);
+  padded[bytes.length] = 0x80;
+  const dv = new DataView(padded.buffer);
+  dv.setUint32(paddedLen - 8, Math.floor(bitLen / 0x100000000), false);
+  dv.setUint32(paddedLen - 4, bitLen >>> 0, false);
+  const w = new Uint32Array(64);
+  const rotr = (x, n) => (x >>> n) | (x << (32 - n));
+  for (let i = 0; i < paddedLen; i += 64) {
+    for (let t = 0; t < 16; t++) w[t] = dv.getUint32(i + t * 4, false);
+    for (let t = 16; t < 64; t++) {
+      const s0 = rotr(w[t - 15], 7) ^ rotr(w[t - 15], 18) ^ (w[t - 15] >>> 3);
+      const s1 = rotr(w[t - 2], 17) ^ rotr(w[t - 2], 19) ^ (w[t - 2] >>> 10);
+      w[t] = (w[t - 16] + s0 + w[t - 7] + s1) >>> 0;
+    }
+    let [a, b, c, d, e, f, g, h] = H;
+    for (let t = 0; t < 64; t++) {
+      const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+      const ch = (e & f) ^ ((~e) & g);
+      const t1 = (h + S1 + ch + K[t] + w[t]) >>> 0;
+      const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+      const maj = (a & b) ^ (a & c) ^ (b & c);
+      const t2 = (S0 + maj) >>> 0;
+      h = g; g = f; f = e; e = (d + t1) >>> 0; d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+    }
+    H[0] = (H[0] + a) >>> 0; H[1] = (H[1] + b) >>> 0; H[2] = (H[2] + c) >>> 0; H[3] = (H[3] + d) >>> 0;
+    H[4] = (H[4] + e) >>> 0; H[5] = (H[5] + f) >>> 0; H[6] = (H[6] + g) >>> 0; H[7] = (H[7] + h) >>> 0;
+  }
+  return Array.from(H).map((x) => x.toString(16).padStart(8, '0')).join('');
+}
+
+export async function hashAccessCode(raw) {
+  const norm = normalizeAccessCode(raw);
+  if (!norm) return null;
+  if (typeof globalThis.crypto !== 'undefined' && globalThis.crypto.subtle) {
+    const buf = await globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(norm));
+    return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+  }
+  return sha256PureJs(norm);
+}
+
+export function findUniqueAccessCodeConflict(projects, candidateCode, candidateHash = null, ignoreProjectCode = null) {
+  const norm = normalizeAccessCode(candidateCode);
+  if (!norm && !candidateHash) return null;
+  const ignore = String(ignoreProjectCode || '').toUpperCase();
+  for (const p of (projects || [])) {
+    if (!p || String(p.code || '').toUpperCase() === ignore) continue;
+    if (candidateHash && p.accessCodeHash && p.accessCodeHash === candidateHash) return p;
+    if (norm && p.accessCode && normalizeAccessCode(p.accessCode) === norm) return p;
+  }
+  return null;
+}
+
 export function isPublishedRuntime(loc = (typeof window !== 'undefined' ? window.location : null)) {
   if (!loc) return false;
   try {
@@ -66,6 +138,8 @@ export function sanitizePortalForPublish(portalState, assetUrlMap = new Map(), v
       subtitle: p.subtitle || '',
       whatsappPhone: p.whatsappPhone || '59173080076',
       published: true,
+      requiresCode: Boolean(p.requiresCode && p.accessCodeHash),
+      accessCodeHash: (p.requiresCode && p.accessCodeHash) ? String(p.accessCodeHash).toLowerCase() : null,
       coverUrl: resolveMediaField(p.coverUrl, p.coverMediaKey, assetUrlMap, './sample-assets/exterior-tower.webp'),
       createdAt: p.createdAt || ''
     }));
@@ -100,6 +174,8 @@ export function sanitizeProjectForPublish(projectState, assetUrlMap = new Map())
 
   if (clone.project) {
     clone.project.shortName = 'SALO SHOWROOM';
+    delete clone.project.accessCode;
+    delete clone.project.accessCodeHash;
     clone.project.logoUrl = resolveMediaField(clone.project.logoUrl, clone.project.logoMediaKey, assetUrlMap, null);
     clone.project.logoMediaKey = null;
   }
@@ -113,8 +189,9 @@ export function sanitizeProjectForPublish(projectState, assetUrlMap = new Map())
     clone.exteriorAngles = clone.exteriorAngles.map((a) => ({
       ...a,
       photo: resolveMediaField(a.photo, a.mediaKey, assetUrlMap, './sample-assets/exterior-tower.webp'),
-      nightPhoto: resolveMediaField(a.nightPhoto, a.nightMediaKey, assetUrlMap, './sample-assets/render-nocturno.jpg'),
-      mediaKey: null
+      nightPhoto: resolveMediaField(a.nightPhoto, a.nightMediaKey, assetUrlMap, null),
+      mediaKey: null,
+      nightMediaKey: null
     }));
   }
 
@@ -122,7 +199,7 @@ export function sanitizeProjectForPublish(projectState, assetUrlMap = new Map())
     clone.levels = clone.levels.map((l) => ({
       ...l,
       dayPhoto: resolveMediaField(l.dayPhoto, l.dayMediaKey, assetUrlMap, './sample-assets/floor-piso9-3d.jpg'),
-      nightPhoto: resolveMediaField(l.nightPhoto, l.nightMediaKey, assetUrlMap, './sample-assets/render-nocturno.jpg'),
+      nightPhoto: resolveMediaField(l.nightPhoto, l.nightMediaKey, assetUrlMap, null),
       plan2DPhoto: resolveMediaField(l.plan2DPhoto, null, assetUrlMap, './sample-assets/floor-piso9-plan.webp'),
       transitionVideo: resolveMediaField(l.transitionVideo, l.transitionMediaKey, assetUrlMap, null),
       transImg1: resolveMediaField(l.transImg1, l.transImg1Key, assetUrlMap, null),
@@ -141,7 +218,9 @@ export function sanitizeProjectForPublish(projectState, assetUrlMap = new Map())
       customButtons: (u.customButtons || []).map((cb) => ({
         ...cb,
         photoUrl: resolveMediaField(cb.photoUrl, cb.photoMediaKey, assetUrlMap, './sample-assets/render-interior-1.jpg'),
-        photoMediaKey: null
+        nightPhotoUrl: resolveMediaField(cb.nightPhotoUrl, cb.nightPhotoMediaKey, assetUrlMap, null),
+        photoMediaKey: null,
+        nightPhotoMediaKey: null
       }))
     }));
   }
@@ -150,7 +229,9 @@ export function sanitizeProjectForPublish(projectState, assetUrlMap = new Map())
     clone.renderedViewsGallery = clone.renderedViewsGallery.map((g) => ({
       ...g,
       url: resolveMediaField(g.url, g.mediaKey, assetUrlMap, './sample-assets/render-amenities.jpg'),
-      mediaKey: null
+      nightUrl: resolveMediaField(g.nightUrl, g.nightMediaKey, assetUrlMap, null),
+      mediaKey: null,
+      nightMediaKey: null
     }));
   }
 
@@ -158,7 +239,9 @@ export function sanitizeProjectForPublish(projectState, assetUrlMap = new Map())
     clone.rooms360 = clone.rooms360.map((r) => ({
       ...r,
       customImageUrl: resolveMediaField(r.customImageUrl, r.mediaKey, assetUrlMap, null),
-      mediaKey: null
+      customNightImageUrl: resolveMediaField(r.customNightImageUrl, r.nightMediaKey, assetUrlMap, null),
+      mediaKey: null,
+      nightMediaKey: null
     }));
   }
 
@@ -208,7 +291,10 @@ export function collectProjectMediaKeys(projectState) {
 
   add(projectState.project?.logoMediaKey, 'logo');
   add(projectState.intro?.mediaKey, 'intro');
-  (projectState.exteriorAngles || []).forEach((a, i) => add(a.mediaKey, `ext-${i}`));
+  (projectState.exteriorAngles || []).forEach((a, i) => {
+    add(a.mediaKey, `ext-${i}`);
+    add(a.nightMediaKey, `ext-${i}-night`);
+  });
   (projectState.levels || []).forEach((l) => {
     add(l.dayMediaKey, `${l.id}-day`);
     add(l.nightMediaKey, `${l.id}-night`);
@@ -217,10 +303,19 @@ export function collectProjectMediaKeys(projectState) {
     add(l.transImg2Key, `${l.id}-img2`);
   });
   (projectState.units || []).forEach((u) => {
-    (u.customButtons || []).forEach((cb) => add(cb.photoMediaKey, `btn-${cb.id}`));
+    (u.customButtons || []).forEach((cb) => {
+      add(cb.photoMediaKey, `btn-${cb.id}`);
+      add(cb.nightPhotoMediaKey, `btn-${cb.id}-night`);
+    });
   });
-  (projectState.renderedViewsGallery || []).forEach((g) => add(g.mediaKey, `gallery-${g.id}`));
-  (projectState.rooms360 || []).forEach((r) => add(r.mediaKey, `360-${r.id}`));
+  (projectState.renderedViewsGallery || []).forEach((g) => {
+    add(g.mediaKey, `gallery-${g.id}`);
+    add(g.nightMediaKey, `gallery-${g.id}-night`);
+  });
+  (projectState.rooms360 || []).forEach((r) => {
+    add(r.mediaKey, `360-${r.id}`);
+    add(r.nightMediaKey, `360-${r.id}-night`);
+  });
   (projectState.finishes?.tabs || []).forEach((t) => {
     (t.items || []).forEach((it) => add(it.mediaKey, `finish-${it.id}`));
   });

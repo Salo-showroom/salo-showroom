@@ -1,6 +1,6 @@
 {
-  "publishVersion": "1795032650929",
-  "publishedAt": "2026-11-18T20:10:50.929Z",
+  "publishVersion": "1795045813941",
+  "publishedAt": "2026-11-18T23:50:13.941Z",
   "visitsScriptUrl": "https://script.google.com/macros/s/AKfycbz4XDuDUinem9hZzjQrFKxP2dZjrP1VekhQ3lmwHcDwnKuUOkYtPLiWNrWshdSMT6t9/exec",
   "projects": [
     {
@@ -9,6 +9,8 @@
       "subtitle": "Showroom Interactivo 3D · 360° · Plantas",
       "whatsappPhone": "59167134994",
       "published": true,
+      "requiresCode": false,
+      "accessCodeHash": null,
       "coverUrl": "https://noisy-bread-2236.salazarlopezalcidesmario.workers.dev/Salo-showroom/salo-showroom/releases/download/media-SALO-002/lvl-day-facade-1795008537783.png",
       "createdAt": "2026-11-18"
     }

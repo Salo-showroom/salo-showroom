@@ -1,6 +1,7 @@
 {
   "project": {
     "code": "SALO-002",
+    "requiresCode": false,
     "shortName": "SALO SHOWROOM",
     "buildingName": "VIVIENDA FAMILIAR",
     "fullTitle": "SALO SHOWROOM · VIVIENDA FAMILIAR",
@@ -25,6 +26,9 @@
     "showTab": true,
     "displayMode": "departments"
   },
+  "model3dConfig": {
+    "showTab": true
+  },
   "avance": {
     "percent": 68,
     "delivery": "Diciembre 2026",
@@ -41,16 +45,9 @@
       "angleDeg": 45,
       "label": "Fachada",
       "photo": "https://noisy-bread-2236.salazarlopezalcidesmario.workers.dev/Salo-showroom/salo-showroom/releases/download/media-SALO-002/lvl-day-facade-1795008537783.png",
-      "nightPhoto": "./sample-assets/render-nocturno.jpg",
-      "mediaKey": null
-    },
-    {
-      "id": "ext-1795008402336-r8vo",
-      "angleDeg": 45,
-      "label": "1a",
-      "photo": "./media/SALO-002/ext-photo-ext-1795008402336-r8vo.png",
-      "nightPhoto": "./sample-assets/render-nocturno.jpg",
-      "mediaKey": null
+      "nightPhoto": "./media/SALO-002/ext-night-0-1795044907969-777.png",
+      "mediaKey": null,
+      "nightMediaKey": null
     }
   ],
   "activeLevelId": "facade",
@@ -408,7 +405,7 @@
       "badge": "Exterior",
       "floorNum": 0,
       "dayPhoto": "./media/SALO-002/floor-plan-facade-1795008301450.jpg",
-      "nightPhoto": "./media/SALO-002/lvl-night-facade-1795008585302.png",
+      "nightPhoto": "./media/SALO-002/ext-night-0-1795044907969-777.png",
       "plan2DPhoto": "./sample-assets/masterplan-render.jpg",
       "dayMediaKey": null,
       "nightMediaKey": null,
@@ -833,7 +830,9 @@
           "pinCoords": {
             "x": 35.7,
             "y": 37
-          }
+          },
+          "nightPhotoUrl": null,
+          "nightPhotoMediaKey": null
         }
       ],
       "center": {
@@ -892,7 +891,9 @@
           "pinCoords": {
             "x": 39.6,
             "y": 66.3
-          }
+          },
+          "nightPhotoUrl": null,
+          "nightPhotoMediaKey": null
         }
       ],
       "center": {
@@ -948,7 +949,9 @@
           "targetRoom360Id": "room-btn-1795009223468",
           "showOnPlan": false,
           "pinColor": "#2d17d3",
-          "pinCoords": null
+          "pinCoords": null,
+          "nightPhotoUrl": null,
+          "nightPhotoMediaKey": null
         }
       ],
       "center": {
@@ -1004,7 +1007,9 @@
           "targetRoom360Id": "room-btn-1795009259093",
           "showOnPlan": true,
           "pinColor": "#2d17d3",
-          "pinCoords": null
+          "pinCoords": null,
+          "nightPhotoUrl": null,
+          "nightPhotoMediaKey": null
         }
       ],
       "center": {
@@ -1040,37 +1045,49 @@
       "id": "rv-1",
       "title": "Rooftop & Piscina Climatizada",
       "url": "./sample-assets/render-amenities.jpg",
-      "mediaKey": null
+      "mediaKey": null,
+      "nightUrl": null,
+      "nightMediaKey": null
     },
     {
       "id": "rv-2",
       "title": "Planta 3D Amoblada Piso 9°",
       "url": "./sample-assets/floor-piso9-3d.jpg",
-      "mediaKey": null
+      "mediaKey": null,
+      "nightUrl": null,
+      "nightMediaKey": null
     },
     {
       "id": "rv-3",
       "title": "Interior Living & Comedor Integrado",
       "url": "./sample-assets/render-interior-1.jpg",
-      "mediaKey": null
+      "mediaKey": null,
+      "nightUrl": null,
+      "nightMediaKey": null
     },
     {
       "id": "rv-4",
       "title": "Fachada Nocturna Iluminada",
       "url": "./sample-assets/render-nocturno.jpg",
-      "mediaKey": null
+      "mediaKey": null,
+      "nightUrl": null,
+      "nightMediaKey": null
     },
     {
       "id": "rv-5",
       "title": "Planta 3D Piso 35° Penthouse",
       "url": "./sample-assets/floor-piso35-3d.jpg",
-      "mediaKey": null
+      "mediaKey": null,
+      "nightUrl": null,
+      "nightMediaKey": null
     },
     {
       "id": "rv-6",
       "title": "Azotea & Sky Deck Piso 36°",
       "url": "./sample-assets/floor-azotea-3d.jpg",
-      "mediaKey": null
+      "mediaKey": null,
+      "nightUrl": null,
+      "nightMediaKey": null
     }
   ],
   "rooms360": [
@@ -1082,7 +1099,9 @@
       "themeColor": "#161410",
       "customImageUrl": null,
       "mediaKey": null,
-      "hotspots": []
+      "hotspots": [],
+      "customNightImageUrl": null,
+      "nightMediaKey": null
     },
     {
       "id": "room-floor-custom-1794979973357-1",
@@ -1092,7 +1111,9 @@
       "themeColor": "#161410",
       "customImageUrl": null,
       "mediaKey": null,
-      "hotspots": []
+      "hotspots": [],
+      "customNightImageUrl": null,
+      "nightMediaKey": null
     },
     {
       "id": "room-floor-custom-1795008638332-1",
@@ -1102,7 +1123,9 @@
       "themeColor": "#161410",
       "customImageUrl": null,
       "mediaKey": null,
-      "hotspots": []
+      "hotspots": [],
+      "customNightImageUrl": null,
+      "nightMediaKey": null
     },
     {
       "id": "room-btn-1795009223468",
@@ -1112,7 +1135,9 @@
       "themeColor": "#161410",
       "customImageUrl": "https://noisy-bread-2236.salazarlopezalcidesmario.workers.dev/Salo-showroom/salo-showroom/releases/download/media-SALO-002/custom-btn-media-1795009220839-qx6v.jpg",
       "mediaKey": null,
-      "hotspots": []
+      "hotspots": [],
+      "customNightImageUrl": null,
+      "nightMediaKey": null
     },
     {
       "id": "room-btn-1795009259093",
@@ -1122,7 +1147,9 @@
       "themeColor": "#161410",
       "customImageUrl": "https://noisy-bread-2236.salazarlopezalcidesmario.workers.dev/Salo-showroom/salo-showroom/releases/download/media-SALO-002/custom-btn-media-1795009256618-1y8h.jpg",
       "mediaKey": null,
-      "hotspots": []
+      "hotspots": [],
+      "customNightImageUrl": null,
+      "nightMediaKey": null
     },
     {
       "id": "room-1795009344379",
@@ -1146,7 +1173,9 @@
           "lon": -65.17871223272799,
           "lat": -18.823262333901326
         }
-      ]
+      ],
+      "customNightImageUrl": null,
+      "nightMediaKey": null
     },
     {
       "id": "room-1795009377761",
@@ -1163,7 +1192,9 @@
           "targetRoomId": "room-1795009344379",
           "label": "Regresar"
         }
-      ]
+      ],
+      "customNightImageUrl": null,
+      "nightMediaKey": null
     }
   ],
   "activeRoom360Id": "living",
@@ -1275,7 +1306,7 @@
   "location": {
     "lat": -17.783327,
     "lng": -63.18214,
-    "zoom": 10,
+    "zoom": 13,
     "placeName": "Equipetrol · Santa Cruz",
     "pois": [
       {
