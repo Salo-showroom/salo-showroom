@@ -33,7 +33,7 @@ const MEDIA_STORE = 'blobs';
 
 function normalizeRelativeAssetPath(val) {
   if (typeof val !== 'string') return val;
-  if (val.startsWith('./sample-assets/')) return `.${val}`;
+  if (val.startsWith('/sample-assets/')) return `.${val}`;
   return val;
 }
 
@@ -534,10 +534,22 @@ function savePortalState() {
       ...p,
       coverUrl: (p.coverUrl && p.coverUrl.startsWith('blob:')) ? './sample-assets/exterior-tower.webp' : p.coverUrl
     }));
-    const cleanExamples = portalState.examplePhotos.map((ex) => ({
-      ...ex,
-      url: (ex.url && ex.url.startsWith('blob:')) ? './sample-assets/exterior-tower.webp' : ex.url
-    }));
+    const cleanExamples = portalState.examplePhotos.map((ex) => {
+      if (ex && ex.type === 'folder') {
+        return {
+          ...ex,
+          coverUrl: (ex.coverUrl && ex.coverUrl.startsWith('blob:')) ? './sample-assets/exterior-tower.webp' : ex.coverUrl,
+          items: (ex.items || []).map((it) => ({
+            ...it,
+            url: (it.url && it.url.startsWith('blob:')) ? './sample-assets/exterior-tower.webp' : it.url
+          }))
+        };
+      }
+      return {
+        ...ex,
+        url: (ex.url && ex.url.startsWith('blob:')) ? './sample-assets/exterior-tower.webp' : ex.url
+      };
+    });
     localStorage.setItem(PORTAL_STORAGE_KEY, JSON.stringify({
       activeProjectCode: portalState.activeProjectCode,
       auth: portalState.auth,
@@ -638,6 +650,7 @@ function savePersistedState() {
       ...l,
       dayPhoto: (l.dayPhoto && l.dayPhoto.startsWith('blob:')) ? './sample-assets/floor-piso9-3d.jpg' : l.dayPhoto,
       nightPhoto: (l.nightPhoto && l.nightPhoto.startsWith('blob:')) ? null : (l.nightPhoto ?? null),
+      plan2DPhoto: (l.plan2DPhoto && l.plan2DPhoto.startsWith('blob:')) ? './sample-assets/floor-piso9-plan.webp' : l.plan2DPhoto,
       transImg1: (l.transImg1 && l.transImg1.startsWith('blob:')) ? null : l.transImg1,
       transImg2: (l.transImg2 && l.transImg2.startsWith('blob:')) ? null : l.transImg2
     }));
@@ -706,7 +719,18 @@ async function hydratePortalMediaFromIndexedDB() {
     }
   }
   for (const ex of portalState.examplePhotos) {
-    if (ex.mediaKey) {
+    if (ex && ex.type === 'folder') {
+      if (ex.coverMediaKey) {
+        const cu = await getMediaUrl(ex.coverMediaKey);
+        if (cu) ex.coverUrl = cu;
+      }
+      for (const it of (ex.items || [])) {
+        if (it?.mediaKey) {
+          const iu = await getMediaUrl(it.mediaKey);
+          if (iu) it.url = iu;
+        }
+      }
+    } else if (ex?.mediaKey) {
       const u = await getMediaUrl(ex.mediaKey);
       if (u) ex.url = u;
     }
@@ -726,6 +750,7 @@ async function hydrateMediaFromIndexedDB() {
   for (const lvl of state.levels) {
     if (lvl.dayMediaKey) { const u = await getMediaUrl(lvl.dayMediaKey); if (u) lvl.dayPhoto = u; }
     if (lvl.nightMediaKey) { const u = await getMediaUrl(lvl.nightMediaKey); if (u) lvl.nightPhoto = u; }
+    if (lvl.plan2DMediaKey) { const u = await getMediaUrl(lvl.plan2DMediaKey); if (u) lvl.plan2DPhoto = u; }
     if (lvl.transitionMediaKey) await getMediaUrl(lvl.transitionMediaKey);
     if (lvl.transImg1Key) { const u = await getMediaUrl(lvl.transImg1Key); if (u) lvl.transImg1 = u; }
     if (lvl.transImg2Key) { const u = await getMediaUrl(lvl.transImg2Key); if (u) lvl.transImg2 = u; }
@@ -805,6 +830,7 @@ function switchPortalTab(tabName) {
     if (sec) sec.style.display = t === tabName ? 'flex' : 'none';
   });
   if (tabName === 'editors') syncPortalEditorTabUI();
+  if (tabName === 'examples') renderPortalExamples();
 }
 
 function syncPortalEditorTabUI() {
@@ -982,24 +1008,202 @@ function renderPortalProjects() {
   });
 }
 
+let activePortfolioFolderId = null;
+
+function renderPortalExamplesDemos() {
+  const sec = document.getElementById('portal-examples-demos-section');
+  const grid = document.getElementById('portal-examples-demos-grid');
+  if (!sec || !grid) return;
+
+  const editorMode = isEditor();
+  const demos = (portalState.projects || []).filter((p) => {
+    if (!p) return false;
+    if (!editorMode && p.published === false) return false;
+    return !p.requiresCode;
+  });
+
+  if (demos.length === 0) {
+    sec.style.display = 'none';
+    grid.innerHTML = '';
+    return;
+  }
+
+  sec.style.display = 'flex';
+  grid.innerHTML = '';
+  demos.forEach((proj) => {
+    const card = document.createElement('div');
+    card.className = 'portal-project-card';
+    card.innerHTML = `
+      <div class="portal-project-cover">
+        <img src="${proj.coverUrl || './sample-assets/exterior-tower.webp'}" alt="${escapeHtml(proj.buildingName)}" />
+        <span class="portal-code-badge" style="color:#4ade80;border-color:rgba(74,222,128,0.5);">✨ DEMO ABIERTO</span>
+      </div>
+      <div class="portal-project-body">
+        <h4 class="portal-project-title">${escapeHtml(proj.buildingName || 'Proyecto Demo')}</h4>
+        <p class="portal-project-sub">${escapeHtml(proj.subtitle || 'Showroom Interactivo SALO')}</p>
+        <div class="portal-project-actions">
+          <button type="button" class="action-btn gold-cta" data-open-demo-proj="${escapeHtml(proj.code)}" style="flex:1;grid-column:auto;">🚀 Abrir Demo</button>
+        </div>
+      </div>
+    `;
+    card.querySelector('[data-open-demo-proj]')?.addEventListener('click', () => {
+      requestProjectAccessAndOpen(proj);
+    });
+    card.querySelector('.portal-project-cover')?.addEventListener('click', () => {
+      requestProjectAccessAndOpen(proj);
+    });
+    grid.appendChild(card);
+  });
+}
+
+function openPortfolioFolderCreateModal() {
+  if (!isEditor()) { showToast('Solo cuentas de Editor pueden crear carpetas'); return; }
+  const titleEl = document.getElementById('pf-create-title');
+  const coverEl = document.getElementById('pf-create-cover');
+  const photosEl = document.getElementById('pf-create-photos');
+  if (titleEl) titleEl.value = '';
+  if (coverEl) coverEl.value = '';
+  if (photosEl) photosEl.value = '';
+  document.getElementById('modal-portfolio-folder-create')?.classList.add('open');
+}
+
+async function confirmCreatePortfolioFolder() {
+  if (!isEditor()) return;
+  const title = (document.getElementById('pf-create-title')?.value || '').trim();
+  if (!title) { showToast('Escribe un nombre para la carpeta'); return; }
+  const coverFile = document.getElementById('pf-create-cover')?.files?.[0] || null;
+  const photoFiles = Array.from(document.getElementById('pf-create-photos')?.files || []);
+
+  const folderId = `fld-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  let coverUrl = './sample-assets/exterior-tower.webp';
+  let coverMediaKey = null;
+  if (coverFile) {
+    coverMediaKey = `portal-folder-cover-${folderId}`;
+    coverUrl = await saveMediaBlob(coverMediaKey, coverFile);
+  }
+
+  const items = [];
+  for (const file of photoFiles) {
+    const itemId = `it-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const mediaKey = `portal-folder-item-${folderId}-${itemId}`;
+    const url = await saveMediaBlob(mediaKey, file);
+    items.push({ id: itemId, title: file.name.replace(/\.[^.]+$/, ''), url, mediaKey });
+  }
+  if (!coverFile && items[0]) {
+    coverUrl = items[0].url;
+    coverMediaKey = items[0].mediaKey;
+  }
+
+  portalState.examplePhotos.unshift({
+    id: folderId,
+    type: 'folder',
+    title,
+    coverUrl,
+    coverMediaKey,
+    items
+  });
+  savePortalState();
+  renderPortalExamples();
+  document.getElementById('modal-portfolio-folder-create')?.classList.remove('open');
+  showToast(`Carpeta "${title}" creada (${items.length} fotos)`);
+}
+
+function openPortfolioFolderViewer(folderId) {
+  const folder = portalState.examplePhotos.find((x) => x && x.id === folderId && x.type === 'folder');
+  if (!folder) return;
+  activePortfolioFolderId = folder.id;
+  const titleEl = document.getElementById('pf-viewer-title');
+  const grid = document.getElementById('pf-viewer-grid');
+  if (titleEl) titleEl.textContent = folder.title || 'Carpeta de Proyecto';
+  if (!grid) return;
+
+  grid.innerHTML = '';
+  const items = folder.items || [];
+  if (items.length === 0) {
+    grid.innerHTML = `<div style="grid-column:1/-1;padding:24px;text-align:center;color:var(--ink-silver);font-size:12px;">Esta carpeta aún no tiene fotos. ${isEditor() ? 'Usa "➕ Añadir Fotos" arriba.' : ''}</div>`;
+  } else {
+    items.forEach((it, iIdx) => {
+      const card = document.createElement('div');
+      card.className = 'portfolio-folder-item';
+      card.innerHTML = `
+        <img src="${it.url}" alt="${escapeHtml(it.title || 'Foto')}" />
+        <div class="portfolio-folder-item-cap">
+          <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(it.title || 'Vista')}</span>
+          ${isEditor() ? `
+            <div class="portal-example-actions">
+              <button class="icon-btn" data-pf-rename-item="${iIdx}" title="Renombrar foto" style="width:22px;height:22px;">✏️</button>
+              <button class="icon-btn" data-pf-del-item="${iIdx}" title="Eliminar foto" style="width:22px;height:22px;color:#f87171;">✕</button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('[data-pf-rename-item], [data-pf-del-item]')) return;
+        openPhotoLightbox(it.url, `${folder.title} · ${it.title || 'Vista'}`);
+      });
+      card.querySelector('[data-pf-rename-item]')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const nextName = window.prompt('Nuevo nombre para esta foto:', it.title || '');
+        if (!nextName || !nextName.trim()) return;
+        it.title = nextName.trim();
+        savePortalState();
+        openPortfolioFolderViewer(folder.id);
+        showToast('Nombre de foto actualizado');
+      });
+      card.querySelector('[data-pf-del-item]')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        folder.items.splice(iIdx, 1);
+        savePortalState();
+        renderPortalExamples();
+        openPortfolioFolderViewer(folder.id);
+        showToast('Foto eliminada de la carpeta');
+      });
+      grid.appendChild(card);
+    });
+  }
+  document.getElementById('modal-portfolio-folder-viewer')?.classList.add('open');
+}
+
 function renderPortalExamples() {
+  renderPortalExamplesDemos();
   const grids = [document.getElementById('portal-examples-grid'), document.getElementById('portal-examples-full-grid')].filter(Boolean);
   grids.forEach((grid) => {
     grid.innerHTML = '';
     portalState.examplePhotos.forEach((ex, idx) => {
+      const isFolder = ex && ex.type === 'folder';
+      const thumbUrl = isFolder ? (ex.coverUrl || ex.items?.[0]?.url || './sample-assets/exterior-tower.webp') : ex.url;
       const card = document.createElement('div');
-      card.className = 'portal-example-card';
+      card.className = `portal-example-card ${isFolder ? 'is-folder' : ''}`;
       card.innerHTML = `
-        <img src="${ex.url}" alt="${ex.title}" />
+        ${isFolder ? `<span class="portal-folder-badge">📁 ${(ex.items || []).length} fotos</span>` : ''}
+        <img src="${thumbUrl}" alt="${escapeHtml(ex.title || '')}" />
         <div class="portal-example-caption">
-          <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ex.title}</span>
-          ${isEditor() ? `<button class="icon-btn" data-del-ex="${idx}" title="Eliminar foto" style="width:22px;height:22px;color:#f87171;">✕</button>` : ''}
+          <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${isFolder ? '📁 ' : ''}${escapeHtml(ex.title || 'Sin título')}</span>
+          ${isEditor() ? `
+            <div class="portal-example-actions">
+              <button class="icon-btn" data-rename-ex="${idx}" title="Renombrar" style="width:22px;height:22px;">✏️</button>
+              <button class="icon-btn" data-del-ex="${idx}" title="${isFolder ? 'Eliminar carpeta' : 'Eliminar foto'}" style="width:22px;height:22px;color:#f87171;">✕</button>
+            </div>
+          ` : ''}
         </div>
       `;
       card.addEventListener('click', (e) => {
-        if (e.target.closest('[data-del-ex]')) return;
-        openPhotoLightbox(ex.url, ex.title);
+        if (e.target.closest('[data-del-ex], [data-rename-ex]')) return;
+        if (isFolder) openPortfolioFolderViewer(ex.id);
+        else openPhotoLightbox(ex.url, ex.title);
       });
+      const ren = card.querySelector('[data-rename-ex]');
+      if (ren) {
+        ren.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const nextTitle = window.prompt(isFolder ? 'Nuevo nombre para la carpeta:' : 'Nuevo nombre para la foto:', ex.title || '');
+          if (!nextTitle || !nextTitle.trim()) return;
+          ex.title = nextTitle.trim();
+          savePortalState();
+          renderPortalExamples();
+          showToast('Nombre actualizado');
+        });
+      }
       const del = card.querySelector('[data-del-ex]');
       if (del) {
         del.addEventListener('click', (e) => {
@@ -1007,7 +1211,7 @@ function renderPortalExamples() {
           portalState.examplePhotos.splice(idx, 1);
           savePortalState();
           renderPortalExamples();
-          showToast('Foto de ejemplo eliminada');
+          showToast(isFolder ? 'Carpeta eliminada' : 'Foto de ejemplo eliminada');
         });
       }
       grid.appendChild(card);
@@ -1028,6 +1232,14 @@ async function openProjectByCode(rawCode, forceRole = null) {
   if (errEl) errEl.style.display = 'none';
 
   if (forceRole === 'public' || forceRole === 'editor') portalState.auth.mode = forceRole;
+
+  // Synchronous pre-warm of Intro video element while user gesture is fresh (tablets/iPadOS/Android)
+  const prewarmIntroVid = document.getElementById('intro-video-player');
+  if (prewarmIntroVid) {
+    prewarmIntroVid.muted = true;
+    prewarmIntroVid.playsInline = true;
+    prewarmIntroVid.setAttribute('webkit-playsinline', '');
+  }
 
   navHistory.length = 0;
   if (isPublishedRuntime()) {
@@ -1067,7 +1279,9 @@ async function openProjectByCode(rawCode, forceRole = null) {
   updateBackButtonUI();
 
   showScreen('showroom');
+  setNavDockExpanded(false);
   switchView('masterplan', false, true);
+  requestAnimationFrame(() => syncSceneMediaBox());
 
   if (state.intro?.enabled) {
     playIntroVideo(false);
@@ -1443,8 +1657,56 @@ function setupPanelMinimize(panelId, minBtnId, restoreBtnId, mode = 'minimized')
 /* ==========================================================================
    2. EXTERIOR 360° FLYBY ROTATION (< GIRAR >) + POLYGONS + HOVER TOOLTIP
    ========================================================================== */
-function drawMasterplanRender() {
+const crossfadeSeqMap = {};
+
+function crossfadeImageElement(baseImg, overlayImg, nextUrl, seqKey, shouldCrossfade = false) {
+  if (!baseImg) return;
+  const seq = (crossfadeSeqMap[seqKey] = (crossfadeSeqMap[seqKey] || 0) + 1);
+  const prevSrc = baseImg.getAttribute('src') || '';
+  const prevResolved = baseImg.currentSrc || baseImg.src || '';
+
+  const resetOverlay = () => {
+    if (!overlayImg) return;
+    overlayImg.style.transition = 'none';
+    overlayImg.style.opacity = '0';
+    overlayImg.removeAttribute('src');
+  };
+
+  if (!shouldCrossfade || !overlayImg || !prevSrc || prevSrc === nextUrl || prevResolved === nextUrl) {
+    resetOverlay();
+    baseImg.src = nextUrl;
+    return;
+  }
+
+  overlayImg.style.transition = 'none';
+  overlayImg.src = prevResolved || prevSrc;
+  overlayImg.style.opacity = '1';
+  void overlayImg.offsetWidth; // force reflow
+
+  let started = false;
+  const runFade = () => {
+    if (started || crossfadeSeqMap[seqKey] !== seq) return;
+    started = true;
+    requestAnimationFrame(() => {
+      if (crossfadeSeqMap[seqKey] !== seq) return;
+      overlayImg.style.transition = 'opacity 1s ease-in-out';
+      overlayImg.style.opacity = '0';
+      setTimeout(() => {
+        if (crossfadeSeqMap[seqKey] === seq) resetOverlay();
+      }, 1050);
+    });
+  };
+
+  baseImg.addEventListener('load', runFade, { once: true });
+  baseImg.addEventListener('error', runFade, { once: true });
+  baseImg.src = nextUrl;
+  if (baseImg.complete && baseImg.naturalWidth > 0) runFade();
+  setTimeout(runFade, 2500);
+}
+
+function drawMasterplanRender(animateCrossfade = false) {
   const customImg = document.getElementById('masterplan-custom-img');
+  const crossfadeImg = document.getElementById('masterplan-crossfade-img');
   if (!customImg) return;
 
   const isExterior = state.activeLevelId === 'facade';
@@ -1488,15 +1750,18 @@ function drawMasterplanRender() {
     if (angleBadge) angleBadge.textContent = activeLevel.name || activeLevel.badge || 'Planta';
   }
 
-  customImg.src = photoUrl;
+  crossfadeImageElement(customImg, crossfadeImg, photoUrl, 'masterplan', animateCrossfade);
   customImg.style.display = 'block';
   customImg.style.filter = 'none';
+  const isPortalVisible = Boolean(portalEl && portalEl.style.display !== 'none');
+  document.body.classList.toggle('has-exterior-360-btn', isPortalVisible);
   const nav360Btn = document.getElementById('nav-tour360');
   if (nav360Btn) {
     const show360Nav = isExterior ? true : (activeLevel.hasTour360 !== false);
     nav360Btn.style.display = show360Nav ? '' : 'none';
   }
   applyActiveImageAdjustment();
+  syncSceneMediaBox();
   updateBackButtonUI();
   syncProjectLogoUI();
 }
@@ -1523,12 +1788,13 @@ function rotateExteriorFlyby(stepDir) {
   }
 }
 
-/* --- INTRO VIDEO PLAYER (Plays on entry until main panel) --- */
+/* --- INTRO VIDEO PLAYER (Plays on entry until main panel, tablet/mobile autoplay-safe) --- */
 async function playIntroVideo(forcePlay = false) {
   if (!forcePlay && !state.intro?.enabled) return;
   const overlay = document.getElementById('intro-video-overlay');
   const video = document.getElementById('intro-video-player');
   const skipBtn = document.getElementById('btn-skip-intro');
+  const tapPlayBtn = document.getElementById('btn-intro-tap-play');
   if (!overlay || !video) return;
 
   const url = state.intro.mediaKey ? (await getMediaUrl(state.intro.mediaKey)) : (state.intro.defaultVideo || './sample-assets/transition-fly.mp4');
@@ -1540,15 +1806,56 @@ async function playIntroVideo(forcePlay = false) {
     finished = true;
     video.pause();
     video.onended = null;
+    video.onerror = null;
+    if (tapPlayBtn) {
+      tapPlayBtn.style.display = 'none';
+      tapPlayBtn.onclick = null;
+    }
     overlay.classList.remove('playing');
   };
 
+  video.muted = true;
+  video.playsInline = true;
+  video.setAttribute('playsinline', '');
+  video.setAttribute('webkit-playsinline', '');
   video.src = url;
+  if (tapPlayBtn) tapPlayBtn.style.display = 'none';
   overlay.classList.add('playing');
   video.currentTime = 0;
+  video.load();
   video.onended = done;
+  video.onerror = () => {
+    if (finished) return;
+    showToast('No se pudo cargar el video de intro');
+    done();
+  };
   if (skipBtn) skipBtn.onclick = done;
-  video.play().catch(done);
+
+  const attemptPlay = () => {
+    const p = video.play();
+    if (p && typeof p.then === 'function') {
+      p.then(() => {
+        if (tapPlayBtn) tapPlayBtn.style.display = 'none';
+      }).catch((err) => {
+        if (finished) return;
+        const name = err?.name || '';
+        // Tablet/iPadOS/Android autoplay policy rejection: keep overlay open with direct tap-to-play button
+        if (name === 'NotAllowedError' || name === 'AbortError' || !name) {
+          if (tapPlayBtn) {
+            tapPlayBtn.style.display = 'inline-flex';
+            tapPlayBtn.onclick = () => {
+              tapPlayBtn.style.display = 'none';
+              video.muted = true;
+              attemptPlay();
+            };
+          }
+        } else {
+          done();
+        }
+      });
+    }
+  };
+  attemptPlay();
 }
 
 /* --- EXTERIOR VIEWS & INTRO MANAGER MODAL (Solo Editor) --- */
@@ -1685,12 +1992,128 @@ function renderExteriorViewsManagerList() {
   });
 }
 
-function applyActiveImageAdjustment() {
+let sceneMediaBoxMetrics = { cw: 0, ch: 0, bw: 0, bh: 0, scale: 1, overflowsX: false, overflowsY: false };
+
+function setNavDockExpanded(expanded) {
+  const shell = document.getElementById('showroom-shell');
+  const btn = document.getElementById('btn-toggle-nav-dock');
+  const arrow = document.getElementById('nav-dock-toggle-arrow');
+  const isOpen = Boolean(expanded);
+  if (shell) shell.classList.toggle('nav-dock-collapsed', !isOpen);
+  if (btn) btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  if (arrow) arrow.textContent = isOpen ? '▴' : '▾';
+}
+
+function getScenePanBounds() {
+  const { cw, ch, bw, bh, scale } = sceneMediaBoxMetrics;
+  const effW = bw * scale * (state.zoom || 1);
+  const effH = bh * scale * (state.zoom || 1);
+  const maxX = Math.max(0, (effW - cw) / 2);
+  const maxY = Math.max(0, (effH - ch) / 2);
+  return { maxX, maxY, overflowsX: effW > cw + 2, overflowsY: effH > ch + 2 };
+}
+
+function syncSceneMediaBox() {
+  const frame = document.getElementById('scene-frame');
+  const box = document.getElementById('scene-media-box');
   const customImg = document.getElementById('masterplan-custom-img');
-  if (!customImg) return;
+  if (!frame || !box || !customImg) return;
+
+  const cw = frame.clientWidth || window.innerWidth;
+  const ch = frame.clientHeight || window.innerHeight;
+  if (!cw || !ch) return;
+
+  const nw = customImg.naturalWidth || 1600;
+  const nh = customImg.naturalHeight || 900;
   const adj = state.imageAdjustments[state.activeLevelId] || { fit: 'cover', scale: 100, x: 0, y: 0 };
-  customImg.style.objectFit = adj.fit || 'cover';
-  customImg.style.transform = `translate(${adj.x}%, ${adj.y}%) scale(${adj.scale / 100})`;
+  const fit = adj.fit || 'cover';
+  const ratio = fit === 'contain' ? Math.min(cw / nw, ch / nh) : Math.max(cw / nw, ch / nh);
+  const bw = nw * ratio;
+  const bh = nh * ratio;
+  const left = (cw - bw) / 2;
+  const top = (ch - bh) / 2;
+  const scale = (adj.scale ?? 100) / 100;
+
+  box.style.width = `${bw}px`;
+  box.style.height = `${bh}px`;
+  box.style.left = `${left}px`;
+  box.style.top = `${top}px`;
+  box.style.transform = `translate(${adj.x ?? 0}%, ${adj.y ?? 0}%) scale(${scale})`;
+
+  customImg.style.objectFit = 'fill';
+  customImg.style.transform = 'none';
+
+  sceneMediaBoxMetrics = {
+    cw, ch, bw, bh, scale,
+    overflowsX: bw * scale > cw + 2,
+    overflowsY: bh * scale > ch + 2
+  };
+
+  const bounds = getScenePanBounds();
+  state.pan.x = Math.max(-bounds.maxX, Math.min(bounds.maxX, state.pan.x || 0));
+  state.pan.y = Math.max(-bounds.maxY, Math.min(bounds.maxY, state.pan.y || 0));
+  updateMasterplanZoomTransform();
+}
+
+function distPointToSegment2D(px, py, x1, y1, x2, y2) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) return Math.hypot(px - x1, py - y1);
+  let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+}
+
+function isPointInOrNearPolygon(px, py, polygon, thresholdPct = 4.5) {
+  if (!Array.isArray(polygon) || polygon.length < 3) return false;
+  // Ray-casting point-in-polygon
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x, yi = polygon[i].y;
+    const xj = polygon[j].x, yj = polygon[j].y;
+    const intersect = ((yi > py) !== (yj > py)) && (px < ((xj - xi) * (py - yi)) / ((yj - yi) || 1e-9) + xi);
+    if (intersect) inside = !inside;
+  }
+  if (inside) return true;
+  // Minimum distance to any polygon edge
+  for (let i = 0; i < polygon.length; i++) {
+    const a = polygon[i];
+    const b = polygon[(i + 1) % polygon.length];
+    if (distPointToSegment2D(px, py, a.x, a.y, b.x, b.y) <= thresholdPct) return true;
+  }
+  return false;
+}
+
+function clearPolygonProximityReveal() {
+  document.querySelectorAll('#polygon-svg .unit-polygon.proximity-reveal').forEach((el) => {
+    el.classList.remove('proximity-reveal');
+  });
+}
+
+function updatePolygonProximityReveal(clientX, clientY, thresholdPct = 4.5) {
+  if (state.activeView !== 'masterplan') return;
+  const box = document.getElementById('scene-media-box');
+  if (!box) return;
+  const rect = box.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+  const px = ((clientX - rect.left) / rect.width) * 100;
+  const py = ((clientY - rect.top) / rect.height) * 100;
+  if (px < -10 || px > 110 || py < -10 || py > 110) {
+    clearPolygonProximityReveal();
+    return;
+  }
+  const polys = document.querySelectorAll('#polygon-svg .unit-polygon[data-unit-id]');
+  polys.forEach((polyEl) => {
+    const u = state.units.find((item) => item.id === polyEl.dataset.unitId);
+    const near = u ? isPointInOrNearPolygon(px, py, u.polygon, thresholdPct) : false;
+    polyEl.classList.toggle('proximity-reveal', near);
+  });
+}
+
+function applyActiveImageAdjustment() {
+  const adj = state.imageAdjustments[state.activeLevelId] || { fit: 'cover', scale: 100, x: 0, y: 0 };
+  syncSceneMediaBox();
 
   const fitEl = document.getElementById('adj-fit');
   const scaleEl = document.getElementById('adj-scale');
@@ -1818,16 +2241,17 @@ function renderMasterplanOverlays() {
 
   visibleUnits.forEach((unit) => {
     const isSelected = state.selectedUnitId === unit.id && document.getElementById('unit-drawer')?.classList.contains('open');
+    const isEditingTarget = isEditor() && state.editingShapeUnitId === unit.id;
     const hideAvailColor = unit.showAvailability === false;
     const color = hideAvailColor ? '#d4af37' : (statusColorMap[unit.status] || '#22c55e');
     const pointsAttr = unit.polygon.map((p) => `${p.x},${p.y}`).join(' ');
-    const isBreathing = !showAvail && firstAvailable && firstAvailable.id === unit.id;
 
     const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
     poly.setAttribute('points', pointsAttr);
     poly.setAttribute('fill', color);
     poly.setAttribute('stroke', isSelected ? '#f5d77f' : '#ffffff');
-    poly.setAttribute('class', `unit-polygon ${showAvail ? 'show-avail' : ''} ${isBreathing ? 'breathing' : ''} ${isSelected ? 'selected' : ''}`);
+    poly.setAttribute('data-unit-id', unit.id);
+    poly.setAttribute('class', `unit-polygon ${isEditingTarget ? 'editing-target' : ''} ${isSelected ? 'selected' : ''}`);
 
     poly.addEventListener('mouseenter', (e) => { if (!state.isDrawingPolygon) showUnitHoverTooltip(unit, e.clientX, e.clientY); });
     poly.addEventListener('mousemove', (e) => { if (!state.isDrawingPolygon) showUnitHoverTooltip(unit, e.clientX, e.clientY); });
@@ -1935,8 +2359,14 @@ function renderMasterplanOverlays() {
       pin.innerHTML = hideAvailColor
         ? `<span style="color:var(--gold-bright);">✦</span> <span>${unit.buttonText || unit.code}</span>`
         : `<i class="status-dot ${unit.status}"></i> <span>${unit.buttonText || unit.code}</span>`;
-      pin.addEventListener('mouseenter', (e) => { if (!state.isDrawingPolygon) showUnitHoverTooltip(unit, e.clientX, e.clientY); });
-      pin.addEventListener('mouseleave', hideUnitHoverTooltip);
+      pin.addEventListener('mouseenter', (e) => {
+        if (!state.isDrawingPolygon) showUnitHoverTooltip(unit, e.clientX, e.clientY);
+        poly.classList.add('proximity-reveal');
+      });
+      pin.addEventListener('mouseleave', () => {
+        hideUnitHoverTooltip();
+        poly.classList.remove('proximity-reveal');
+      });
       pin.addEventListener('click', (e) => {
         if (state.isDrawingPolygon || state.isPlacingPlanPoint) return;
         e.stopPropagation();
@@ -2142,6 +2572,8 @@ async function navigateToLevelWithTransition(targetLevelId, explicitOverride = '
   const applyLevel = () => {
     state.activeLevelId = targetLevelId;
     state.is2DPlanMode = false;
+    state.pan = { x: 0, y: 0 };
+    setNavDockExpanded(false);
     document.getElementById('btn-mode-3drender')?.classList.add('active');
     document.getElementById('btn-mode-2dplan')?.classList.remove('active');
     renderLevelsSidebar();
@@ -2450,6 +2882,11 @@ function saveFloorFromModal() {
       targetSelect.value = targetLvlId;
     }
     showToast(`Piso "${name}" creado y vinculado al polígono`);
+  } else if (state.activeView === 'studio') {
+    showToast(`Nivel "${name}" guardado`);
+    populateTransitionSelectors();
+    renderStudioFloorsTab();
+    renderStudioTransitionsTab();
   } else {
     showToast(`Nivel "${name}" guardado`);
     navigateToLevelWithTransition(targetLvlId, 'auto', true);
@@ -2465,49 +2902,94 @@ function getLevelDisplayName(levelId) {
   return lvl ? lvl.name : levelId;
 }
 
-function populateTransitionSelectors() {
-  const fromSel = document.getElementById('trans-new-from');
-  const toSel = document.getElementById('trans-new-to');
-  if (!fromSel || !toSel) return;
-  fromSel.innerHTML = '';
-  toSel.innerHTML = '';
-  state.levels.forEach((lvl) => {
-    const o1 = document.createElement('option');
-    o1.value = lvl.id;
-    o1.textContent = lvl.id === 'facade' ? `🏛️ Edificio (${lvl.name})` : `🏢 ${lvl.name}`;
-    fromSel.appendChild(o1);
+let studioActiveTab = 'transitions';
+let studioTransitionsFilterLevelId = null;
 
-    const o2 = document.createElement('option');
-    o2.value = lvl.id;
-    o2.textContent = lvl.id === 'facade' ? `🏛️ Edificio (${lvl.name})` : `🏢 ${lvl.name}`;
-    toSel.appendChild(o2);
+function buildTransitionEndpointOptionsHtml(selectedVal = '') {
+  const opts = [];
+  (state.levels || []).forEach((lvl) => {
+    const label = lvl.id === 'facade' ? `🏛️ Exterior (${lvl.name})` : `🏢 ${lvl.name}`;
+    opts.push({ value: lvl.id, label });
   });
-  const o360 = document.createElement('option'); o360.value = 'tour360'; o360.textContent = '🌐 Recorrido 360°'; toSel.appendChild(o360);
-  const o3d = document.createElement('option'); o3d.value = 'model3d'; o3d.textContent = '🧊 Maqueta 3D'; toSel.appendChild(o3d);
-  if (state.levels.length > 1) toSel.value = state.levels[state.levels.length - 1].id;
+  opts.push({ value: 'tour360', label: '🌐 Panorámica 360°' });
+  opts.push({ value: 'model3d', label: '🧊 Maqueta 3D' });
+  if (selectedVal && !opts.some((o) => o.value === selectedVal)) {
+    opts.push({ value: selectedVal, label: getLevelDisplayName(selectedVal) });
+  }
+  return opts.map((o) => `<option value="${escapeHtml(o.value)}" ${o.value === selectedVal ? 'selected' : ''}>${escapeHtml(o.label)}</option>`).join('');
+}
+
+function populateTransitionSelectors() {
+  const pairs = [
+    [document.getElementById('trans-new-from'), document.getElementById('trans-new-to')],
+    [document.getElementById('studio-trans-new-from'), document.getElementById('studio-trans-new-to')]
+  ];
+  const defaultTo = state.levels.length > 1 ? state.levels[state.levels.length - 1].id : 'tour360';
+  pairs.forEach(([fromSel, toSel]) => {
+    if (!fromSel || !toSel) return;
+    const prevFrom = fromSel.value || 'facade';
+    const prevTo = toSel.value || defaultTo;
+    fromSel.innerHTML = buildTransitionEndpointOptionsHtml(prevFrom);
+    toSel.innerHTML = buildTransitionEndpointOptionsHtml(prevTo);
+    fromSel.value = prevFrom;
+    toSel.value = prevTo;
+  });
+}
+
+function syncGlobalTransitionsToggleUI() {
+  const enabled = !!state.transitions.globalEnabled;
+  [
+    ['toggle-global-transitions', 'lbl-global-transitions'],
+    ['toggle-studio-global-transitions', 'lbl-studio-global-transitions']
+  ].forEach(([cbId, lblId]) => {
+    const cb = document.getElementById(cbId);
+    const lbl = document.getElementById(lblId);
+    if (cb) cb.checked = enabled;
+    if (lbl) {
+      lbl.textContent = enabled ? 'ACTIVADAS' : 'DESACTIVADAS';
+      lbl.style.color = enabled ? '#4ade80' : '#f87171';
+    }
+  });
 }
 
 function openTransitionsManagerModal() {
   if (!isEditor()) { showToast('Solo cuentas de Editor pueden configurar transiciones'); return; }
   const modal = document.getElementById('modal-transitions-manager');
-  const globalCb = document.getElementById('toggle-global-transitions');
-  const globalLbl = document.getElementById('lbl-global-transitions');
-  globalCb.checked = !!state.transitions.globalEnabled;
-  globalLbl.textContent = state.transitions.globalEnabled ? 'ACTIVADAS' : 'DESACTIVADAS';
-  globalLbl.style.color = state.transitions.globalEnabled ? '#4ade80' : '#f87171';
+  syncGlobalTransitionsToggleUI();
   populateTransitionSelectors();
   renderTransitionsManagerRows();
   modal.classList.add('open');
 }
 
+function refreshAllTransitionsLists() {
+  renderTransitionsRowsInto(document.getElementById('transitions-list-container'), null);
+  renderTransitionsRowsInto(document.getElementById('studio-transitions-list'), studioTransitionsFilterLevelId);
+}
+
 function renderTransitionsManagerRows() {
-  const container = document.getElementById('transitions-list-container');
+  refreshAllTransitionsLists();
+}
+
+function renderTransitionsRowsInto(container, filterLevelId = null) {
   if (!container) return;
   container.innerHTML = '';
 
-  (state.transitions.slots || []).forEach((slot, idx) => {
+  const slots = state.transitions.slots || [];
+  const filteredEntries = slots
+    .map((slot, idx) => ({ slot, idx }))
+    .filter(({ slot }) => {
+      if (!filterLevelId) return true;
+      return slot.fromLevelId === filterLevelId || slot.toLevelId === filterLevelId;
+    });
+
+  if (filteredEntries.length === 0) {
+    container.innerHTML = `<div style="padding:14px;text-align:center;color:var(--ink-silver);font-size:11.5px;border:1px dashed var(--gold-border);border-radius:10px;">No hay transiciones configuradas para este filtro. Usa el formulario superior para añadir una ruta.</div>`;
+    return;
+  }
+
+  filteredEntries.forEach(({ slot, idx }) => {
     const row = document.createElement('div');
-    row.className = 'transition-row';
+    row.className = 'transition-row editable-grid';
     const tType = slot.transitionType || 'video';
     const desc = tType === 'two_images'
       ? `🖼️ 2 Imágenes (${slot.img1Url ? 'Img1 ✓' : 'Falta 1'} · ${slot.img2Url ? 'Img2 ✓' : 'Falta 2'})`
@@ -2515,45 +2997,68 @@ function renderTransitionsManagerRows() {
         ? '⚡ Cambio directo sin animación'
         : (slot.customName ? `🎬 Video: ${slot.customName}` : (slot.defaultVideo ? `🎞️ Demo: ${slot.defaultVideo.split('/').pop()}` : 'Sin video'));
 
-    const routeLabel = (slot.fromLevelId && slot.toLevelId)
-      ? `${getLevelDisplayName(slot.fromLevelId)} → ${getLevelDisplayName(slot.toLevelId)}`
-      : slot.label;
+    const fromVal = slot.fromLevelId || 'facade';
+    const toVal = slot.toLevelId || (slot.id === 'to_tour360' ? 'tour360' : slot.id === 'to_model3d' ? 'model3d' : (state.levels[1]?.id || 'facade'));
+    const routeLabel = `${getLevelDisplayName(fromVal)} → ${getLevelDisplayName(toVal)}`;
 
     row.innerHTML = `
-      <div style="min-width:185px;flex:1;">
-        <strong style="font-size:11.5px;color:var(--ink-white);display:block;">${routeLabel}</strong>
-        <span style="font-size:10px;color:${slot.customName || slot.img1Url ? '#4ade80' : 'var(--ink-silver)'};">${desc}</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
-        <select data-slot-type="${slot.id}" style="background:rgba(255,255,255,0.07);border:1px solid var(--gold-border);color:#fff;border-radius:99px;padding:3px 7px;font-size:10px;">
-          <option value="video" ${tType === 'video' ? 'selected' : ''}>🎬 Video</option>
-          <option value="two_images" ${tType === 'two_images' ? 'selected' : ''}>🖼️ 2 Imág.</option>
-          <option value="none" ${tType === 'none' ? 'selected' : ''}>⚡ Directo</option>
+      <div class="field-col" style="gap:3px;">
+        <select class="trans-endpoint-select" data-slot-from="${slot.id}" title="Inicio (Desde)">
+          ${buildTransitionEndpointOptionsHtml(fromVal)}
         </select>
-        <label class="toggle-switch">
-          <input type="checkbox" data-slot-toggle="${slot.id}" ${slot.enabled ? 'checked' : ''} />
-          <span style="color:${slot.enabled ? '#4ade80' : 'var(--ink-muted)'};">${slot.enabled ? 'ON' : 'OFF'}</span>
-        </label>
-        ${tType === 'two_images' ? `
-          <label class="glass-pill-btn" style="cursor:pointer;height:24px;font-size:10px;padding:0 8px;">Img 1<input type="file" accept="image/*" data-slot-img1="${slot.id}" style="display:none;" /></label>
-          <label class="glass-pill-btn" style="cursor:pointer;height:24px;font-size:10px;padding:0 8px;">Img 2<input type="file" accept="image/*" data-slot-img2="${slot.id}" style="display:none;" /></label>
-        ` : `
-          <label class="glass-pill-btn" style="cursor:pointer;height:24px;font-size:10px;padding:0 8px;">⬆️ Video<input type="file" accept="video/mp4,video/webm" data-slot-upload="${slot.id}" style="display:none;" /></label>
-        `}
-        <button class="glass-pill-btn" data-slot-test="${slot.id}" style="height:24px;padding:0 7px;">▶️</button>
-        <button class="glass-pill-btn" data-slot-del="${idx}" title="Eliminar transición" style="height:24px;padding:0 7px;color:#f87171;">🗑️</button>
+      </div>
+      <div class="field-col" style="gap:3px;">
+        <select class="trans-endpoint-select" data-slot-to="${slot.id}" title="Fin (Hacia)">
+          ${buildTransitionEndpointOptionsHtml(toVal)}
+        </select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;">
+        <span style="font-size:10px;color:${slot.customName || slot.img1Url ? '#4ade80' : 'var(--ink-silver)'};">${desc}</span>
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+          <select data-slot-type="${slot.id}" style="background:rgba(255,255,255,0.07);border:1px solid var(--gold-border);color:#fff;border-radius:99px;padding:3px 7px;font-size:10px;">
+            <option value="video" ${tType === 'video' ? 'selected' : ''}>🎬 Video</option>
+            <option value="two_images" ${tType === 'two_images' ? 'selected' : ''}>🖼️ 2 Imág.</option>
+            <option value="none" ${tType === 'none' ? 'selected' : ''}>⚡ Directo</option>
+          </select>
+          <label class="toggle-switch">
+            <input type="checkbox" data-slot-toggle="${slot.id}" ${slot.enabled ? 'checked' : ''} />
+            <span style="color:${slot.enabled ? '#4ade80' : 'var(--ink-muted)'};">${slot.enabled ? 'ON' : 'OFF'}</span>
+          </label>
+          ${tType === 'two_images' ? `
+            <label class="glass-pill-btn" style="cursor:pointer;height:24px;font-size:10px;padding:0 8px;">Img 1<input type="file" accept="image/*" data-slot-img1="${slot.id}" style="display:none;" /></label>
+            <label class="glass-pill-btn" style="cursor:pointer;height:24px;font-size:10px;padding:0 8px;">Img 2<input type="file" accept="image/*" data-slot-img2="${slot.id}" style="display:none;" /></label>
+          ` : `
+            <label class="glass-pill-btn" style="cursor:pointer;height:24px;font-size:10px;padding:0 8px;">⬆️ Video<input type="file" accept="video/mp4,video/webm" data-slot-upload="${slot.id}" style="display:none;" /></label>
+          `}
+          <button class="glass-pill-btn" data-slot-test="${slot.id}" style="height:24px;padding:0 7px;">▶️</button>
+          <button class="glass-pill-btn" data-slot-del="${idx}" title="Eliminar transición" style="height:24px;padding:0 7px;color:#f87171;">🗑️</button>
+        </div>
       </div>
     `;
 
+    row.querySelector(`[data-slot-from="${slot.id}"]`).addEventListener('change', (e) => {
+      slot.fromLevelId = e.target.value;
+      slot.label = `${getLevelDisplayName(slot.fromLevelId)} → ${getLevelDisplayName(slot.toLevelId || toVal)}`;
+      savePersistedState();
+      refreshAllTransitionsLists();
+      showToast(`Ruta actualizada: ${slot.label}`);
+    });
+    row.querySelector(`[data-slot-to="${slot.id}"]`).addEventListener('change', (e) => {
+      slot.toLevelId = e.target.value;
+      slot.label = `${getLevelDisplayName(slot.fromLevelId || fromVal)} → ${getLevelDisplayName(slot.toLevelId)}`;
+      savePersistedState();
+      refreshAllTransitionsLists();
+      showToast(`Ruta actualizada: ${slot.label}`);
+    });
     row.querySelector(`[data-slot-type="${slot.id}"]`).addEventListener('change', (e) => {
       slot.transitionType = e.target.value;
       savePersistedState();
-      renderTransitionsManagerRows();
+      refreshAllTransitionsLists();
     });
     row.querySelector(`[data-slot-toggle="${slot.id}"]`).addEventListener('change', (e) => {
       slot.enabled = e.target.checked;
       savePersistedState();
-      renderTransitionsManagerRows();
+      refreshAllTransitionsLists();
     });
     const vidInp = row.querySelector(`[data-slot-upload="${slot.id}"]`);
     if (vidInp) {
@@ -2566,7 +3071,7 @@ function renderTransitionsManagerRows() {
         slot.transitionType = 'video';
         slot.enabled = true;
         savePersistedState();
-        renderTransitionsManagerRows();
+        refreshAllTransitionsLists();
         showToast(`Video guardado para "${routeLabel}"`);
       });
     }
@@ -2579,7 +3084,7 @@ function renderTransitionsManagerRows() {
         slot.img1Key = key;
         slot.enabled = true;
         savePersistedState();
-        renderTransitionsManagerRows();
+        refreshAllTransitionsLists();
         showToast('Imagen 1 de transición guardada');
       });
     }
@@ -2592,7 +3097,7 @@ function renderTransitionsManagerRows() {
         slot.img2Key = key;
         slot.enabled = true;
         savePersistedState();
-        renderTransitionsManagerRows();
+        refreshAllTransitionsLists();
         showToast('Imagen 2 de transición guardada');
       });
     }
@@ -2607,11 +3112,190 @@ function renderTransitionsManagerRows() {
     row.querySelector('[data-slot-del]').addEventListener('click', () => {
       state.transitions.slots.splice(idx, 1);
       savePersistedState();
-      renderTransitionsManagerRows();
+      refreshAllTransitionsLists();
       showToast('Transición eliminada');
     });
     container.appendChild(row);
   });
+}
+
+function renderStudioTransitionsTab() {
+  syncGlobalTransitionsToggleUI();
+  populateTransitionSelectors();
+  const filterBar = document.getElementById('studio-trans-filter-bar');
+  const filterLbl = document.getElementById('studio-trans-filter-label');
+  if (filterBar) {
+    filterBar.style.display = studioTransitionsFilterLevelId ? 'flex' : 'none';
+    if (filterLbl && studioTransitionsFilterLevelId) {
+      filterLbl.textContent = `Filtrando transiciones de: ${getLevelDisplayName(studioTransitionsFilterLevelId)}`;
+    }
+  }
+  renderTransitionsRowsInto(document.getElementById('studio-transitions-list'), studioTransitionsFilterLevelId);
+}
+
+function renderStudioFloorsTab() {
+  const list = document.getElementById('studio-floors-list');
+  if (!list) return;
+  list.innerHTML = '';
+
+  (state.levels || []).forEach((lvl) => {
+    const isFacade = lvl.id === 'facade';
+    const polyCount = state.units.filter((u) => u.levelId === lvl.id).length;
+    const panoCount = isFacade
+      ? state.rooms360.length
+      : state.rooms360.filter((r) => r.levelId === lvl.id).length;
+    const hasNight = isFacade
+      ? Boolean(state.exteriorAngles[0]?.nightPhoto || lvl.nightPhoto)
+      : Boolean(lvl.nightPhoto);
+    const thumb = isFacade ? (state.exteriorAngles[0]?.photo || lvl.dayPhoto) : lvl.dayPhoto;
+
+    const row = document.createElement('div');
+    row.className = 'studio-floor-row';
+    row.dataset.floorId = lvl.id;
+    row.innerHTML = `
+      <div class="studio-floor-row-top">
+        <div class="studio-floor-meta">
+          <img class="studio-floor-thumb" src="${thumb}" alt="" />
+          <div style="min-width:0;flex:1;">
+            <strong style="font-size:13px;color:var(--gold-bright);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              ${isFacade ? '🏛️ ' : '🏢 '}${escapeHtml(lvl.name || lvl.badge)}
+            </strong>
+            <span style="font-size:10.5px;color:var(--ink-silver);">
+              ${polyCount} polígono(s) · ${panoCount} panorámica(s) 360°${hasNight ? ' · 🌙 Con nocturna' : ''}
+            </span>
+          </div>
+        </div>
+        <div class="studio-floor-actions">
+          <button type="button" class="glass-pill-btn" data-floor-act="transitions" style="height:28px;font-size:10.5px;padding:0 10px;">🎬 Editar transiciones</button>
+          <button type="button" class="glass-pill-btn" data-floor-act="renders" style="height:28px;font-size:10.5px;padding:0 10px;">🖼️ Editar renders de piso</button>
+          <button type="button" class="glass-pill-btn active" data-floor-act="plan" style="height:28px;font-size:10.5px;padding:0 10px;">📐 Editar plano planta piso</button>
+          <button type="button" class="glass-pill-btn" data-floor-act="panoramas" style="height:28px;font-size:10.5px;padding:0 10px;">🌐 Panorámicas</button>
+        </div>
+      </div>
+      <div class="studio-floor-renders-panel" data-floor-panel="${lvl.id}">
+        <label class="glass-pill-btn active" style="cursor:pointer;height:28px;font-size:10.5px;padding:0 10px;">
+          ☀️ Subir Render Día
+          <input type="file" accept="image/*" style="display:none;" data-floor-upload="day" />
+        </label>
+        <label class="glass-pill-btn" style="cursor:pointer;height:28px;font-size:10.5px;padding:0 10px;">
+          🌙 ${hasNight ? 'Cambiar Nocturna' : 'Subir Nocturna'}
+          <input type="file" accept="image/*" style="display:none;" data-floor-upload="night" />
+        </label>
+        ${hasNight ? `<button type="button" class="glass-pill-btn" data-floor-clear-night style="height:28px;font-size:10.5px;padding:0 9px;color:#fdba74;">✕ Quitar Nocturna</button>` : ''}
+        <label class="glass-pill-btn" style="cursor:pointer;height:28px;font-size:10.5px;padding:0 10px;">
+          📐 Subir Plano 2D
+          <input type="file" accept="image/*" style="display:none;" data-floor-upload="plan2d" />
+        </label>
+        <button type="button" class="glass-pill-btn" data-floor-open-gallery style="height:28px;font-size:10.5px;padding:0 10px;">🖼️ Abrir Galería</button>
+      </div>
+    `;
+
+    row.querySelector('[data-floor-act="transitions"]').addEventListener('click', () => {
+      studioTransitionsFilterLevelId = lvl.id;
+      switchStudioTab('transitions');
+      const toSel = document.getElementById('studio-trans-new-to');
+      if (toSel) toSel.value = lvl.id;
+    });
+
+    row.querySelector('[data-floor-act="renders"]').addEventListener('click', () => {
+      if (isFacade) {
+        openExteriorManagerModal();
+        return;
+      }
+      const panel = row.querySelector(`[data-floor-panel="${lvl.id}"]`);
+      if (panel) panel.classList.toggle('open');
+    });
+
+    row.querySelector('[data-floor-act="plan"]').addEventListener('click', () => {
+      state.activeLevelId = lvl.id;
+      state.is2DPlanMode = false;
+      document.getElementById('btn-mode-3drender')?.classList.add('active');
+      document.getElementById('btn-mode-2dplan')?.classList.remove('active');
+      renderLevelsSidebar();
+      switchView('masterplan', false, false);
+      drawMasterplanRender();
+      renderMasterplanOverlays();
+      const fp = document.getElementById('floor-elevator-panel');
+      if (fp) fp.classList.remove('minimized', 'collapsed');
+      document.getElementById('restore-floors-panel')?.classList.remove('visible');
+      showToast(`Editando plano y polígonos de "${lvl.name}"`);
+    });
+
+    row.querySelector('[data-floor-act="panoramas"]').addEventListener('click', async () => {
+      await openFloorTour360(isFacade ? null : lvl.id, null, false);
+      const hud = document.getElementById('tour360-hud-panel');
+      if (hud) hud.classList.remove('minimized', 'collapsed');
+      const rest = document.getElementById('restore-360-panel');
+      if (rest) rest.classList.remove('visible');
+    });
+
+    const dayInp = row.querySelector('[data-floor-upload="day"]');
+    dayInp?.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0]; if (!file) return;
+      const key = `floor-day-${lvl.id}-${Date.now()}`;
+      lvl.dayPhoto = await saveMediaBlob(key, file);
+      lvl.dayMediaKey = key;
+      savePersistedState();
+      renderStudioFloorsTab();
+      if (state.activeLevelId === lvl.id) drawMasterplanRender();
+      showToast(`Render Día actualizado en "${lvl.name}"`);
+      e.target.value = '';
+    });
+
+    const nightInp = row.querySelector('[data-floor-upload="night"]');
+    nightInp?.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0]; if (!file) return;
+      const key = `floor-night-${lvl.id}-${Date.now()}`;
+      lvl.nightPhoto = await saveMediaBlob(key, file);
+      lvl.nightMediaKey = key;
+      savePersistedState();
+      renderStudioFloorsTab();
+      if (state.activeLevelId === lvl.id) drawMasterplanRender();
+      showToast(`Vista Nocturna cargada en "${lvl.name}"`);
+      e.target.value = '';
+    });
+
+    row.querySelector('[data-floor-clear-night]')?.addEventListener('click', () => {
+      lvl.nightPhoto = null;
+      lvl.nightMediaKey = null;
+      savePersistedState();
+      renderStudioFloorsTab();
+      if (state.activeLevelId === lvl.id) drawMasterplanRender();
+      showToast(`Vista nocturna eliminada en "${lvl.name}"`);
+    });
+
+    const plan2dInp = row.querySelector('[data-floor-upload="plan2d"]');
+    plan2dInp?.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0]; if (!file) return;
+      const key = `floor-plan2d-${lvl.id}-${Date.now()}`;
+      lvl.plan2DPhoto = await saveMediaBlob(key, file);
+      lvl.plan2DMediaKey = key;
+      savePersistedState();
+      renderStudioFloorsTab();
+      if (state.activeLevelId === lvl.id) drawMasterplanRender();
+      showToast(`Plano 2D actualizado en "${lvl.name}"`);
+      e.target.value = '';
+    });
+
+    row.querySelector('[data-floor-open-gallery]')?.addEventListener('click', () => {
+      renderGalleryModalContent();
+      document.getElementById('modal-renders-gallery')?.classList.add('open');
+    });
+
+    list.appendChild(row);
+  });
+}
+
+function switchStudioTab(tabName = 'transitions') {
+  studioActiveTab = tabName;
+  document.querySelectorAll('.studio-tab-btn[data-studio-tab]').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.studioTab === tabName);
+  });
+  document.querySelectorAll('.studio-panel').forEach((panel) => {
+    panel.classList.toggle('active', panel.id === `studio-panel-${tabName}`);
+  });
+  if (tabName === 'transitions') renderStudioTransitionsTab();
+  if (tabName === 'floors') renderStudioFloorsTab();
 }
 
 /* ==========================================================================
@@ -2644,12 +3328,14 @@ function syncDayNightButtonsUI() {
   }
 }
 
-function syncPhotoLightboxImage() {
+function syncPhotoLightboxImage(animateCrossfade = false) {
   const img = document.getElementById('photo-viewer-img');
+  const overlayImg = document.getElementById('photo-viewer-crossfade-img');
   const toggleBtn = document.getElementById('btn-photo-viewer-day-night');
   if (!img || !activeLightboxState.dayUrl) return;
   const hasNight = Boolean(activeLightboxState.nightUrl);
-  img.src = (state.isNightMode && hasNight) ? activeLightboxState.nightUrl : activeLightboxState.dayUrl;
+  const nextUrl = (state.isNightMode && hasNight) ? activeLightboxState.nightUrl : activeLightboxState.dayUrl;
+  crossfadeImageElement(img, overlayImg, nextUrl, 'lightbox', animateCrossfade && hasNight);
   img.style.filter = 'none';
   if (toggleBtn) {
     toggleBtn.style.display = hasNight ? 'inline-flex' : 'none';
@@ -2661,10 +3347,12 @@ function syncPhotoLightboxImage() {
 function toggleDayNightMode(forcedNight = null) {
   state.isNightMode = (typeof forcedNight === 'boolean') ? forcedNight : !state.isNightMode;
   syncDayNightButtonsUI();
-  drawMasterplanRender();
-  if (tour360.sphereMesh) loadRoom360(state.activeRoom360Id);
-  if (document.getElementById('modal-renders-gallery')?.classList.contains('open')) renderGalleryModalContent();
-  if (document.getElementById('modal-photo-viewer')?.classList.contains('open')) syncPhotoLightboxImage();
+  drawMasterplanRender(true);
+  if (tour360.sphereMesh) {
+    loadRoom360(state.activeRoom360Id, { crossfade: state.activeView === 'tour360', preserveView: true });
+  }
+  if (document.getElementById('modal-renders-gallery')?.classList.contains('open')) renderGalleryModalContent(null, true);
+  if (document.getElementById('modal-photo-viewer')?.classList.contains('open')) syncPhotoLightboxImage(true);
 }
 
 function openPhotoLightbox(url, caption = 'Vista Renderizada', nightUrl = null) {
@@ -3077,8 +3765,9 @@ function savePolygonFromModal() {
 
 let activeGalleryItemId = null;
 
-function renderGalleryModalContent(activeId = null) {
+function renderGalleryModalContent(activeId = null, animateCrossfade = false) {
   const mainImg = document.getElementById('gallery-main-img');
+  const overlayImg = document.getElementById('gallery-crossfade-img');
   const mainCap = document.getElementById('gallery-main-caption');
   const row = document.getElementById('gallery-thumbs-row');
   if (!mainImg || !row) return;
@@ -3087,7 +3776,8 @@ function renderGalleryModalContent(activeId = null) {
   const current = state.renderedViewsGallery.find((g) => g.id === targetId) || state.renderedViewsGallery[0];
   activeGalleryItemId = current?.id || null;
   if (current) {
-    mainImg.src = (state.isNightMode && current.nightUrl) ? current.nightUrl : current.url;
+    const nextUrl = (state.isNightMode && current.nightUrl) ? current.nightUrl : current.url;
+    crossfadeImageElement(mainImg, overlayImg, nextUrl, 'gallery', animateCrossfade && Boolean(current.nightUrl));
     mainImg.style.filter = 'none';
     mainCap.textContent = current.title;
   }
@@ -3141,7 +3831,7 @@ let tour360 = {
   onPointerDownLat: 0,
   onPointerDownX: 0,
   onPointerDownY: 0,
-  autoRotate: true,
+  autoRotate: false,
   hotspotElements: [],
   gyroEnabled: false,
   gyroAutoAttempted: false,
@@ -3403,8 +4093,53 @@ function stepRoom360(dir) {
   loadRoom360(scoped[next].id);
 }
 
-function loadRoom360(roomId) {
+function disposeTour360FadeMesh() {
+  if (!tour360.fadeMesh) return;
+  try {
+    if (tour360.scene) tour360.scene.remove(tour360.fadeMesh);
+    if (tour360.fadeMesh.material?.map) tour360.fadeMesh.material.map.dispose();
+    tour360.fadeMesh.material?.dispose();
+    tour360.fadeMesh.geometry?.dispose();
+  } catch (_) {}
+  tour360.fadeMesh = null;
+  tour360.fadeStartTime = 0;
+}
+
+function startTour360Crossfade(oldTexture) {
+  if (!oldTexture || !tour360.scene) return;
+  disposeTour360FadeMesh();
+  const geo = new THREE.SphereGeometry(495, 48, 32);
+  geo.scale(-1, 1, 1);
+  const mat = new THREE.MeshBasicMaterial({
+    map: oldTexture,
+    transparent: true,
+    opacity: 1,
+    depthWrite: false
+  });
+  tour360.fadeMesh = new THREE.Mesh(geo, mat);
+  tour360.fadeMesh.renderOrder = 2;
+  tour360.scene.add(tour360.fadeMesh);
+  tour360.fadeStartTime = performance.now();
+}
+
+function resetTour360CameraToCenter() {
+  tour360.lon = 0;
+  tour360.lat = 0;
+  tour360.gyroBaselineAlpha = null;
+  tour360.gyroBaselineBeta = null;
+  tour360.gyroBaselineGamma = null;
+  if (tour360.camera) {
+    tour360.camera.fov = 65;
+    tour360.camera.updateProjectionMatrix();
+  }
+}
+
+function loadRoom360(roomId, opts = {}) {
   const reqSeq = ++tour360.loadSeq;
+  const prevRoomId = state.activeRoom360Id;
+  if (!opts.preserveView) {
+    resetTour360CameraToCenter();
+  }
   state.activeRoom360Id = roomId;
   let scoped = getRooms360ForScope(state.activeTour360LevelId);
   let room = null;
@@ -3433,9 +4168,17 @@ function loadRoom360(roomId) {
   const containerEl = document.getElementById('tour360-container');
   const clrNight360 = document.getElementById('btn-clear-360-night');
 
-  const applyTex = (tex, badgeText) => {
+  const isSameRoomCrossfade = Boolean(opts.crossfade && room && room.id === prevRoomId && room.customNightImageUrl);
+
+  const applyTex = (tex, badgeText, useCrossfade = false) => {
     if (!tour360.sphereMesh) return;
-    if (tour360.currentTexture && tour360.currentTexture !== tex) tour360.currentTexture.dispose();
+    const prevTex = tour360.currentTexture;
+    if (useCrossfade && prevTex && prevTex !== tex) {
+      startTour360Crossfade(prevTex);
+    } else {
+      disposeTour360FadeMesh();
+      if (prevTex && prevTex !== tex) prevTex.dispose();
+    }
     tour360.currentTexture = tex;
     tour360.sphereMesh.material.map = tex;
     tour360.sphereMesh.material.needsUpdate = true;
@@ -3443,6 +4186,7 @@ function loadRoom360(roomId) {
   };
 
   if (!room || !tour360.sphereMesh) {
+    disposeTour360FadeMesh();
     if (clrNight360) clrNight360.style.display = 'none';
     if (containerEl) containerEl.dataset.loadedTexUrl = 'empty';
     if (titleEl) titleEl.textContent = activeLvl ? `Sin vistas 360° en ${activeLvl.name}` : 'Sin vistas 360°';
@@ -3452,7 +4196,7 @@ function loadRoom360(roomId) {
         subtitle: isEditor() ? 'Sube una foto 360° desde el panel izquierdo' : 'Sin vistas disponibles aún',
         themeColor: '#121216'
       }, false);
-      applyTex(emptyTex, 'Sin imagen 360° en este piso');
+      applyTex(emptyTex, 'Sin imagen 360° en este piso', false);
     }
     syncDayNightButtonsUI();
     renderNumbered360Bar();
@@ -3465,11 +4209,13 @@ function loadRoom360(roomId) {
   if (titleEl) titleEl.textContent = room.name;
   if (clrNight360) clrNight360.style.display = room.customNightImageUrl ? 'inline-flex' : 'none';
 
+  const prevLoadedUrl = containerEl?.dataset.loadedTexUrl || '';
   const targetUrl = (state.isNightMode && room.customNightImageUrl)
     ? room.customNightImageUrl
     : (room.customImageUrl || null);
 
   if (targetUrl) {
+    const doFade = isSameRoomCrossfade && prevLoadedUrl && prevLoadedUrl !== targetUrl;
     if (containerEl) containerEl.dataset.loadedTexUrl = targetUrl;
     loadLossless360Texture(targetUrl, (tex, nw, nh) => {
       if (reqSeq !== tour360.loadSeq) {
@@ -3477,12 +4223,14 @@ function loadRoom360(roomId) {
         return;
       }
       const aniso = tour360.renderer ? tour360.renderer.capabilities.getMaxAnisotropy() : 16;
-      applyTex(tex, `Calidad Original: ${nw} × ${nh} px · AF ${aniso}x`);
+      applyTex(tex, `Calidad Original: ${nw} × ${nh} px · AF ${aniso}x`, doFade);
     });
   } else {
-    if (containerEl) containerEl.dataset.loadedTexUrl = `procedural-${state.isNightMode ? 'night' : 'day'}`;
+    const nextProcKey = `procedural-${state.isNightMode ? 'night' : 'day'}`;
+    const doFade = isSameRoomCrossfade && prevLoadedUrl && prevLoadedUrl !== nextProcKey;
+    if (containerEl) containerEl.dataset.loadedTexUrl = nextProcKey;
     const tex = generateEquirectangularPanoramaTexture(room, state.isNightMode);
-    applyTex(tex, 'Panorama 4K Demo · Calidad Nativa Sin Compresión');
+    applyTex(tex, 'Panorama 4K Demo · Calidad Nativa Sin Compresión', doFade);
   }
 
   syncDayNightButtonsUI();
@@ -3577,15 +4325,25 @@ function updateHotspots360Projection() {
   const container = document.getElementById('tour360-container');
   if (!container || !tour360.camera) return;
 
+  const w = container.clientWidth;
+  const h = container.clientHeight;
+  if (w > 0 && h > 0 && tour360.renderer) {
+    if (tour360._lastW !== w || tour360._lastH !== h) {
+      tour360._lastW = w;
+      tour360._lastH = h;
+      tour360.camera.aspect = w / h;
+      tour360.camera.updateProjectionMatrix();
+      tour360.renderer.setSize(w, h, true);
+    }
+  }
+
   const normDeg = ((Math.round(tour360.lon) % 360) + 360) % 360;
   const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
   const cardinal = dirs[Math.round(normDeg / 45) % 8];
   const compEl = document.getElementById('compass-deg-label');
   if (compEl) compEl.textContent = `${cardinal} ${String(normDeg).padStart(3, '0')}°`;
 
-  if (tour360.hotspotElements.length === 0) return;
-  const w = container.clientWidth;
-  const h = container.clientHeight;
+  if (tour360.hotspotElements.length === 0 || !w || !h) return;
   const camDir = new THREE.Vector3();
   tour360.camera.getWorldDirection(camDir);
 
@@ -3618,14 +4376,12 @@ function openHotspot360Modal(e, editIndex = null) {
     );
     const rc = new THREE.Raycaster();
     rc.setFromCamera(mouse, tour360.camera);
-    const hits = rc.intersectObject(tour360.sphereMesh);
-
-    if (hits.length > 0) {
-      const p = hits[0].point.clone().normalize();
-      state.pendingHotspotCoords = { lon: THREE.MathUtils.radToDeg(Math.atan2(p.z, p.x)), lat: 90 - THREE.MathUtils.radToDeg(Math.acos(p.y)) };
-    } else {
-      state.pendingHotspotCoords = { lon: tour360.lon, lat: tour360.lat };
-    }
+    const d = rc.ray.direction.clone().normalize();
+    const clampedY = Math.max(-1, Math.min(1, d.y));
+    state.pendingHotspotCoords = {
+      lon: THREE.MathUtils.radToDeg(Math.atan2(d.z, d.x)),
+      lat: THREE.MathUtils.radToDeg(Math.asin(clampedY))
+    };
   }
 
   const targetSelect = document.getElementById('hs360-input-target');
@@ -5193,13 +5949,21 @@ async function switchView(viewName, allowTransition = false, skipHistory = false
 
   const doSwitch = () => {
     state.activeView = viewName;
+    setNavDockExpanded(false);
     document.querySelectorAll('.nav-btn[data-view]').forEach((btn) => btn.classList.toggle('active', btn.dataset.view === viewName));
     document.querySelectorAll('.view-panel').forEach((panel) => panel.classList.toggle('active', panel.id === `view-${viewName}`));
+    if (viewName !== 'masterplan') document.body.classList.remove('has-exterior-360-btn');
+    else {
+      const portalEl = document.getElementById('exterior-portal-360');
+      document.body.classList.toggle('has-exterior-360-btn', Boolean(portalEl && portalEl.style.display !== 'none'));
+      requestAnimationFrame(() => syncSceneMediaBox());
+    }
 
     const strip = document.getElementById('editor-quick-strip');
     if (strip) strip.style.visibility = (viewName === 'masterplan' && isEditor()) ? 'visible' : 'hidden';
 
     if (viewName === 'tour360' && tour360.renderer) {
+      resetTour360CameraToCenter();
       const c = document.getElementById('tour360-container');
       tour360.camera.aspect = c.clientWidth / c.clientHeight;
       tour360.camera.updateProjectionMatrix();
@@ -5226,14 +5990,31 @@ async function switchView(viewName, allowTransition = false, skipHistory = false
       else renderLocationMap();
     }
     if (viewName === 'units') renderUnitsCatalog();
+    if (viewName === 'studio') switchStudioTab(studioActiveTab || 'transitions');
     syncProjectLogoUI();
     updateBackButtonUI();
   };
 
-  if (allowTransition && (viewName === 'tour360' || viewName === 'model3d') && state.activeView !== viewName) {
-    const slotId = viewName === 'tour360' ? 'to_tour360' : 'to_model3d';
-    const vid = await resolveTransitionVideoForSlot(slotId, 'auto');
-    if (vid) { await playTransitionVideoThen(vid, doSwitch); return; }
+  if (allowTransition && state.activeView !== viewName && state.transitions?.globalEnabled) {
+    const fromEndpoint = state.activeView === 'masterplan' ? (state.activeLevelId || 'facade') : state.activeView;
+    const toEndpoint = viewName === 'masterplan' ? (state.activeLevelId || 'facade') : viewName;
+    const findExactSlot = (f, t) => (state.transitions.slots || []).find((s) => s.fromLevelId === f && s.toLevelId === t);
+    let matchedSlot = findExactSlot(fromEndpoint, toEndpoint);
+    if (!matchedSlot && viewName === 'masterplan' && toEndpoint !== 'facade') {
+      matchedSlot = findExactSlot(fromEndpoint, 'facade');
+    }
+    if (!matchedSlot && (viewName === 'tour360' || viewName === 'model3d')) {
+      const legacyId = viewName === 'tour360' ? 'to_tour360' : 'to_model3d';
+      matchedSlot = (state.transitions.slots || []).find((s) => s.id === legacyId && (!s.toLevelId || s.toLevelId === viewName));
+    }
+    if (matchedSlot && matchedSlot.enabled && matchedSlot.transitionType !== 'none') {
+      if (matchedSlot.transitionType === 'two_images' && (matchedSlot.img1Url || matchedSlot.img2Url)) {
+        await playTwoImageTransition(matchedSlot.img1Url, matchedSlot.img2Url, doSwitch);
+        return;
+      }
+      const vid = matchedSlot.mediaKey ? await getMediaUrl(matchedSlot.mediaKey) : matchedSlot.defaultVideo;
+      if (vid) { await playTransitionVideoThen(vid, doSwitch); return; }
+    }
   }
   doSwitch();
 }
@@ -5330,6 +6111,59 @@ function bindEvents() {
   document.getElementById('input-portal-upload-examples')?.addEventListener('change', handlePortalExampleUpload);
   document.getElementById('input-portal-upload-examples-2')?.addEventListener('change', handlePortalExampleUpload);
 
+  // Portfolio Visual Project Folders (Create & Viewer modals)
+  document.getElementById('btn-portal-create-folder')?.addEventListener('click', openPortfolioFolderCreateModal);
+  document.getElementById('btn-portal-create-folder-2')?.addEventListener('click', openPortfolioFolderCreateModal);
+  document.getElementById('btn-close-pf-create')?.addEventListener('click', () => document.getElementById('modal-portfolio-folder-create')?.classList.remove('open'));
+  document.getElementById('btn-cancel-pf-create')?.addEventListener('click', () => document.getElementById('modal-portfolio-folder-create')?.classList.remove('open'));
+  document.getElementById('btn-confirm-pf-create')?.addEventListener('click', confirmCreatePortfolioFolder);
+  document.getElementById('btn-close-pf-viewer')?.addEventListener('click', () => document.getElementById('modal-portfolio-folder-viewer')?.classList.remove('open'));
+  document.getElementById('btn-pf-viewer-rename')?.addEventListener('click', () => {
+    if (!isEditor() || !activePortfolioFolderId) return;
+    const folder = portalState.examplePhotos.find((x) => x && x.id === activePortfolioFolderId && x.type === 'folder');
+    if (!folder) return;
+    const nextTitle = window.prompt('Nuevo nombre para la carpeta:', folder.title || '');
+    if (!nextTitle || !nextTitle.trim()) return;
+    folder.title = nextTitle.trim();
+    savePortalState();
+    renderPortalExamples();
+    openPortfolioFolderViewer(folder.id);
+    showToast('Carpeta renombrada');
+  });
+  document.getElementById('input-pf-viewer-cover')?.addEventListener('change', async (e) => {
+    if (!isEditor() || !activePortfolioFolderId) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const folder = portalState.examplePhotos.find((x) => x && x.id === activePortfolioFolderId && x.type === 'folder');
+    if (!folder) return;
+    const key = `portal-folder-cover-${folder.id}-${Date.now()}`;
+    folder.coverUrl = await saveMediaBlob(key, file);
+    folder.coverMediaKey = key;
+    savePortalState();
+    renderPortalExamples();
+    showToast('Portada de carpeta actualizada');
+    e.target.value = '';
+  });
+  document.getElementById('input-pf-viewer-add-photos')?.addEventListener('change', async (e) => {
+    if (!isEditor() || !activePortfolioFolderId) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    const folder = portalState.examplePhotos.find((x) => x && x.id === activePortfolioFolderId && x.type === 'folder');
+    if (!folder) return;
+    if (!Array.isArray(folder.items)) folder.items = [];
+    for (const file of files) {
+      const itemId = `it-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      const mediaKey = `portal-folder-item-${folder.id}-${itemId}`;
+      const url = await saveMediaBlob(mediaKey, file);
+      folder.items.push({ id: itemId, title: file.name.replace(/\.[^.]+$/, ''), url, mediaKey });
+    }
+    savePortalState();
+    renderPortalExamples();
+    openPortfolioFolderViewer(folder.id);
+    showToast(`${files.length} foto(s) añadidas a "${folder.title}"`);
+    e.target.value = '';
+  });
+
   document.getElementById('btn-portal-login-submit')?.addEventListener('click', () => {
     const u = document.getElementById('portal-login-user').value.trim();
     const p = document.getElementById('portal-login-pin').value.trim();
@@ -5410,24 +6244,73 @@ function bindEvents() {
     showToast(`Avance de obra actualizado al ${state.avance.percent}%`);
   });
 
-  // Single Exterior View Cycle Button + Drag-to-Orbit + 360° Portal (Bottom Availability Switch Removed)
+  // Collapsible Top Nav Dock Toggle
+  document.getElementById('btn-toggle-nav-dock')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const shell = document.getElementById('showroom-shell');
+    const isCollapsed = shell?.classList.contains('nav-dock-collapsed');
+    setNavDockExpanded(isCollapsed);
+  });
+
+  // Sync #scene-media-box on image load & viewport changes
+  const mpImgEl = document.getElementById('masterplan-custom-img');
+  if (mpImgEl) mpImgEl.addEventListener('load', () => syncSceneMediaBox());
+  window.addEventListener('resize', () => syncSceneMediaBox());
+  window.addEventListener('orientationchange', () => setTimeout(syncSceneMediaBox, 120));
+  window.visualViewport?.addEventListener('resize', () => syncSceneMediaBox());
+
+  // Single Exterior View Cycle Button + Drag-to-Pan (overflowing/zoomed) or Drag-to-Orbit + Polygon Proximity Reveal
   document.getElementById('btn-flyby-prev').addEventListener('click', () => rotateExteriorFlyby(-1));
   document.getElementById('btn-flyby-next').addEventListener('click', () => rotateExteriorFlyby(1));
   document.getElementById('btn-cycle-exterior-view')?.addEventListener('click', () => rotateExteriorFlyby(1));
 
   let flybyDragStartX = null;
+  let mpPanDrag = null;
   const mpViewport = document.getElementById('masterplan-viewport');
   mpViewport.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'touch') updatePolygonProximityReveal(e.clientX, e.clientY, 5.5);
     if (state.isDrawingPolygon || state.isPlacingPlanPoint || e.target.closest('button, .unit-polygon, .portal-360-hotspot')) return;
-    flybyDragStartX = e.clientX;
+    const bounds = getScenePanBounds();
+    if (bounds.overflowsX || bounds.overflowsY || state.zoom > 1) {
+      mpPanDrag = { startX: e.clientX, startY: e.clientY, origX: state.pan.x || 0, origY: state.pan.y || 0, bounds };
+      flybyDragStartX = null;
+    } else {
+      flybyDragStartX = e.clientX;
+      mpPanDrag = null;
+    }
   });
-  window.addEventListener('pointerup', (e) => {
+  mpViewport.addEventListener('pointermove', (e) => {
+    if (mpPanDrag) {
+      const dx = e.clientX - mpPanDrag.startX;
+      const dy = e.clientY - mpPanDrag.startY;
+      state.pan.x = Math.max(-mpPanDrag.bounds.maxX, Math.min(mpPanDrag.bounds.maxX, mpPanDrag.origX + dx));
+      state.pan.y = Math.max(-mpPanDrag.bounds.maxY, Math.min(mpPanDrag.bounds.maxY, mpPanDrag.origY + dy));
+      updateMasterplanZoomTransform();
+      return;
+    }
+    if (!state.isDrawingPolygon && !state.editingShapeUnitId) {
+      updatePolygonProximityReveal(e.clientX, e.clientY, 4.5);
+    }
+  });
+  mpViewport.addEventListener('pointerleave', () => {
+    clearPolygonProximityReveal();
+  });
+  const endMpPointerDrag = (e, allowSwipe = true) => {
+    if (mpPanDrag) {
+      mpPanDrag = null;
+      return;
+    }
     if (flybyDragStartX === null) return;
-    const dx = e.clientX - flybyDragStartX;
+    const dx = allowSwipe && e ? (e.clientX - flybyDragStartX) : 0;
     flybyDragStartX = null;
-    if (Math.abs(dx) > 70 && state.activeView === 'masterplan' && state.activeLevelId === 'facade') {
+    if (allowSwipe && Math.abs(dx) > 70 && state.activeView === 'masterplan' && state.activeLevelId === 'facade') {
       rotateExteriorFlyby(dx < 0 ? 1 : -1);
     }
+  };
+  window.addEventListener('pointerup', (e) => endMpPointerDrag(e, true));
+  window.addEventListener('pointercancel', () => {
+    endMpPointerDrag(null, false);
+    tour360.isUserInteracting = false;
   });
 
   document.getElementById('btn-portal-360-enter').addEventListener('click', (e) => {
@@ -5880,19 +6763,20 @@ function bindEvents() {
   document.getElementById('btn-studio-open-transitions').addEventListener('click', openTransitionsManagerModal);
   document.getElementById('btn-studio-manage-transitions-card').addEventListener('click', openTransitionsManagerModal);
   document.getElementById('btn-close-transitions-modal').addEventListener('click', () => document.getElementById('modal-transitions-manager').classList.remove('open'));
-  document.getElementById('toggle-global-transitions').addEventListener('change', (e) => {
+  const onToggleGlobalTransitions = (e) => {
     if (!isEditor()) return;
     state.transitions.globalEnabled = e.target.checked;
-    const lbl = document.getElementById('lbl-global-transitions');
-    lbl.textContent = state.transitions.globalEnabled ? 'ACTIVADAS' : 'DESACTIVADAS';
-    lbl.style.color = state.transitions.globalEnabled ? '#4ade80' : '#f87171';
+    syncGlobalTransitionsToggleUI();
     savePersistedState();
-  });
-  document.getElementById('btn-add-custom-transition')?.addEventListener('click', () => {
+  };
+  document.getElementById('toggle-global-transitions')?.addEventListener('change', onToggleGlobalTransitions);
+  document.getElementById('toggle-studio-global-transitions')?.addEventListener('change', onToggleGlobalTransitions);
+
+  const createCustomTransitionRoute = (fromSelId, toSelId, typeSelId) => {
     if (!isEditor()) return;
-    const fromLevelId = document.getElementById('trans-new-from')?.value || 'facade';
-    const toLevelId = document.getElementById('trans-new-to')?.value || state.levels[1]?.id || 'floor-9';
-    const transitionType = document.getElementById('trans-new-type')?.value || 'video';
+    const fromLevelId = document.getElementById(fromSelId)?.value || 'facade';
+    const toLevelId = document.getElementById(toSelId)?.value || state.levels[1]?.id || 'floor-9';
+    const transitionType = document.getElementById(typeSelId)?.value || 'video';
     if (fromLevelId === toLevelId) {
       showToast('Elige un origen y destino diferentes');
       return;
@@ -5923,7 +6807,24 @@ function bindEvents() {
       showToast(`Transición "${label}" creada`);
     }
     savePersistedState();
-    renderTransitionsManagerRows();
+    refreshAllTransitionsLists();
+  };
+
+  document.getElementById('btn-add-custom-transition')?.addEventListener('click', () => {
+    createCustomTransitionRoute('trans-new-from', 'trans-new-to', 'trans-new-type');
+  });
+  document.getElementById('btn-studio-add-transition')?.addEventListener('click', () => {
+    createCustomTransitionRoute('studio-trans-new-from', 'studio-trans-new-to', 'studio-trans-new-type');
+  });
+  document.getElementById('btn-studio-clear-trans-filter')?.addEventListener('click', () => {
+    studioTransitionsFilterLevelId = null;
+    renderStudioTransitionsTab();
+  });
+  document.querySelectorAll('.studio-tab-btn[data-studio-tab]').forEach((btn) => {
+    btn.addEventListener('click', () => switchStudioTab(btn.dataset.studioTab));
+  });
+  document.getElementById('btn-studio-create-floor')?.addEventListener('click', () => {
+    openFloorCreatorModal(null);
   });
   document.getElementById('studio-upload-transition').addEventListener('change', async (e) => {
     if (!isEditor()) return;
@@ -6011,9 +6912,10 @@ function bindEvents() {
   const sceneFrame = document.getElementById('scene-frame');
   sceneFrame.addEventListener('click', (e) => {
     if (!isEditor()) return;
-    const rect = sceneFrame.getBoundingClientRect();
-    const px = Math.round(((e.clientX - rect.left) / rect.width) * 1000) / 10;
-    const py = Math.round(((e.clientY - rect.top) / rect.height) * 1000) / 10;
+    const mediaBox = document.getElementById('scene-media-box') || sceneFrame;
+    const rect = mediaBox.getBoundingClientRect();
+    const px = Math.max(0, Math.min(100, Math.round(((e.clientX - rect.left) / rect.width) * 1000) / 10));
+    const py = Math.max(0, Math.min(100, Math.round(((e.clientY - rect.top) / rect.height) * 1000) / 10));
 
     if (state.isPlacingPlanPoint) {
       pendingNewBtnPoint = { x: px, y: py };
@@ -6584,16 +7486,8 @@ function bindEvents() {
     tour360.camera.updateProjectionMatrix();
   });
   document.getElementById('btn-360-reset-view').addEventListener('click', () => {
-    tour360.lon = 0; tour360.lat = 0;
-    if (tour360.camera) { tour360.camera.fov = 65; tour360.camera.updateProjectionMatrix(); }
+    resetTour360CameraToCenter();
   });
-  const toggle360AutoRotate = () => {
-    tour360.autoRotate = !tour360.autoRotate;
-    document.getElementById('btn-360-autorotate').textContent = `🔄 Giro Automático: ${tour360.autoRotate ? 'ON' : 'OFF'}`;
-    document.getElementById('btn-360-autorotate-icon').classList.toggle('active', tour360.autoRotate);
-  };
-  document.getElementById('btn-360-autorotate').addEventListener('click', toggle360AutoRotate);
-  document.getElementById('btn-360-autorotate-icon').addEventListener('click', toggle360AutoRotate);
   document.getElementById('btn-360-gyro')?.addEventListener('click', () => toggleTour360Gyroscope(null, true));
   const t360Panel = document.getElementById('tour360-floors-panel');
   const t360Restore = document.getElementById('restore-360-floors');
@@ -6795,14 +7689,12 @@ function bindEvents() {
     showToast(`Piso 3D "${newFloor.name}" creado (corte ${snap.heightCut}m)`);
   });
   const set3DMode = (m) => {
-    model3d.mode = m;
-    document.getElementById('btn-3d-mode-orbit').classList.toggle('active', m === 'orbit');
-    document.getElementById('btn-3d-mode-walk').classList.toggle('active', m === 'walk');
-    document.getElementById('btn-3d-mode-drone').classList.toggle('active', m === 'drone');
+    model3d.mode = (m === 'walk') ? 'walk' : 'orbit';
+    document.getElementById('btn-3d-mode-orbit')?.classList.toggle('active', model3d.mode === 'orbit');
+    document.getElementById('btn-3d-mode-walk')?.classList.toggle('active', model3d.mode === 'walk');
   };
-  document.getElementById('btn-3d-mode-orbit').addEventListener('click', () => set3DMode('orbit'));
-  document.getElementById('btn-3d-mode-walk').addEventListener('click', () => set3DMode('walk'));
-  document.getElementById('btn-3d-mode-drone').addEventListener('click', () => set3DMode('drone'));
+  document.getElementById('btn-3d-mode-orbit')?.addEventListener('click', () => set3DMode('orbit'));
+  document.getElementById('btn-3d-mode-walk')?.addEventListener('click', () => set3DMode('walk'));
   document.querySelectorAll('[data-move]').forEach((btn) => {
     const dir = btn.dataset.move;
     btn.addEventListener('pointerdown', () => { model3d.camLerpTargetPos = null; model3d.keys[dir] = true; });
@@ -7086,8 +7978,12 @@ function animate() {
   requestAnimationFrame(animate);
 
   if (state.activeView === 'tour360' && tour360.renderer && tour360.camera) {
-    const gyroMoving = tour360.gyroEnabled && (Date.now() - tour360.gyroLastMoveAt) < 4000;
-    if (!tour360.isUserInteracting && tour360.autoRotate && !state.isPlacingHotspot360 && !gyroMoving) tour360.lon += 0.045;
+    if (tour360.fadeMesh && tour360.fadeStartTime) {
+      const elapsed = performance.now() - tour360.fadeStartTime;
+      const t = Math.min(1, Math.max(0, elapsed / 1000));
+      tour360.fadeMesh.material.opacity = 1 - t;
+      if (t >= 1) disposeTour360FadeMesh();
+    }
     tour360.lat = Math.max(-85, Math.min(85, tour360.lat));
     const phi = THREE.MathUtils.degToRad(90 - tour360.lat);
     const theta = THREE.MathUtils.degToRad(tour360.lon);
@@ -7103,12 +7999,7 @@ function animate() {
         fg.position.y += (targetY - fg.position.y) * 0.1;
       });
     }
-    if (model3d.mode === 'drone') {
-      model3d.droneAngle += 0.0045;
-      const r = model3d.droneRadius || 22;
-      model3d.camera.position.set(Math.cos(model3d.droneAngle) * r, (model3d.droneTargetY || 5.5) + r * 0.4, Math.sin(model3d.droneAngle) * r);
-      model3d.controls.target.set(0, model3d.droneTargetY || 5.5, 0);
-    } else if (model3d.camLerpTargetPos && model3d.camLerpLookAt) {
+    if (model3d.camLerpTargetPos && model3d.camLerpLookAt) {
       model3d.camera.position.lerp(model3d.camLerpTargetPos, 0.09);
       model3d.controls.target.lerp(model3d.camLerpLookAt, 0.09);
       if (model3d.camera.position.distanceTo(model3d.camLerpTargetPos) < 0.08) { model3d.camLerpTargetPos = null; model3d.camLerpLookAt = null; }

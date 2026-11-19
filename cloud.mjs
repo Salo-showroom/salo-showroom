@@ -144,11 +144,28 @@ export function sanitizePortalForPublish(portalState, assetUrlMap = new Map(), v
       createdAt: p.createdAt || ''
     }));
 
-  const examplePhotos = (portalState?.examplePhotos || []).map((ex) => ({
-    id: ex.id,
-    title: ex.title || 'Proyecto SALO',
-    url: resolveMediaField(ex.url, ex.mediaKey, assetUrlMap, './sample-assets/exterior-tower.webp')
-  }));
+  const examplePhotos = (portalState?.examplePhotos || []).map((ex) => {
+    if (ex && ex.type === 'folder') {
+      const items = (ex.items || []).map((it) => ({
+        id: it.id,
+        title: it.title || 'Vista del Proyecto',
+        url: resolveMediaField(it.url, it.mediaKey, assetUrlMap, './sample-assets/exterior-tower.webp')
+      }));
+      return {
+        id: ex.id,
+        type: 'folder',
+        title: ex.title || 'Carpeta de Proyecto',
+        coverUrl: resolveMediaField(ex.coverUrl, ex.coverMediaKey, assetUrlMap, items[0]?.url || './sample-assets/exterior-tower.webp'),
+        items
+      };
+    }
+    return {
+      id: ex.id,
+      type: 'photo',
+      title: ex.title || 'Proyecto SALO',
+      url: resolveMediaField(ex.url, ex.mediaKey, assetUrlMap, './sample-assets/exterior-tower.webp')
+    };
+  });
 
   return {
     publishVersion: String(Date.now()),
@@ -200,12 +217,13 @@ export function sanitizeProjectForPublish(projectState, assetUrlMap = new Map())
       ...l,
       dayPhoto: resolveMediaField(l.dayPhoto, l.dayMediaKey, assetUrlMap, './sample-assets/floor-piso9-3d.jpg'),
       nightPhoto: resolveMediaField(l.nightPhoto, l.nightMediaKey, assetUrlMap, null),
-      plan2DPhoto: resolveMediaField(l.plan2DPhoto, null, assetUrlMap, './sample-assets/floor-piso9-plan.webp'),
+      plan2DPhoto: resolveMediaField(l.plan2DPhoto, l.plan2DMediaKey, assetUrlMap, './sample-assets/floor-piso9-plan.webp'),
       transitionVideo: resolveMediaField(l.transitionVideo, l.transitionMediaKey, assetUrlMap, null),
       transImg1: resolveMediaField(l.transImg1, l.transImg1Key, assetUrlMap, null),
       transImg2: resolveMediaField(l.transImg2, l.transImg2Key, assetUrlMap, null),
       dayMediaKey: null,
       nightMediaKey: null,
+      plan2DMediaKey: null,
       transitionMediaKey: null,
       transImg1Key: null,
       transImg2Key: null
@@ -298,6 +316,7 @@ export function collectProjectMediaKeys(projectState) {
   (projectState.levels || []).forEach((l) => {
     add(l.dayMediaKey, `${l.id}-day`);
     add(l.nightMediaKey, `${l.id}-night`);
+    add(l.plan2DMediaKey, `${l.id}-plan2d`);
     add(l.transitionMediaKey, `${l.id}-trans`);
     add(l.transImg1Key, `${l.id}-img1`);
     add(l.transImg2Key, `${l.id}-img2`);
@@ -609,6 +628,14 @@ export async function publishShowroomOrchestrator({
     throw new Error('Configura tu Usuario, Repositorio y Token de GitHub en la pestaña "Cuentas y Drive".');
   }
 
+  // Preflight check: verify local publishing relay server (server.mjs) is reachable before looping media
+  try {
+    const ping = await fetch('./api/cloud/app-files');
+    if (!ping.ok) throw new Error(`HTTP ${ping.status}`);
+  } catch (pingErr) {
+    throw new Error('No se pudo conectar con el servidor local de publicación (server.mjs en 127.0.0.1:4173). Asegúrate de tener abierto Iniciar_Editor_SALO.bat y vuelve a intentar.');
+  }
+
   prog(5, 'Recopilando proyectos publicados y archivos…');
   log(`Proyectos a publicar: ${publishedProjects.map((p) => p.code).join(', ')} (${draftProjects.length} en borrador).`);
 
@@ -618,7 +645,14 @@ export async function publishShowroomOrchestrator({
   const mediaQueue = [];
 
   for (const ex of (portalState.examplePhotos || [])) {
-    if (ex.mediaKey) mediaQueue.push({ scope: 'PORTAL', key: ex.mediaKey, hint: `example-${ex.id}` });
+    if (ex && ex.type === 'folder') {
+      if (ex.coverMediaKey) mediaQueue.push({ scope: 'PORTAL', key: ex.coverMediaKey, hint: `folder-cover-${ex.id}` });
+      for (const it of (ex.items || [])) {
+        if (it?.mediaKey) mediaQueue.push({ scope: 'PORTAL', key: it.mediaKey, hint: `folder-${ex.id}-${it.id}` });
+      }
+    } else if (ex?.mediaKey) {
+      mediaQueue.push({ scope: 'PORTAL', key: ex.mediaKey, hint: `example-${ex.id}` });
+    }
   }
   const loadedStates = new Map();
   for (const proj of publishedProjects) {
@@ -651,7 +685,15 @@ export async function publishShowroomOrchestrator({
     if (!blob) continue;
 
     const ext = guessExtFromBlob(blob, task.hint);
-    const baseClean = String(task.key).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 48) || 'asset';
+    const rawKeyClean = String(task.key).replace(/[^a-zA-Z0-9_-]/g, '') || 'asset';
+    let keyHash = 2166136261;
+    for (let i = 0; i < rawKeyClean.length; i++) {
+      keyHash ^= rawKeyClean.charCodeAt(i);
+      keyHash = Math.imul(keyHash, 16777619) >>> 0;
+    }
+    const baseClean = rawKeyClean.length > 48
+      ? `${rawKeyClean.slice(0, 38)}_${keyHash.toString(16).padStart(8, '0')}`
+      : rawKeyClean;
     const fileName = baseClean.endsWith(ext) ? baseClean : `${baseClean}${ext}`;
     const sizeMb = (blob.size / (1024 * 1024)).toFixed(2);
     const isSmallWebFile = blob.size <= 3 * 1024 * 1024 && !/\.(glb|gltf|fbx|obj|mp4|webm)$/i.test(ext);

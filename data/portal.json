@@ -1,6 +1,6 @@
 {
-  "publishVersion": "1795045813941",
-  "publishedAt": "2026-11-18T23:50:13.941Z",
+  "publishVersion": "1795098149101",
+  "publishedAt": "2026-11-19T14:22:29.101Z",
   "visitsScriptUrl": "https://script.google.com/macros/s/AKfycbz4XDuDUinem9hZzjQrFKxP2dZjrP1VekhQ3lmwHcDwnKuUOkYtPLiWNrWshdSMT6t9/exec",
   "projects": [
     {
@@ -18,21 +18,25 @@
   "examplePhotos": [
     {
       "id": "ex-1795026742140-pg8e",
+      "type": "photo",
       "title": "00 fachada noche",
       "url": "https://noisy-bread-2236.salazarlopezalcidesmario.workers.dev/Salo-showroom/salo-showroom/releases/download/portal-media/portal-example-ex-1795026742140-pg8e.png"
     },
     {
       "id": "ex-1795026722720-39iy",
+      "type": "photo",
       "title": "Casa Moderna con Montañas Nevadas",
       "url": "./media/PORTAL/portal-example-ex-1795026722720-39iy.png"
     },
     {
       "id": "ex-1795026699857-ksoe",
+      "type": "photo",
       "title": "Fachada editada 2",
       "url": "./media/PORTAL/portal-example-ex-1795026699857-ksoe.png"
     },
     {
       "id": "ex-1795026677355-uagw",
+      "type": "photo",
       "title": "propuesta fachada vivienda",
       "url": "./media/PORTAL/portal-example-ex-1795026677355-uagw.jpg"
     }

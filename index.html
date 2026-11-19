@@ -124,26 +124,46 @@
               <span style="font-size:10px;color:var(--gold-bright);letter-spacing:1.4px;text-transform:uppercase;font-weight:700;">PORTAFOLIO VISUAL</span>
               <h3 style="font-family:var(--font-display);font-size:18px;color:var(--ink-white);margin-top:2px;">🖼️ Vistas de Ejemplos de Edificios</h3>
             </div>
-            <label class="action-btn gold-cta" style="cursor:pointer;grid-column:auto;padding:7px 14px;" data-editor-only>
-              ⬆️ Subir Fotos de Edificios
-              <input type="file" id="input-portal-upload-examples" accept="image/*" multiple style="display:none;" />
-            </label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;" data-editor-only>
+              <button type="button" class="action-btn" id="btn-portal-create-folder" style="grid-column:auto;padding:7px 13px;">
+                📁 Crear Carpeta de Proyecto
+              </button>
+              <label class="action-btn gold-cta" style="cursor:pointer;grid-column:auto;padding:7px 14px;">
+                ⬆️ Subir Fotos de Edificios
+                <input type="file" id="input-portal-upload-examples" accept="image/*" multiple style="display:none;" />
+              </label>
+            </div>
           </div>
           <div class="portal-examples-grid" id="portal-examples-grid"></div>
         </div>
       </section>
 
-      <!-- TAB 2: GALERÍA COMPLETA DE EJEMPLOS -->
-      <section id="portal-sec-examples" style="display:none;flex-direction:column;gap:16px;">
+      <!-- TAB 2: GALERÍA COMPLETA DE EJEMPLOS (+ SHOWROOMS DEMO) -->
+      <section id="portal-sec-examples" style="display:none;flex-direction:column;gap:18px;">
+        <!-- Showrooms DEMO abiertos sin código -->
+        <div class="portal-examples-demos-section" id="portal-examples-demos-section" style="display:none;flex-direction:column;gap:12px;">
+          <div>
+            <span class="dropdown-role-badge">DEMO INTERACTIVO</span>
+            <h2 style="font-family:var(--font-display);font-size:20px;color:var(--gold-bright);margin-top:6px;">✨ Showrooms Interactivos (DEMO)</h2>
+            <p style="font-size:12px;color:var(--ink-silver);margin-top:2px;">Explora nuestros showrooms de demostración abiertos al instante sin necesidad de código.</p>
+          </div>
+          <div class="portal-projects-grid" id="portal-examples-demos-grid"></div>
+        </div>
+
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
           <div>
-            <span class="dropdown-role-badge">GALERÍA SALO</span>
-            <h2 style="font-family:var(--font-display);font-size:22px;color:var(--gold-bright);margin-top:6px;">🖼️ Ejemplos de Edificios &amp; Renders Arquitectónicos</h2>
+            <span class="dropdown-role-badge">GALERÍA SALO · PORTAFOLIO VISUAL</span>
+            <h2 style="font-family:var(--font-display);font-size:22px;color:var(--gold-bright);margin-top:6px;">🖼️ Ejemplos de Edificios &amp; Carpetas de Proyectos</h2>
           </div>
-          <label class="action-btn gold-cta" style="cursor:pointer;grid-column:auto;padding:8px 16px;" data-editor-only>
-            ➕ Subir Fotos de Ejemplos
-            <input type="file" id="input-portal-upload-examples-2" accept="image/*" multiple style="display:none;" />
-          </label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;" data-editor-only>
+            <button type="button" class="action-btn" id="btn-portal-create-folder-2" style="grid-column:auto;padding:8px 14px;">
+              📁 Crear Carpeta de Proyecto
+            </button>
+            <label class="action-btn gold-cta" style="cursor:pointer;grid-column:auto;padding:8px 16px;">
+              ➕ Subir Fotos de Ejemplos
+              <input type="file" id="input-portal-upload-examples-2" accept="image/*" multiple style="display:none;" />
+            </label>
+          </div>
         </div>
         <div class="portal-examples-grid" id="portal-examples-full-grid"></div>
       </section>
@@ -215,7 +235,7 @@
     </div>
   </div>
 
-  <div class="showroom-shell">
+  <div class="showroom-shell nav-dock-collapsed" id="showroom-shell">
 
     <!-- ==================== SALO SHOWROOM TOP BAR ==================== -->
     <header class="top-bar">
@@ -319,27 +339,32 @@
         </a>
       </div>
 
-      <!-- 2. WHISPER-MINIMAL CENTER NAV PILL -->
-      <nav class="nav-dock" aria-label="Modos del Showroom">
-        <button class="nav-btn active" data-view="masterplan" id="nav-masterplan">
-          <span>🏛️</span> Exterior
+      <!-- 2. WHISPER-MINIMAL CENTER NAV PILL (COLLAPSIBLE) -->
+      <div class="nav-dock-wrapper" id="nav-dock-wrapper">
+        <button type="button" class="nav-dock-toggle-btn" id="btn-toggle-nav-dock" aria-expanded="false" title="Mostrar u ocultar menú de pestañas">
+          <span class="nav-dock-toggle-arrow" id="nav-dock-toggle-arrow">▾</span>
         </button>
-        <button class="nav-btn" data-view="tour360" id="nav-tour360">
-          <span>🌐</span> Panorámica
-        </button>
-        <button class="nav-btn" data-view="model3d" id="nav-model3d">
-          <span>🧊</span> Maqueta 3D
-        </button>
-        <button class="nav-btn" data-view="finishes" id="nav-finishes">
-          <span>✨</span> Acabados
-        </button>
-        <button class="nav-btn" data-view="location" id="nav-location">
-          <span>📍</span> Ubicación
-        </button>
-        <button class="nav-btn" data-view="units" id="nav-units">
-          <span>💎</span> Áreas disponibles ($) <span id="available-count-badge" style="display:none;">6</span>
-        </button>
-      </nav>
+        <nav class="nav-dock" id="main-nav-dock" aria-label="Modos del Showroom">
+          <button class="nav-btn active" data-view="masterplan" id="nav-masterplan">
+            <span>🏛️</span> Exterior
+          </button>
+          <button class="nav-btn" data-view="tour360" id="nav-tour360">
+            <span>🌐</span> Panorámica
+          </button>
+          <button class="nav-btn" data-view="model3d" id="nav-model3d">
+            <span>🧊</span> Maqueta 3D
+          </button>
+          <button class="nav-btn" data-view="finishes" id="nav-finishes">
+            <span>✨</span> Acabados
+          </button>
+          <button class="nav-btn" data-view="location" id="nav-location">
+            <span>📍</span> Ubicación
+          </button>
+          <button class="nav-btn" data-view="units" id="nav-units">
+            <span>💎</span> Áreas disponibles ($) <span id="available-count-badge" style="display:none;">6</span>
+          </button>
+        </nav>
+      </div>
 
       <!-- 3. TOP-RIGHT FLOATING TOOLBAR -->
       <div class="maihuenia-right-toolbar">
@@ -558,30 +583,33 @@
         <div class="interactive-canvas-wrap" id="masterplan-viewport">
           <div class="zoom-transform-layer" id="zoom-layer">
             <div class="scene-media-frame" id="scene-frame">
-              <img id="masterplan-custom-img" class="scene-render-img" src="./sample-assets/exterior-tower.webp" alt="Vista del proyecto" draggable="false" />
-              <svg class="scene-svg-overlay" id="polygon-svg" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
-              <div id="pins-container"></div>
-
-              <!-- MAIHUENIA ANIMATED PULSING 360° ENTRY PORTAL -->
-              <div class="portal-360-hotspot" id="exterior-portal-360" style="left: 44%; top: 75%;">
-                <div class="portal-360-preview">
-                  <img src="./sample-assets/render-interior-1.jpg" alt="Vista previa 360°" />
-                  <div class="portal-360-preview-meta">
-                    <strong id="portal-360-title">Recorrido Virtual 360°</strong>
-                    <span id="portal-360-sub">Hall, Living &amp; Amenities en HD</span>
-                  </div>
-                </div>
-                <span class="portal-360-aura" aria-hidden="true"></span>
-                <button class="portal-360-btn" id="btn-portal-360-enter" title="Ingresar al Recorrido Virtual 360°">
-                  <svg class="portal-360-ring-svg" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-                    <circle cx="32" cy="32" r="27" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="42 127" />
-                    <circle cx="32" cy="32" r="27" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="42 127" stroke-dashoffset="-84.5" />
-                  </svg>
-                  <span class="portal-360-text">360°</span>
-                </button>
+              <div class="scene-media-box" id="scene-media-box">
+                <img id="masterplan-custom-img" class="scene-render-img" src="./sample-assets/exterior-tower.webp" alt="Vista del proyecto" draggable="false" />
+                <img id="masterplan-crossfade-img" class="scene-render-img crossfade-overlay-img" src="" alt="" draggable="false" />
+                <svg class="scene-svg-overlay" id="polygon-svg" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+                <div id="pins-container"></div>
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- MAIHUENIA ANIMATED PULSING 360° ENTRY PORTAL (FIXED LOWER-CENTER, 40% SMALLER) -->
+        <div class="portal-360-hotspot" id="exterior-portal-360">
+          <div class="portal-360-preview">
+            <img src="./sample-assets/render-interior-1.jpg" alt="Vista previa 360°" />
+            <div class="portal-360-preview-meta">
+              <strong id="portal-360-title">Recorrido Virtual 360°</strong>
+              <span id="portal-360-sub">Hall, Living &amp; Amenities en HD</span>
+            </div>
+          </div>
+          <span class="portal-360-aura" aria-hidden="true"></span>
+          <button class="portal-360-btn" id="btn-portal-360-enter" title="Ingresar al Recorrido Virtual 360°">
+            <svg class="portal-360-ring-svg" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+              <circle cx="32" cy="32" r="27" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="42 127" />
+              <circle cx="32" cy="32" r="27" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="42 127" stroke-dashoffset="-84.5" />
+            </svg>
+            <span class="portal-360-text">360°</span>
+          </button>
         </div>
 
         <!-- MAIHUENIA FLOATING CURSOR TOOLTIP CARD -->
@@ -735,7 +763,6 @@
           <button class="tour360-circle-btn" id="btn-360-zoom-in" title="Acercar vista 360°">＋</button>
           <button class="tour360-circle-btn" id="btn-360-zoom-out" title="Alejar vista 360°">－</button>
           <button class="tour360-circle-btn" id="btn-360-reset-view" title="Centrar cámara 360°">⟲</button>
-          <button class="tour360-circle-btn active" id="btn-360-autorotate-icon" title="Alternar giro automático">🔄</button>
           <button class="tour360-circle-btn" id="btn-360-gyro" title="Mover Panorámica con sensor del dispositivo">📱</button>
           <button class="tour360-circle-btn" id="btn-360-day-night" title="Alternar Día / Noche en Panorámica">☀️</button>
           <button class="tour360-circle-btn" id="btn-360-exit-exterior" title="Volver Atrás">✕</button>
@@ -780,7 +807,6 @@
             <button type="button" class="action-btn danger" id="btn-clear-360-night" style="display:none;grid-column:auto;" data-editor-only>
               🗑️ Quitar 360° Nocturna
             </button>
-            <button class="action-btn" id="btn-360-autorotate">🔄 Giro Automático: ON</button>
           </div>
           <div id="hotspot-place-hint" style="display:none;background:rgba(212,175,55,0.14);border:1px solid var(--gold-bright);color:var(--gold-bright);padding:6px 8px;border-radius:8px;font-size:10.5px;font-weight:600;">
             👆 Haz clic en el piso o punto del panorama 360° donde deseas ubicar el botón
@@ -818,10 +844,9 @@
             <span class="elevator-title">🧊 Motor 3D · Piso a Piso</span>
             <button class="panel-minimize-btn" id="btn-min-3d-left" title="Minimizar controles 3D">◀</button>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
             <button class="action-btn active" id="btn-3d-mode-orbit" style="padding:6px 4px;font-size:10px;">🛰️ Órbita</button>
             <button class="action-btn" id="btn-3d-mode-walk" style="padding:6px 4px;font-size:10px;">🚶 Peatón</button>
-            <button class="action-btn" id="btn-3d-mode-drone" style="padding:6px 4px;font-size:10px;">🚁 Dron</button>
           </div>
           <button class="action-btn" id="btn-3d-explode" style="width:100%;">💥 Vista Explotada</button>
           <div class="control-group">
@@ -1039,18 +1064,18 @@
       </section>
 
       <!-- =================================================================
-           7. ESTUDIO DE CARGA (SOLO EDITOR)
+           7. ESTUDIO MAESTRO DE CARGA, TRANSICIONES Y PISOS (SOLO EDITOR)
            ================================================================= -->
       <section class="view-panel scrollable-view" id="view-studio" data-editor-only>
         <div class="container-max">
           <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;">
             <div>
-              <span class="dropdown-role-badge">Solo Cuenta Editor</span>
-              <h2 style="font-family:var(--font-display);font-size:20px;color:var(--gold-bright);margin-top:4px;">Estudio de Carga · Calidad Nativa</h2>
+              <span class="dropdown-role-badge">Solo Cuenta Editor · Editor Maestro</span>
+              <h2 style="font-family:var(--font-display);font-size:20px;color:var(--gold-bright);margin-top:4px;">Estudio Maestro · Transiciones, Pisos y Medios</h2>
             </div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;">
               <button class="glass-pill-btn active" id="btn-studio-open-exterior-mgr">🖼️ Vistas Exteriores &amp; Intro</button>
-              <button class="glass-pill-btn active" id="btn-studio-open-transitions">🎬 Transiciones</button>
+              <button class="glass-pill-btn active" id="btn-studio-open-transitions">🎬 Modal Transiciones</button>
               <button class="glass-pill-btn" id="btn-export-project">💾 Exportar (.JSON)</button>
               <label class="glass-pill-btn" style="cursor:pointer;">
                 📂 Importar (.JSON)
@@ -1060,48 +1085,126 @@
             </div>
           </div>
 
-          <div class="studio-grid">
-            <div class="studio-card">
-              <h3 style="color:var(--gold-bright);font-family:var(--font-display);font-size:13.5px;">1. Foto-Render de Exterior / Planta Activa</h3>
-              <p style="font-size:11px;color:var(--ink-silver);">Guarda en IndexedDB al 100% de resolución original sin pérdida.</p>
-              <label class="dropzone">
-                <strong style="color:var(--gold-bright);">☀️ Subir Imagen Principal / Planta Foto-Render</strong>
-                <input type="file" id="studio-upload-day-render" accept="image/*" />
-              </label>
-              <label class="dropzone">
-                <strong style="color:var(--gold-bright);">🌙 Subir Versión Nocturna (Opcional)</strong>
-                <input type="file" id="studio-upload-night-render" accept="image/*" />
-              </label>
-            </div>
+          <!-- PESTAÑAS DEL EDITOR MAESTRO -->
+          <div class="studio-tabs-bar" role="tablist">
+            <button type="button" class="studio-tab-btn active" data-studio-tab="transitions">🎬 Transiciones (Inicio → Fin)</button>
+            <button type="button" class="studio-tab-btn" data-studio-tab="floors">🏢 Listado por Pisos</button>
+            <button type="button" class="studio-tab-btn" data-studio-tab="model3d">🧊 Maqueta 3D &amp; Respaldo</button>
+          </div>
 
-            <div class="studio-card">
-              <h3 style="color:var(--gold-bright);font-family:var(--font-display);font-size:13.5px;">2. Videos de Intro y Transiciones</h3>
-              <p style="font-size:11px;color:var(--ink-silver);">Configura el video de ingreso inicial y los videos por cada transición.</p>
-              <button class="action-btn gold-cta" id="btn-studio-manage-transitions-card" style="grid-column:auto;">🎬 Abrir Gestor de Transiciones</button>
-              <label class="dropzone">
-                <strong style="color:var(--gold-bright);">⚡ Carga Rápida Video Exterior → Piso 9°</strong>
-                <input type="file" id="studio-upload-transition" accept="video/mp4,video/webm" />
-              </label>
-            </div>
-
-            <div class="studio-card">
-              <h3 style="color:var(--gold-bright);font-family:var(--font-display);font-size:13.5px;">3. Panoramas 360° HD y Modelos 3D (.OBJ/.GLB/.FBX)</h3>
-              <div class="field-col">
-                <label for="studio-360-name">Nombre del Nuevo Panorama 360°:</label>
-                <input type="text" id="studio-360-name" value="Nueva Habitación 360°" />
+          <!-- PESTAÑA 1: TRANSICIONES MAESTRAS (INICIO / FIN / VIDEO) -->
+          <div class="studio-panel active" id="studio-panel-transitions">
+            <div class="studio-card" style="display:flex;flex-direction:column;gap:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:rgba(212,175,55,0.08);border:1px solid var(--gold-border-strong);border-radius:10px;padding:10px 12px;">
+                <div>
+                  <strong style="font-size:12.5px;color:var(--gold-bright);">Interruptor Global de Transiciones</strong>
+                  <p style="font-size:10.5px;color:var(--ink-silver);">Edita libremente el origen (Inicio), destino (Fin) y video de cada transición del proyecto.</p>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="toggle-studio-global-transitions" checked />
+                  <span id="lbl-studio-global-transitions" style="color:#4ade80;">ACTIVADAS</span>
+                </label>
               </div>
-              <label class="dropzone">
-                <strong style="color:var(--gold-bright);">🌐 Subir Panorama 360° (Sin pérdida de calidad)</strong>
-                <input type="file" id="studio-upload-360" accept="image/*" />
-              </label>
-              <label class="dropzone">
-                <strong style="color:var(--gold-bright);">🌙 Subir 360° Nocturna (Opcional — Panorama activo)</strong>
-                <input type="file" id="studio-upload-360-night" accept="image/*" />
-              </label>
-              <label class="dropzone">
-                <strong style="color:var(--gold-bright);">🧊 Subir Modelo 3D (.OBJ + .MTL, .GLB, .FBX)</strong>
-                <input type="file" id="studio-upload-glb" accept=".obj,.mtl,.glb,.gltf,.fbx,.d5a,.d5" multiple />
-              </label>
+
+              <!-- Creador de nueva ruta -->
+              <div style="background:rgba(255,255,255,0.03);border:1px solid var(--gold-border);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px;">
+                <strong style="font-size:11.5px;color:var(--gold-bright);">➕ Añadir Nueva Ruta de Transición</strong>
+                <div style="display:grid;grid-template-columns:1fr 1fr 0.85fr auto;gap:8px;align-items:end;">
+                  <div class="field-col">
+                    <label for="studio-trans-new-from">Inicio (Desde):</label>
+                    <select id="studio-trans-new-from"></select>
+                  </div>
+                  <div class="field-col">
+                    <label for="studio-trans-new-to">Fin (Hacia):</label>
+                    <select id="studio-trans-new-to"></select>
+                  </div>
+                  <div class="field-col">
+                    <label for="studio-trans-new-type">Tipo:</label>
+                    <select id="studio-trans-new-type">
+                      <option value="video">🎬 Video</option>
+                      <option value="two_images">🖼️ 2 Imágenes</option>
+                      <option value="none">⚡ Directo</option>
+                    </select>
+                  </div>
+                  <button type="button" class="action-btn gold-cta" id="btn-studio-add-transition" style="grid-column:auto;padding:8px 13px;">➕ Añadir Ruta</button>
+                </div>
+              </div>
+
+              <!-- Filtro activo por piso (opcional) -->
+              <div id="studio-trans-filter-bar" style="display:none;align-items:center;justify-content:space-between;gap:8px;background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.35);border-radius:9px;padding:7px 11px;">
+                <span id="studio-trans-filter-label" style="font-size:11.5px;color:#7dd3fc;font-weight:600;">Filtrando por piso</span>
+                <button type="button" class="glass-pill-btn" id="btn-studio-clear-trans-filter" style="height:24px;padding:0 10px;font-size:10.5px;">Mostrar todas</button>
+              </div>
+
+              <!-- Encabezado 3 columnas -->
+              <div class="studio-trans-header">
+                <span>Inicio (Origen)</span>
+                <span>Fin (Destino)</span>
+                <span>Video de Transición y Acciones</span>
+              </div>
+              <div id="studio-transitions-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+            </div>
+          </div>
+
+          <!-- PESTAÑA 2: LISTADO POR PISOS (4 ACCESOS DIRECTOS POR PISO) -->
+          <div class="studio-panel" id="studio-panel-floors">
+            <div class="studio-card" style="display:flex;flex-direction:column;gap:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                <div>
+                  <h3 style="color:var(--gold-bright);font-family:var(--font-display);font-size:14.5px;">🏢 Listado Maestro por Pisos y Niveles</h3>
+                  <p style="font-size:11px;color:var(--ink-silver);">Accede directamente a transiciones, renders, plano de planta con polígonos y panorámicas 360° de cada piso.</p>
+                </div>
+                <button type="button" class="action-btn gold-cta" id="btn-studio-create-floor" style="grid-column:auto;padding:8px 14px;">➕ Crear Nuevo Piso / Nivel</button>
+              </div>
+              <div id="studio-floors-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+            </div>
+          </div>
+
+          <!-- PESTAÑA 3: MAQUETA 3D Y RESPALDO (HERRAMIENTAS ORIGINALES) -->
+          <div class="studio-panel" id="studio-panel-model3d">
+            <div class="studio-grid">
+              <div class="studio-card">
+                <h3 style="color:var(--gold-bright);font-family:var(--font-display);font-size:13.5px;">1. Foto-Render de Exterior / Planta Activa</h3>
+                <p style="font-size:11px;color:var(--ink-silver);">Guarda en IndexedDB al 100% de resolución original sin pérdida.</p>
+                <label class="dropzone">
+                  <strong style="color:var(--gold-bright);">☀️ Subir Imagen Principal / Planta Foto-Render</strong>
+                  <input type="file" id="studio-upload-day-render" accept="image/*" />
+                </label>
+                <label class="dropzone">
+                  <strong style="color:var(--gold-bright);">🌙 Subir Versión Nocturna (Opcional)</strong>
+                  <input type="file" id="studio-upload-night-render" accept="image/*" />
+                </label>
+              </div>
+
+              <div class="studio-card">
+                <h3 style="color:var(--gold-bright);font-family:var(--font-display);font-size:13.5px;">2. Videos de Intro y Transiciones</h3>
+                <p style="font-size:11px;color:var(--ink-silver);">Configura el video de ingreso inicial y los videos por cada transición.</p>
+                <button class="action-btn gold-cta" id="btn-studio-manage-transitions-card" style="grid-column:auto;">🎬 Abrir Gestor de Transiciones</button>
+                <label class="dropzone">
+                  <strong style="color:var(--gold-bright);">⚡ Carga Rápida Video Exterior → Piso 9°</strong>
+                  <input type="file" id="studio-upload-transition" accept="video/mp4,video/webm" />
+                </label>
+              </div>
+
+              <div class="studio-card">
+                <h3 style="color:var(--gold-bright);font-family:var(--font-display);font-size:13.5px;">3. Panoramas 360° HD y Modelos 3D (.OBJ/.GLB/.FBX)</h3>
+                <div class="field-col">
+                  <label for="studio-360-name">Nombre del Nuevo Panorama 360°:</label>
+                  <input type="text" id="studio-360-name" value="Nueva Habitación 360°" />
+                </div>
+                <label class="dropzone">
+                  <strong style="color:var(--gold-bright);">🌐 Subir Panorama 360° (Sin pérdida de calidad)</strong>
+                  <input type="file" id="studio-upload-360" accept="image/*" />
+                </label>
+                <label class="dropzone">
+                  <strong style="color:var(--gold-bright);">🌙 Subir 360° Nocturna (Opcional — Panorama activo)</strong>
+                  <input type="file" id="studio-upload-360-night" accept="image/*" />
+                </label>
+                <label class="dropzone">
+                  <strong style="color:var(--gold-bright);">🧊 Subir Modelo 3D (.OBJ + .MTL, .GLB, .FBX)</strong>
+                  <input type="file" id="studio-upload-glb" accept=".obj,.mtl,.glb,.gltf,.fbx,.d5a,.d5" multiple />
+                </label>
+              </div>
             </div>
           </div>
         </div>
@@ -1111,11 +1214,12 @@
 
     <!-- ==================== OVERLAYS: INTRO VIDEO, VIDEO TRANSICIÓN & 2-IMAGE TRANSITION ==================== -->
     <div class="intro-video-overlay" id="intro-video-overlay">
-      <video id="intro-video-player" muted playsinline></video>
+      <video id="intro-video-player" muted playsinline webkit-playsinline preload="auto"></video>
       <div class="intro-brand-caption">
         <h2 id="intro-brand-title">SALO SHOWROOM</h2>
         <p id="intro-brand-sub">Bienvenido al Showroom Interactivo</p>
       </div>
+      <button type="button" class="intro-tap-play-btn" id="btn-intro-tap-play" style="display:none;">▶ Reproducir Video de Intro</button>
       <button class="transition-skip-badge" id="btn-skip-intro">Ingresar al Panel Principal ⏭️</button>
     </div>
 
@@ -1537,7 +1641,8 @@
         </div>
         <div style="position:relative;width:100%;height:56vh;background:#040406;border-radius:12px;overflow:hidden;border:1px solid var(--gold-border);">
           <img id="gallery-main-img" src="./sample-assets/render-amenities.jpg" alt="Vista Renderizada" style="width:100%;height:100%;object-fit:contain;" />
-          <div style="position:absolute;bottom:10px;left:12px;background:rgba(5,5,7,0.88);border:1px solid var(--gold-border);padding:5px 12px;border-radius:99px;">
+          <img id="gallery-crossfade-img" class="crossfade-overlay-img" src="" alt="" style="object-fit:contain;" />
+          <div style="position:absolute;bottom:10px;left:12px;background:rgba(5,5,7,0.88);border:1px solid var(--gold-border);padding:5px 12px;border-radius:99px;z-index:10;">
             <strong id="gallery-main-caption" style="color:var(--gold-bright);font-size:11.5px;">Rooftop &amp; Piscina</strong>
           </div>
         </div>
@@ -1780,7 +1885,10 @@
     <button class="global-back-btn" id="btn-photo-viewer-day-night" style="top:18px;right:18px;left:auto;display:none;">
       ☀️ Modo Día
     </button>
-    <img id="photo-viewer-img" src="" alt="Vista Renderizada" />
+    <div class="photo-viewer-stage" id="photo-viewer-stage">
+      <img id="photo-viewer-img" src="" alt="Vista Renderizada" />
+      <img id="photo-viewer-crossfade-img" class="crossfade-overlay-img" src="" alt="" />
+    </div>
     <div style="margin-top:12px;background:rgba(8,8,12,0.88);border:1px solid var(--gold-border);padding:6px 16px;border-radius:99px;">
       <strong id="photo-viewer-caption" style="color:var(--gold-bright);font-size:13px;">Vista Renderizada</strong>
     </div>
@@ -2035,6 +2143,60 @@
           <button class="action-btn" id="btn-add-editor-account">➕ Autorizar Nuevo Editor</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CREAR CARPETA DE PROYECTO (PORTAFOLIO VISUAL · SOLO EDITOR) -->
+  <div class="modal-backdrop" id="modal-portfolio-folder-create">
+    <div class="luxury-modal" style="max-width:480px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <span class="dropdown-role-badge">PORTAFOLIO VISUAL · SOLO EDITOR</span>
+          <h3 style="font-family:var(--font-display);color:var(--gold-bright);font-size:15.5px;margin-top:4px;">📁 Crear Carpeta de Proyecto</h3>
+        </div>
+        <button class="icon-btn" id="btn-close-pf-create">✕</button>
+      </div>
+      <div class="field-col">
+        <label for="pf-create-title">Nombre de la Carpeta / Proyecto:</label>
+        <input type="text" id="pf-create-title" placeholder="Ej: Edificio Mirador Real" />
+      </div>
+      <div class="field-col">
+        <label for="pf-create-cover">Imagen de Portada:</label>
+        <input type="file" id="pf-create-cover" accept="image/*" />
+      </div>
+      <div class="field-col">
+        <label for="pf-create-photos">Fotos del Proyecto (puedes seleccionar varias):</label>
+        <input type="file" id="pf-create-photos" accept="image/*" multiple />
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px;">
+        <button type="button" class="action-btn" id="btn-cancel-pf-create">Cancelar</button>
+        <button type="button" class="action-btn gold-cta" id="btn-confirm-pf-create" style="grid-column:auto;">✅ Crear Carpeta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: VISOR DE CARPETA DE PROYECTO (PORTAFOLIO VISUAL) -->
+  <div class="modal-backdrop" id="modal-portfolio-folder-viewer">
+    <div class="luxury-modal wide" style="max-width:860px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <div>
+          <span class="dropdown-role-badge">📁 CARPETA DE PROYECTO</span>
+          <h3 id="pf-viewer-title" style="font-family:var(--font-display);color:var(--gold-bright);font-size:17px;margin-top:4px;">Carpeta de Proyecto</h3>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <button type="button" class="glass-pill-btn" id="btn-pf-viewer-rename" data-editor-only title="Renombrar carpeta">✏️ Renombrar</button>
+          <label class="glass-pill-btn" style="cursor:pointer;" data-editor-only title="Cambiar portada de la carpeta">
+            🖼️ Cambiar Portada
+            <input type="file" id="input-pf-viewer-cover" accept="image/*" style="display:none;" />
+          </label>
+          <label class="glass-pill-btn active" style="cursor:pointer;" data-editor-only title="Añadir más fotos a esta carpeta">
+            ➕ Añadir Fotos
+            <input type="file" id="input-pf-viewer-add-photos" accept="image/*" multiple style="display:none;" />
+          </label>
+          <button class="icon-btn" id="btn-close-pf-viewer">✕</button>
+        </div>
+      </div>
+      <div class="portfolio-folder-grid" id="pf-viewer-grid"></div>
     </div>
   </div>
 
