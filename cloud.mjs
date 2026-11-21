@@ -167,12 +167,23 @@ export function sanitizePortalForPublish(portalState, assetUrlMap = new Map(), v
     };
   });
 
+  const news = (portalState?.news || [])
+    .filter((n) => n && typeof n.url === 'string' && /^https?:\/\/(?:[a-z0-9-]+\.)?tiktok\.com\//i.test(n.url))
+    .map((n) => ({
+      id: n.id || `news-${Date.now()}`,
+      title: n.title || 'Noticia SALO',
+      url: n.url,
+      videoId: (n.videoId && /^\d{8,25}$/.test(String(n.videoId))) ? String(n.videoId) : null,
+      createdAt: n.createdAt || ''
+    }));
+
   return {
     publishVersion: String(Date.now()),
     publishedAt: new Date().toISOString(),
     visitsScriptUrl: visitsScriptUrl || '',
     projects: publishedProjects,
-    examplePhotos
+    examplePhotos,
+    news
   };
 }
 

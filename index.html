@@ -32,6 +32,7 @@
       <nav class="portal-nav-tabs" aria-label="Secciones del Portal SALO">
         <button class="portal-tab-btn active" data-portal-tab="projects" id="ptab-projects">🏛️ Proyectos</button>
         <button class="portal-tab-btn" data-portal-tab="examples" id="ptab-examples">🖼️ Ejemplos</button>
+        <button class="portal-tab-btn" data-portal-tab="news" id="ptab-news">📰 Noticias</button>
         <button class="portal-tab-btn" data-portal-tab="about" id="ptab-about">📐 SALO Cálculo y Diseño</button>
         <button class="portal-tab-btn" data-portal-tab="editors" id="ptab-editors">🔐 Editores</button>
       </nav>
@@ -201,6 +202,38 @@
             </a>
           </div>
         </div>
+      </section>
+
+      <!-- TAB 3B: NOTICIAS Y VIDEOS DE TIKTOK -->
+      <section id="portal-sec-news" style="display:none;flex-direction:column;gap:18px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+          <div>
+            <span class="dropdown-role-badge">NOVEDADES · RECORRIDOS · AVANCES</span>
+            <h2 style="font-family:var(--font-display);font-size:22px;color:var(--gold-bright);margin-top:6px;">📰 Noticias &amp; Videos de TikTok</h2>
+            <p style="font-size:12px;color:var(--ink-silver);margin-top:2px;">Explora los últimos avances de obra, lanzamientos y recorridos en video de SALO Cálculo y Diseño.</p>
+          </div>
+        </div>
+
+        <form id="portal-news-editor-form" class="portal-hero-card" data-editor-only style="padding:14px;gap:10px;" onsubmit="return false;">
+          <strong style="font-size:12px;color:var(--gold-bright);">➕ Publicar Nuevo Video de TikTok en Noticias (Solo Editor)</strong>
+          <div class="form-grid-2">
+            <div class="field-col">
+              <label for="news-input-title">Título / Descripción de la Noticia:</label>
+              <input type="text" id="news-input-title" placeholder="Ej: Avance de Obra Torre Pocito" />
+            </div>
+            <div class="field-col">
+              <label for="news-input-url">Enlace de Video de TikTok:</label>
+              <input type="url" id="news-input-url" placeholder="https://www.tiktok.com/@.salo.bo/video/..." />
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;">
+            <button type="submit" class="action-btn gold-cta" id="btn-add-news-item" data-editor-only style="grid-column:auto;padding:8px 16px;">
+              ➕ Publicar Video en Noticias
+            </button>
+          </div>
+        </form>
+
+        <div class="portal-news-grid" id="portal-news-grid"></div>
       </section>
 
       <!-- TAB 4: INICIO DE SESIÓN PARA EDITORES -->
@@ -494,12 +527,22 @@
 
         <!-- Barra flotante activa al Trazar un Polígono (Solo Editor) -->
         <div class="polygon-draw-toolbar" id="polygon-draw-toolbar" data-editor-only>
-          <span style="color:var(--gold-bright);font-size:11px;font-weight:700;">
-            ✏️ Clic para marcar esquinas (<span id="draft-points-count">0</span> pts)
+          <div class="poly-tool-group" role="group" aria-label="Herramientas de polígono">
+            <button type="button" class="glass-pill-btn poly-tool-btn active" id="btn-poly-tool-point" data-poly-tool="point" title="Añadir puntos (clic)">📍 Puntos</button>
+            <button type="button" class="glass-pill-btn poly-tool-btn" id="btn-poly-tool-delete" data-poly-tool="delete" title="Borrar punto existente">🧹 Borrar</button>
+            <button type="button" class="glass-pill-btn poly-tool-btn" id="btn-poly-tool-rect" data-poly-tool="rect" title="Rectángulo (arrastrar o 2 clics)">▭ Rectángulo</button>
+            <button type="button" class="glass-pill-btn poly-tool-btn" id="btn-poly-tool-curve" data-poly-tool="curve" title="Curva: marca 2 extremos y jala para dar forma">〰️ Curva 2 pts</button>
+            <button type="button" class="glass-pill-btn poly-tool-btn" id="btn-poly-tool-circle3" data-poly-tool="circle3" title="Círculo definido por 3 puntos">⭕ Círculo 3 pts</button>
+          </div>
+          <span class="poly-draw-status">
+            <span id="polygon-draw-hint">Clic para añadir puntos</span>
+            (<span id="draft-points-count">0</span> pts)
           </span>
-          <button class="glass-pill-btn active" id="btn-finish-polygon">✅ Crear Polígono</button>
-          <button class="glass-pill-btn" id="btn-undo-polygon-pt">↩️ Deshacer</button>
-          <button class="glass-pill-btn" id="btn-cancel-polygon">✕</button>
+          <div class="poly-draw-actions">
+            <button type="button" class="glass-pill-btn active" id="btn-finish-polygon">✅ Crear Polígono</button>
+            <button type="button" class="glass-pill-btn" id="btn-undo-polygon-pt">↩️ Deshacer</button>
+            <button type="button" class="glass-pill-btn" id="btn-cancel-polygon">✕</button>
+          </div>
         </div>
 
         <!-- Barra Flotante de Edición Directa de Forma y Botones de Polígono (Solo Editor) -->
@@ -1376,10 +1419,28 @@
             <strong style="font-size:11.5px;color:var(--gold-bright);display:block;">📸 Fotografía en Planta del Nivel</strong>
             <span id="floor-plan-photo-lbl" style="font-size:10px;color:var(--ink-silver);">Se usará render de planta predeterminado o sube tu foto</span>
           </div>
-          <label class="action-btn gold-cta" style="cursor:pointer;grid-column:auto;">
-            ⬆️ Añadir Fotografía en Planta
-            <input type="file" id="floor-upload-plan-photo" accept="image/*" style="display:none;" />
-          </label>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <label class="action-btn gold-cta" data-editor-only style="cursor:pointer;grid-column:auto;">
+              🔄 Cambiar / Subir Planta
+              <input type="file" id="floor-upload-plan-photo" accept="image/*" style="display:none;" />
+            </label>
+            <button type="button" class="action-btn danger" id="btn-floor-clear-plan-photo" data-editor-only style="grid-column:auto;padding:7px 10px;" title="Eliminar fotografía en planta">🗑️ Eliminar Planta</button>
+          </div>
+        </div>
+
+        <!-- Vista de Plano 2D Exclusiva del Nivel -->
+        <div style="background:rgba(212,175,55,0.05);border:1px solid var(--gold-border);border-radius:10px;padding:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+          <div>
+            <strong style="font-size:11.5px;color:var(--gold-bright);display:block;">📐 Vista de Plano 2D del Nivel</strong>
+            <span id="floor-plan2d-photo-lbl" style="font-size:10px;color:var(--ink-silver);">Opcional: sube o cambia el Plano 2D exclusivo de este piso</span>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <label class="action-btn" data-editor-only style="cursor:pointer;grid-column:auto;">
+              🔄 Cambiar Plano 2D
+              <input type="file" id="floor-upload-plan2d-photo" accept="image/*" style="display:none;" />
+            </label>
+            <button type="button" class="action-btn danger" id="btn-floor-clear-plan2d" data-editor-only style="grid-column:auto;padding:7px 10px;" title="Eliminar Plano 2D">🗑️ Eliminar Plano 2D</button>
+          </div>
         </div>
 
         <!-- Fotografía Nocturna Opcional de este Piso -->
@@ -1663,6 +1724,11 @@
               ➕ Añadir Render
               <input type="file" id="input-add-gallery-render" accept="image/*" multiple style="display:none;" />
             </label>
+            <label class="glass-pill-btn" style="cursor:pointer;" data-editor-only title="Cambiar imagen del render activo">
+              🔄 Cambiar Render
+              <input type="file" id="input-replace-gallery-render" accept="image/*" style="display:none;" />
+            </label>
+            <button type="button" class="glass-pill-btn" id="btn-delete-gallery-render" style="color:#f87171;" data-editor-only title="Eliminar render activo">🗑️ Eliminar</button>
             <label class="glass-pill-btn" style="cursor:pointer;" data-editor-only title="Subir versión nocturna para la vista activa">
               🌙 Nocturna
               <input type="file" id="input-upload-gallery-night" accept="image/*" style="display:none;" />

@@ -167,7 +167,8 @@ const defaultPortalState = {
     { id: 'ex-2', title: 'Masterplan Urbano 3 Torres', url: './sample-assets/masterplan-render.jpg', mediaKey: null },
     { id: 'ex-3', title: 'Sky Deck & Piscina Climatizada', url: './sample-assets/render-amenities.jpg', mediaKey: null },
     { id: 'ex-4', title: 'Fachada Nocturna Iluminada', url: './sample-assets/render-nocturno.jpg', mediaKey: null }
-  ]
+  ],
+  news: []
 };
 
 let portalState = structuredClone(defaultPortalState);
@@ -518,6 +519,7 @@ function loadPortalState() {
         });
       }
       if (Array.isArray(saved.examplePhotos) && saved.examplePhotos.length > 0) portalState.examplePhotos = normalizeSampleAssetPathsDeep(saved.examplePhotos);
+      if (Array.isArray(saved.news)) portalState.news = saved.news;
       if (saved.activeProjectCode) portalState.activeProjectCode = saved.activeProjectCode;
     }
   } catch (_) {}
@@ -554,7 +556,8 @@ function savePortalState() {
       activeProjectCode: portalState.activeProjectCode,
       auth: portalState.auth,
       projects: cleanProjects,
-      examplePhotos: cleanExamples
+      examplePhotos: cleanExamples,
+      news: Array.isArray(portalState.news) ? portalState.news : []
     }));
   } catch (_) {}
 }
@@ -803,6 +806,7 @@ function showScreen(screenName) {
   if (portalState.activeScreen === 'portal') {
     renderPortalProjects();
     renderPortalExamples();
+    renderPortalNews();
     syncPortalEditorTabUI();
     document.title = 'SALO SHOWROOM · Cálculo y Diseño · Portal Interactivo 3D / 360°';
   } else {
@@ -825,12 +829,13 @@ function showScreen(screenName) {
 function switchPortalTab(tabName) {
   portalState.activePortalTab = tabName;
   document.querySelectorAll('[data-portal-tab]').forEach((b) => b.classList.toggle('active', b.dataset.portalTab === tabName));
-  ['projects', 'examples', 'about', 'editors'].forEach((t) => {
+  ['projects', 'examples', 'news', 'about', 'editors'].forEach((t) => {
     const sec = document.getElementById(`portal-sec-${t}`);
     if (sec) sec.style.display = t === tabName ? 'flex' : 'none';
   });
   if (tabName === 'editors') syncPortalEditorTabUI();
   if (tabName === 'examples') renderPortalExamples();
+  if (tabName === 'news') renderPortalNews();
 }
 
 function syncPortalEditorTabUI() {
@@ -1130,16 +1135,31 @@ function openPortfolioFolderViewer(folderId) {
         <div class="portfolio-folder-item-cap">
           <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(it.title || 'Vista')}</span>
           ${isEditor() ? `
-            <div class="portal-example-actions">
-              <button class="icon-btn" data-pf-rename-item="${iIdx}" title="Renombrar foto" style="width:22px;height:22px;">✏️</button>
-              <button class="icon-btn" data-pf-del-item="${iIdx}" title="Eliminar foto" style="width:22px;height:22px;color:#f87171;">✕</button>
+            <div class="portal-example-actions" data-editor-only>
+              <label class="icon-btn" data-editor-only data-pf-replace-lbl="${iIdx}" title="Cambiar foto" style="width:22px;height:22px;cursor:pointer;">🔄<input type="file" accept="image/*" data-pf-replace-item="${iIdx}" style="display:none;" /></label>
+              <button type="button" class="icon-btn" data-editor-only data-pf-rename-item="${iIdx}" title="Renombrar foto" style="width:22px;height:22px;">✏️</button>
+              <button type="button" class="icon-btn" data-editor-only data-pf-del-item="${iIdx}" title="Eliminar foto" style="width:22px;height:22px;color:#f87171;">🗑️</button>
             </div>
           ` : ''}
         </div>
       `;
       card.addEventListener('click', (e) => {
-        if (e.target.closest('[data-pf-rename-item], [data-pf-del-item]')) return;
+        if (e.target.closest('[data-pf-rename-item], [data-pf-del-item], [data-pf-replace-item], [data-pf-replace-lbl]')) return;
         openPhotoLightbox(it.url, `${folder.title} · ${it.title || 'Vista'}`);
+      });
+      card.querySelector('[data-pf-replace-item]')?.addEventListener('change', async (e) => {
+        e.stopPropagation();
+        if (!isEditor()) return;
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const key = `portal-folder-item-${folder.id}-${it.id || iIdx}-${Date.now()}`;
+        it.url = await saveMediaBlob(key, file);
+        it.mediaKey = key;
+        savePortalState();
+        renderPortalExamples();
+        openPortfolioFolderViewer(folder.id);
+        showToast('Foto de carpeta actualizada');
+        e.target.value = '';
       });
       card.querySelector('[data-pf-rename-item]')?.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1180,18 +1200,41 @@ function renderPortalExamples() {
         <div class="portal-example-caption">
           <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${isFolder ? '📁 ' : ''}${escapeHtml(ex.title || 'Sin título')}</span>
           ${isEditor() ? `
-            <div class="portal-example-actions">
-              <button class="icon-btn" data-rename-ex="${idx}" title="Renombrar" style="width:22px;height:22px;">✏️</button>
-              <button class="icon-btn" data-del-ex="${idx}" title="${isFolder ? 'Eliminar carpeta' : 'Eliminar foto'}" style="width:22px;height:22px;color:#f87171;">✕</button>
+            <div class="portal-example-actions" data-editor-only>
+              <label class="icon-btn" data-editor-only data-replace-ex-lbl="${idx}" title="${isFolder ? 'Cambiar portada' : 'Cambiar foto'}" style="width:22px;height:22px;cursor:pointer;">🔄<input type="file" accept="image/*" data-replace-ex="${idx}" style="display:none;" /></label>
+              <button type="button" class="icon-btn" data-editor-only data-rename-ex="${idx}" title="Renombrar" style="width:22px;height:22px;">✏️</button>
+              <button type="button" class="icon-btn" data-editor-only data-del-ex="${idx}" title="${isFolder ? 'Eliminar carpeta' : 'Eliminar foto'}" style="width:22px;height:22px;color:#f87171;">🗑️</button>
             </div>
           ` : ''}
         </div>
       `;
       card.addEventListener('click', (e) => {
-        if (e.target.closest('[data-del-ex], [data-rename-ex]')) return;
+        if (e.target.closest('[data-del-ex], [data-rename-ex], [data-replace-ex], [data-replace-ex-lbl]')) return;
         if (isFolder) openPortfolioFolderViewer(ex.id);
         else openPhotoLightbox(ex.url, ex.title);
       });
+      const rep = card.querySelector('[data-replace-ex]');
+      if (rep) {
+        rep.addEventListener('change', async (e) => {
+          e.stopPropagation();
+          if (!isEditor()) return;
+          const file = e.target.files?.[0];
+          if (!file) return;
+          const key = `portal-example-rep-${ex.id || idx}-${Date.now()}`;
+          const url = await saveMediaBlob(key, file);
+          if (isFolder) {
+            ex.coverUrl = url;
+            ex.coverMediaKey = key;
+          } else {
+            ex.url = url;
+            ex.mediaKey = key;
+          }
+          savePortalState();
+          renderPortalExamples();
+          showToast(isFolder ? 'Portada de carpeta actualizada' : 'Foto de ejemplo actualizada');
+          e.target.value = '';
+        });
+      }
       const ren = card.querySelector('[data-rename-ex]');
       if (ren) {
         ren.addEventListener('click', (e) => {
@@ -1216,6 +1259,91 @@ function renderPortalExamples() {
       }
       grid.appendChild(card);
     });
+  });
+}
+
+function parseTikTokVideoUrl(rawUrl) {
+  const clean = String(rawUrl || '').trim();
+  if (!clean) return null;
+  let parsed = null;
+  try {
+    parsed = new URL(clean);
+  } catch (_) {
+    return null;
+  }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null;
+  const host = (parsed.hostname || '').toLowerCase();
+  if (!/^(?:[a-z0-9-]+\.)?tiktok\.com$/i.test(host)) return null;
+
+  const pathStr = parsed.pathname || '';
+  const mVideo = pathStr.match(/\/(?:video|v|embed\/v2)\/(\d{8,25})/i);
+  const qItemId = parsed.searchParams.get('item_id');
+  const videoId = mVideo ? mVideo[1] : (qItemId && /^\d{8,25}$/.test(qItemId) ? qItemId : null);
+  const isShortHost = /^(?:vm|vt)\.tiktok\.com$/i.test(host);
+  const hasShortCode = isShortHost && pathStr.replace(/\//g, '').length >= 3;
+  if (!videoId && !hasShortCode) return null;
+
+  return {
+    url: parsed.toString(),
+    videoId
+  };
+}
+
+function renderPortalNews() {
+  const grid = document.getElementById('portal-news-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  if (!Array.isArray(portalState.news)) portalState.news = [];
+  const items = portalState.news;
+  const editorMode = isEditor();
+
+  if (items.length === 0) {
+    grid.innerHTML = `<div class="portal-news-empty" style="grid-column:1/-1;padding:28px;text-align:center;color:var(--ink-silver);border:1px dashed var(--gold-border);border-radius:14px;">📰 Aún no hay noticias o videos de TikTok publicados en esta sección.</div>`;
+    return;
+  }
+
+  items.forEach((item, idx) => {
+    if (!item || typeof item.url !== 'string') return;
+    const safeTitle = escapeHtml(item.title || 'Noticia SALO');
+    const safeUrl = escapeHtml(item.url);
+    const cleanVideoId = item.videoId && /^\d{8,25}$/.test(String(item.videoId)) ? String(item.videoId) : null;
+
+    const card = document.createElement('article');
+    card.className = 'portal-news-card';
+    card.innerHTML = `
+      <div class="portal-news-card-header">
+        <div>
+          <span style="font-size:9.5px;color:var(--gold-bright);letter-spacing:1.2px;font-weight:700;">TIKTOK · SALO SHOWROOM</span>
+          <h3 class="portal-news-title">${safeTitle}</h3>
+        </div>
+        ${editorMode ? `<button type="button" class="glass-pill-btn" data-editor-only data-del-news="${idx}" title="Eliminar noticia" style="color:#f87171;border-color:rgba(239,68,68,0.4);flex-shrink:0;">🗑️ Eliminar</button>` : ''}
+      </div>
+      ${cleanVideoId ? `
+        <div class="portal-news-embed-wrap">
+          <iframe src="https://www.tiktok.com/embed/v2/${cleanVideoId}" title="${safeTitle}" loading="lazy" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"></iframe>
+        </div>
+      ` : `
+        <div class="portal-news-short-preview">
+          🎵 Video corto de TikTok disponible en enlace directo
+        </div>
+      `}
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:auto;">
+        <a class="portal-tiktok-btn" href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="height:32px;padding:0 13px;font-size:11px;">
+          <span>🎵 Ver en TikTok ↗</span>
+        </a>
+      </div>
+    `;
+
+    card.querySelector('[data-del-news]')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!isEditor()) return;
+      portalState.news.splice(idx, 1);
+      savePortalState();
+      renderPortalNews();
+      showToast('Noticia eliminada');
+    });
+
+    grid.appendChild(card);
   });
 }
 
@@ -1248,9 +1376,8 @@ async function openProjectByCode(rawCode, forceRole = null) {
     try {
       const pubData = await fetchPublishedProject(match.code, portalState.publishVersion || '', './');
       applyLoadedProjectData(pubData, match.code, match);
-    } catch (err) {
-      showToast(`No se pudo cargar ${match.code}: ${err?.message || err}`);
-      return false;
+    } catch (_) {
+      // Fallback to fresh demo project state when published project JSON is not present locally
     }
     state.auth = portalState.auth;
     await hydrateMediaFromIndexedDB();
@@ -1268,6 +1395,8 @@ async function openProjectByCode(rawCode, forceRole = null) {
 
   syncProjectBrandingUI();
   syncAvanceUI();
+  state.is2DPlanMode = false;
+  resetPolygonDrawingState(false);
   applyRoleUI();
   renderLevelsSidebar();
   drawMasterplanRender();
@@ -1378,11 +1507,19 @@ function pushNavHistory() {
     view: state.activeView,
     levelId: state.activeLevelId,
     exteriorAngleIndex: state.exteriorAngleIndex,
+    is2DPlanMode: Boolean(state.is2DPlanMode),
     tour360LevelId: state.activeTour360LevelId,
     room360Id: state.activeRoom360Id
   };
   const last = navHistory[navHistory.length - 1];
-  if (last && last.view === snap.view && last.levelId === snap.levelId && last.room360Id === snap.room360Id && last.tour360LevelId === snap.tour360LevelId) {
+  if (
+    last &&
+    last.view === snap.view &&
+    last.levelId === snap.levelId &&
+    Boolean(last.is2DPlanMode) === snap.is2DPlanMode &&
+    last.room360Id === snap.room360Id &&
+    last.tour360LevelId === snap.tour360LevelId
+  ) {
     return;
   }
   navHistory.push(snap);
@@ -1412,6 +1549,8 @@ function goBackHistory() {
     state.activeLevelId = prev.levelId || 'facade';
     state.exteriorAngleIndex = prev.exteriorAngleIndex || 0;
     state.activeTour360LevelId = prev.tour360LevelId ?? null;
+    state.is2DPlanMode = (!prev.levelId || prev.levelId === 'facade') ? false : Boolean(prev.is2DPlanMode);
+    syncPlanModeButtons();
     switchView(prev.view || 'masterplan', false, true);
     renderLevelsSidebar();
     drawMasterplanRender();
@@ -1424,6 +1563,8 @@ function goBackHistory() {
     switchView('masterplan', false, true);
   } else if (state.activeLevelId !== 'facade') {
     state.activeLevelId = 'facade';
+    state.is2DPlanMode = false;
+    syncPlanModeButtons();
     renderLevelsSidebar();
     drawMasterplanRender();
     renderMasterplanOverlays();
@@ -1570,16 +1711,13 @@ function applyRoleUI() {
   if (toggleLbl) toggleLbl.textContent = mode === 'editor' ? '🛡️ Editor' : '👁️ Público';
 
   if (mode === 'public') {
-    state.isDrawingPolygon = false;
+    resetPolygonDrawingState(false);
     state.isPlacingPlanPoint = false;
     if (state.editingShapeUnitId) exitPolygonShapeEdit(false);
-    state.draftPolygonPoints = [];
     state.isPlacingHotspot360 = false;
     locationMap.isPlacingPoi = false;
     document.body.classList.remove('placing-plan-point');
     document.getElementById('plan-point-place-banner')?.classList.remove('active');
-    document.getElementById('btn-draw-polygon')?.classList.remove('active');
-    document.getElementById('polygon-draw-toolbar')?.classList.remove('active');
     document.getElementById('image-adjust-popover')?.classList.remove('open');
     document.getElementById('info-config-panel')?.classList.remove('open');
     document.getElementById('hotspot-place-hint').style.display = 'none';
@@ -1593,12 +1731,14 @@ function applyRoleUI() {
   syncPortalEditorTabUI();
   renderPortalProjects();
   renderPortalExamples();
+  renderPortalNews();
   const strip = document.getElementById('editor-quick-strip');
   if (strip) strip.style.visibility = (state.activeView === 'masterplan' && isEditor()) ? 'visible' : 'hidden';
   render3DCamerasList();
   render3DFloorSelectorButtons();
   renderFinishesTabs();
   renderLocationPoiList();
+  renderUnitsCatalog();
   renderMasterplanOverlays();
   syncHotspots360DOM();
   renderTour360FloorsPanel();
@@ -1629,20 +1769,45 @@ function renderAuthorizedEditorsList() {
   const list = document.getElementById('authorized-editors-list');
   if (!list) return;
   list.innerHTML = '';
-  state.auth.editors.forEach((ed, idx) => {
+  if (isPublishedRuntime() || !isEditor()) return;
+  state.auth = portalState.auth;
+  (portalState.auth.editors || []).forEach((ed, idx) => {
     const row = document.createElement('div');
     row.className = 'poi-list-item';
     row.innerHTML = `
       <div>
-        <strong style="font-size:11.5px;color:var(--gold-bright);">👤 ${ed.username}</strong>
-        <span style="font-size:10px;color:var(--ink-silver);margin-left:6px;">PIN: ${ed.pin} · ${ed.role || 'Editor'}</span>
+        <strong style="font-size:11.5px;color:var(--gold-bright);">👤 ${escapeHtml(ed.username)}</strong>
+        <span style="font-size:10px;color:var(--ink-silver);margin-left:6px;">Clave: •••• · ${escapeHtml(ed.role || 'Editor')}</span>
       </div>
-      ${idx > 0 ? `<button class="icon-btn" data-del-ed="${idx}" title="Quitar acceso" style="color:#f87171;">🗑️</button>` : '<span class="code-tag">Admin</span>'}
+      <div style="display:flex;align-items:center;gap:4px;">
+        <button type="button" class="glass-pill-btn" data-pw-ed="${idx}" title="Cambiar contraseña / clave" style="height:22px;padding:0 7px;font-size:10px;">🔑 Cambiar Clave</button>
+        ${idx > 0 ? `<button type="button" class="icon-btn" data-del-ed="${idx}" title="Quitar acceso" style="color:#f87171;">🗑️</button>` : '<span class="code-tag">Admin</span>'}
+      </div>
     `;
+    const pwBtn = row.querySelector('[data-pw-ed]');
+    if (pwBtn) {
+      pwBtn.addEventListener('click', () => {
+        if (!isEditor()) return;
+        const nextPin = window.prompt(`Nueva contraseña / PIN para "${ed.username}":`, '');
+        if (nextPin === null) return;
+        const cleanPin = String(nextPin).trim();
+        if (!cleanPin) {
+          showToast('La contraseña no puede estar vacía');
+          return;
+        }
+        portalState.auth.editors[idx].pin = cleanPin;
+        state.auth = portalState.auth;
+        savePortalState();
+        savePersistedState();
+        renderAuthorizedEditorsList();
+        showToast(`Contraseña actualizada para "${ed.username}"`);
+      });
+    }
     const delBtn = row.querySelector('[data-del-ed]');
     if (delBtn) {
       delBtn.addEventListener('click', () => {
         portalState.auth.editors.splice(idx, 1);
+        state.auth = portalState.auth;
         savePortalState();
         savePersistedState();
         renderAuthorizedEditorsList();
@@ -1723,7 +1888,29 @@ function crossfadeImageElement(baseImg, overlayImg, nextUrl, seqKey, shouldCross
   setTimeout(runFade, 2500);
 }
 
+function syncPlanModeButtons() {
+  const is2D = Boolean(state.is2DPlanMode);
+  document.getElementById('btn-mode-3drender')?.classList.toggle('active', !is2D);
+  document.getElementById('btn-mode-2dplan')?.classList.toggle('active', is2D);
+  document.body.classList.toggle('mode-2d-plan', is2D);
+}
+
+function setPlanMode(is2D) {
+  state.is2DPlanMode = Boolean(is2D);
+  if (state.is2DPlanMode) {
+    if (state.isDrawingPolygon) resetPolygonDrawingState(false);
+    if (state.editingShapeUnitId) exitPolygonShapeEdit(false);
+    clearPolygonProximityReveal();
+    hideUnitHoverTooltip();
+    closePlanActionPopover();
+  }
+  syncPlanModeButtons();
+  drawMasterplanRender();
+  renderMasterplanOverlays();
+}
+
 function drawMasterplanRender(animateCrossfade = false) {
+  syncPlanModeButtons();
   const customImg = document.getElementById('masterplan-custom-img');
   const crossfadeImg = document.getElementById('masterplan-crossfade-img');
   if (!customImg) return;
@@ -2146,11 +2333,12 @@ function renderExteriorViewsManagerList() {
         </div>
       </div>
       <div style="display:flex;gap:4px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">
-        <button class="glass-pill-btn" data-ext-view="${idx}" style="height:24px;padding:0 8px;font-size:10px;">👁️ Ver</button>
-        <label class="glass-pill-btn" style="height:24px;padding:0 8px;font-size:10px;cursor:pointer;" title="Subir vista nocturna opcional">🌙 ${hasNight ? 'Cambiar' : 'Nocturna'}<input type="file" accept="image/*" style="display:none;" data-ext-night-input="${idx}" /></label>
-        ${hasNight ? `<button class="glass-pill-btn" data-ext-del-night="${idx}" style="height:24px;padding:0 7px;font-size:10px;color:#fdba74;" title="Quitar vista nocturna">✕🌙</button>` : ''}
-        ${idx > 0 ? `<button class="glass-pill-btn" data-ext-make-main="${idx}" style="height:24px;padding:0 8px;font-size:10px;" title="Hacer vista principal">⭐</button>` : ''}
-        ${state.exteriorAngles.length > 1 ? `<button class="glass-pill-btn" data-ext-del="${idx}" style="height:24px;padding:0 7px;font-size:10px;color:#f87171;">🗑️</button>` : ''}
+        <button type="button" class="glass-pill-btn" data-ext-view="${idx}" style="height:24px;padding:0 8px;font-size:10px;">👁️ Ver</button>
+        <label class="glass-pill-btn" data-editor-only style="height:24px;padding:0 8px;font-size:10px;cursor:pointer;" title="Cambiar imagen de vista exterior">🔄 Cambiar<input type="file" accept="image/*" style="display:none;" data-ext-day-input="${idx}" /></label>
+        <label class="glass-pill-btn" data-editor-only style="height:24px;padding:0 8px;font-size:10px;cursor:pointer;" title="Subir vista nocturna opcional">🌙 ${hasNight ? 'Cambiar' : 'Nocturna'}<input type="file" accept="image/*" style="display:none;" data-ext-night-input="${idx}" /></label>
+        ${hasNight ? `<button type="button" class="glass-pill-btn" data-editor-only data-ext-del-night="${idx}" style="height:24px;padding:0 7px;font-size:10px;color:#fdba74;" title="Quitar vista nocturna">✕🌙</button>` : ''}
+        ${idx > 0 ? `<button type="button" class="glass-pill-btn" data-editor-only data-ext-make-main="${idx}" style="height:24px;padding:0 8px;font-size:10px;" title="Hacer vista principal">⭐</button>` : ''}
+        <button type="button" class="glass-pill-btn" data-editor-only data-ext-del="${idx}" title="Eliminar vista exterior" style="height:24px;padding:0 7px;font-size:10px;color:#f87171;">🗑️</button>
       </div>
     `;
     row.querySelector('[data-ext-view]').addEventListener('click', () => {
@@ -2160,6 +2348,29 @@ function renderExteriorViewsManagerList() {
       renderMasterplanOverlays();
       document.getElementById('modal-exterior-manager').classList.remove('open');
     });
+    const dayInput = row.querySelector('[data-ext-day-input]');
+    if (dayInput) {
+      dayInput.addEventListener('change', async (e) => {
+        if (!isEditor()) return;
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const key = `ext-day-${idx}-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`;
+        const url = await saveMediaBlob(key, file);
+        ang.photo = url;
+        ang.mediaKey = key;
+        if (idx === 0) {
+          const facadeLvl = state.levels.find((l) => l.id === 'facade');
+          if (facadeLvl) { facadeLvl.dayPhoto = url; facadeLvl.dayMediaKey = key; }
+        }
+        state.activeLevelId = 'facade';
+        state.exteriorAngleIndex = idx;
+        savePersistedState();
+        renderExteriorViewsManagerList();
+        drawMasterplanRender();
+        showToast(`Vista exterior actualizada en ${ang.label}`);
+        e.target.value = '';
+      });
+    }
     const nightInput = row.querySelector('[data-ext-night-input]');
     if (nightInput) {
       nightInput.addEventListener('change', async (e) => {
@@ -2221,22 +2432,33 @@ function renderExteriorViewsManagerList() {
     const delBtn = row.querySelector('[data-ext-del]');
     if (delBtn) {
       delBtn.addEventListener('click', () => {
-        state.exteriorAngles.splice(idx, 1);
-        state.exteriorAngleIndex = Math.min(state.exteriorAngleIndex, state.exteriorAngles.length - 1);
-        if (idx === 0 && state.exteriorAngles[0]) {
-          const facadeLvl = state.levels.find((l) => l.id === 'facade');
-          const nextMain = state.exteriorAngles[0];
-          if (facadeLvl) {
-            facadeLvl.dayPhoto = nextMain.photo;
-            facadeLvl.dayMediaKey = nextMain.mediaKey || null;
-            facadeLvl.nightPhoto = nextMain.nightPhoto || null;
-            facadeLvl.nightMediaKey = nextMain.nightMediaKey || null;
+        if (state.exteriorAngles.length > 1) {
+          state.exteriorAngles.splice(idx, 1);
+          state.exteriorAngleIndex = Math.min(state.exteriorAngleIndex, state.exteriorAngles.length - 1);
+          if (idx === 0 && state.exteriorAngles[0]) {
+            const facadeLvl = state.levels.find((l) => l.id === 'facade');
+            const nextMain = state.exteriorAngles[0];
+            if (facadeLvl) {
+              facadeLvl.dayPhoto = nextMain.photo;
+              facadeLvl.dayMediaKey = nextMain.mediaKey || null;
+              facadeLvl.nightPhoto = nextMain.nightPhoto || null;
+              facadeLvl.nightMediaKey = nextMain.nightMediaKey || null;
+            }
           }
+          showToast('Vista exterior eliminada');
+        } else if (state.exteriorAngles[0]) {
+          state.exteriorAngles[0].photo = './sample-assets/exterior-tower.webp';
+          state.exteriorAngles[0].mediaKey = null;
+          const facadeLvl = state.levels.find((l) => l.id === 'facade');
+          if (facadeLvl) {
+            facadeLvl.dayPhoto = './sample-assets/exterior-tower.webp';
+            facadeLvl.dayMediaKey = null;
+          }
+          showToast('Vista exterior restaurada a imagen base');
         }
         savePersistedState();
         renderExteriorViewsManagerList();
         drawMasterplanRender();
-        showToast('Vista exterior eliminada');
       });
     }
     list.appendChild(row);
@@ -2343,7 +2565,11 @@ function clearPolygonProximityReveal() {
 }
 
 function updatePolygonProximityReveal(clientX, clientY, thresholdPct = 4.5) {
-  if (state.activeView !== 'masterplan') return;
+  if (state.activeView !== 'masterplan' || state.is2DPlanMode) {
+    clearPolygonProximityReveal();
+    hideUnitHoverTooltip();
+    return;
+  }
   const box = document.getElementById('scene-media-box');
   if (!box) return;
   const rect = box.getBoundingClientRect();
@@ -2381,7 +2607,10 @@ function applyActiveImageAdjustment() {
 
 function showUnitHoverTooltip(unit, clientX, clientY) {
   const tip = document.getElementById('unit-hover-tooltip');
-  if (!tip || !unit) return;
+  if (!tip || !unit || state.is2DPlanMode) {
+    tip?.classList.remove('visible');
+    return;
+  }
   const isAlreadySelectedOpen = unit.id === state.selectedUnitId && document.getElementById('unit-drawer')?.classList.contains('open');
   if (isAlreadySelectedOpen || state.editingShapeUnitId) {
     tip.classList.remove('visible');
@@ -2430,8 +2659,975 @@ function hideUnitHoverTooltip() {
 
 let shapeEditBackupPolygon = null;
 
+function round2(n) {
+  return Math.round(n * 100) / 100;
+}
+
+function clampPct(v) {
+  return Math.max(0, Math.min(100, round2(v)));
+}
+
+function getMediaBoxMetrics() {
+  const mediaBox = document.getElementById('scene-media-box') || document.getElementById('scene-frame');
+  const rect = mediaBox ? mediaBox.getBoundingClientRect() : { left: 0, top: 0, width: 1600, height: 900 };
+  return {
+    rect,
+    w: rect.width || 1600,
+    h: rect.height || 900
+  };
+}
+
+function clientToMediaPct(clientX, clientY) {
+  const { rect, w, h } = getMediaBoxMetrics();
+  if (!rect.width || !rect.height) return { x: 50, y: 50 };
+  return {
+    x: clampPct(((clientX - rect.left) / w) * 100),
+    y: clampPct(((clientY - rect.top) / h) * 100)
+  };
+}
+
+function pctDistPx(a, b, metrics = getMediaBoxMetrics()) {
+  return Math.hypot(((a.x - b.x) / 100) * metrics.w, ((a.y - b.y) / 100) * metrics.h);
+}
+
+const polyToolState = {
+  mode: 'point',
+  undoStack: [],
+  closedShapeMode: false,
+  hoverPt: null,
+  rectStart: null,
+  rectDragging: false,
+  rectDownScreen: null,
+  curveStage: 0,
+  curveP0: null,
+  curveP1: null,
+  curvePull: null,
+  curveSnapIdx0: -1,
+  curveSnapIdx1: -1,
+  curvePullDragging: false,
+  curveP1DownScreen: null,
+  circlePts: []
+};
+
+function pushDraftUndoSnapshot() {
+  polyToolState.undoStack.push({
+    points: state.draftPolygonPoints.map((p) => ({ x: p.x, y: p.y })),
+    closedShapeMode: polyToolState.closedShapeMode
+  });
+  if (polyToolState.undoStack.length > 80) polyToolState.undoStack.shift();
+}
+
+function resetActivePolySubstate() {
+  polyToolState.rectStart = null;
+  polyToolState.rectDragging = false;
+  polyToolState.rectDownScreen = null;
+  polyToolState.curveStage = 0;
+  polyToolState.curveP0 = null;
+  polyToolState.curveP1 = null;
+  polyToolState.curvePull = null;
+  polyToolState.curveSnapIdx0 = -1;
+  polyToolState.curveSnapIdx1 = -1;
+  polyToolState.curvePullDragging = false;
+  polyToolState.curveP1DownScreen = null;
+  polyToolState.circlePts = [];
+}
+
+function updateDraftCounter() {
+  const el = document.getElementById('draft-points-count');
+  if (el) el.textContent = String(state.draftPolygonPoints.length);
+}
+
+function updatePolygonDrawToolbarUI() {
+  const mode = polyToolState.mode || 'point';
+  document.querySelectorAll('.poly-tool-btn[data-poly-tool]').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.polyTool === mode);
+  });
+  if (state.isDrawingPolygon) {
+    document.body.dataset.polyTool = mode;
+  } else {
+    delete document.body.dataset.polyTool;
+  }
+  const hintEl = document.getElementById('polygon-draw-hint');
+  if (hintEl) {
+    let hint = 'Clic para añadir puntos';
+    if (mode === 'point') {
+      hint = (polyToolState.closedShapeMode && state.draftPolygonPoints.length >= 3)
+        ? 'Clic para insertar punto en el borde'
+        : 'Clic para añadir puntos';
+    } else if (mode === 'delete') {
+      hint = 'Clic en un punto para borrarlo';
+    } else if (mode === 'rect') {
+      hint = polyToolState.rectStart ? 'Marca la 2ª esquina del rectángulo' : 'Arrastra o haz 2 clics para el rectángulo';
+    } else if (mode === 'curve') {
+      if (polyToolState.curveStage === 0) hint = 'Curva: marca el 1er extremo';
+      else if (polyToolState.curveStage === 1) hint = 'Curva: marca el 2° extremo (o mantén presionado y jala)';
+      else hint = 'Mueve y haz clic para fijar la curvatura';
+    } else if (mode === 'circle3') {
+      if (polyToolState.circlePts.length === 0) hint = 'Círculo: marca el 1er punto del borde';
+      else if (polyToolState.circlePts.length === 1) hint = 'Círculo: marca el 2° punto del borde';
+      else hint = 'Círculo: marca el 3er punto del borde';
+    }
+    hintEl.textContent = hint;
+  }
+  updateDraftCounter();
+}
+
+function setPolygonDrawTool(tool) {
+  const allowed = ['point', 'delete', 'rect', 'curve', 'circle3'];
+  if (!allowed.includes(tool)) return;
+  resetActivePolySubstate();
+  polyToolState.mode = tool;
+  updatePolygonDrawToolbarUI();
+  renderDraftPolygonOverlayOnly();
+}
+
+function resetPolygonDrawingState(shouldRender = true) {
+  state.isDrawingPolygon = false;
+  state.draftPolygonPoints = [];
+  polyToolState.mode = 'point';
+  polyToolState.undoStack = [];
+  polyToolState.closedShapeMode = false;
+  polyToolState.hoverPt = null;
+  resetActivePolySubstate();
+  document.body.classList.remove('drawing-polygon');
+  delete document.body.dataset.polyTool;
+  document.getElementById('btn-draw-polygon')?.classList.remove('active');
+  document.getElementById('polygon-draw-toolbar')?.classList.remove('active');
+  updatePolygonDrawToolbarUI();
+  if (shouldRender) renderMasterplanOverlays();
+}
+
+function undoPolygonDraftStep() {
+  if (!isEditor() || !state.isDrawingPolygon) return;
+  if (polyToolState.circlePts.length > 0) {
+    polyToolState.circlePts.pop();
+    updatePolygonDrawToolbarUI();
+    renderDraftPolygonOverlayOnly();
+    return;
+  }
+  if (polyToolState.curveStage === 2) {
+    polyToolState.curveStage = 1;
+    polyToolState.curveP1 = null;
+    polyToolState.curvePull = null;
+    polyToolState.curveSnapIdx1 = -1;
+    polyToolState.curvePullDragging = false;
+    polyToolState.curveP1DownScreen = null;
+    updatePolygonDrawToolbarUI();
+    renderDraftPolygonOverlayOnly();
+    return;
+  }
+  if (polyToolState.curveStage === 1) {
+    polyToolState.curveStage = 0;
+    polyToolState.curveP0 = null;
+    polyToolState.curveSnapIdx0 = -1;
+    updatePolygonDrawToolbarUI();
+    renderDraftPolygonOverlayOnly();
+    return;
+  }
+  if (polyToolState.rectStart !== null) {
+    polyToolState.rectStart = null;
+    polyToolState.rectDragging = false;
+    polyToolState.rectDownScreen = null;
+    updatePolygonDrawToolbarUI();
+    renderDraftPolygonOverlayOnly();
+    return;
+  }
+  if (polyToolState.undoStack.length > 0) {
+    const snap = polyToolState.undoStack.pop();
+    state.draftPolygonPoints = (snap.points || []).map((p) => ({ x: p.x, y: p.y }));
+    polyToolState.closedShapeMode = Boolean(snap.closedShapeMode) && state.draftPolygonPoints.length >= 3;
+    updatePolygonDrawToolbarUI();
+    renderDraftPolygonOverlayOnly();
+    return;
+  }
+  if (state.draftPolygonPoints.length > 0) {
+    state.draftPolygonPoints.pop();
+    if (state.draftPolygonPoints.length < 3) polyToolState.closedShapeMode = false;
+    updatePolygonDrawToolbarUI();
+    renderDraftPolygonOverlayOnly();
+  }
+}
+
+function findNearestDraftVertexIdx(pt, maxPx = 22, excludeIdx = -1) {
+  const pts = state.draftPolygonPoints;
+  if (!pt || !Array.isArray(pts) || pts.length === 0) return -1;
+  const metrics = getMediaBoxMetrics();
+  let bestIdx = -1;
+  let bestDist = maxPx;
+  for (let i = 0; i < pts.length; i++) {
+    if (i === excludeIdx) continue;
+    const d = pctDistPx(pts[i], pt, metrics);
+    if (d <= bestDist) {
+      bestDist = d;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
+}
+
+function findNearestPolygonEdgeIdx(poly, pt, metrics = getMediaBoxMetrics()) {
+  if (!Array.isArray(poly) || poly.length < 2) return 0;
+  const px = (pt.x / 100) * metrics.w;
+  const py = (pt.y / 100) * metrics.h;
+  let bestIdx = 0;
+  let bestDist = Infinity;
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i];
+    const b = poly[(i + 1) % poly.length];
+    const d = distPointToSegment2D(
+      px, py,
+      (a.x / 100) * metrics.w, (a.y / 100) * metrics.h,
+      (b.x / 100) * metrics.w, (b.y / 100) * metrics.h
+    );
+    if (d < bestDist) {
+      bestDist = d;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
+}
+
+function signedArea2D(poly) {
+  if (!Array.isArray(poly) || poly.length < 3) return 0;
+  let sum = 0;
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i];
+    const b = poly[(i + 1) % poly.length];
+    sum += a.x * b.y - b.x * a.y;
+  }
+  return sum * 0.5;
+}
+
+function stripNearDuplicates(poly, eps = 1e-4) {
+  const out = [];
+  for (const p of (poly || [])) {
+    if (!p || !Number.isFinite(p.x) || !Number.isFinite(p.y)) continue;
+    const prev = out[out.length - 1];
+    if (!prev || Math.hypot(p.x - prev.x, p.y - prev.y) > eps) {
+      out.push({ x: p.x, y: p.y });
+    }
+  }
+  while (out.length > 2 && Math.hypot(out[0].x - out[out.length - 1].x, out[0].y - out[out.length - 1].y) <= eps) {
+    out.pop();
+  }
+  return out;
+}
+
+function ensurePositiveOrientation(poly) {
+  const cleaned = stripNearDuplicates(poly);
+  if (cleaned.length < 3) return cleaned;
+  return signedArea2D(cleaned) < 0 ? cleaned.slice().reverse() : cleaned;
+}
+
+function simplifyCollinear(poly, eps = 1e-4) {
+  let pts = stripNearDuplicates(poly, 1e-4);
+  if (pts.length <= 3) return pts;
+  let changed = true;
+  while (changed && pts.length > 3) {
+    changed = false;
+    const nextPts = [];
+    const n = pts.length;
+    for (let i = 0; i < n; i++) {
+      const prev = pts[(i - 1 + n) % n];
+      const curr = pts[i];
+      const next = pts[(i + 1) % n];
+      const ux = curr.x - prev.x;
+      const uy = curr.y - prev.y;
+      const vx = next.x - curr.x;
+      const vy = next.y - curr.y;
+      const lu = Math.hypot(ux, uy);
+      const lv = Math.hypot(vx, vy);
+      if (lu < 1e-5 || lv < 1e-5) {
+        changed = true;
+        continue;
+      }
+      const cross = Math.abs(ux * vy - uy * vx) / (lu * lv);
+      const dot = (ux * vx + uy * vy) / (lu * lv);
+      // Only remove true straight-ahead collinear points (dot > 0), never 180-deg bridge turnarounds
+      if (cross < eps && dot > 0.999) {
+        changed = true;
+        continue;
+      }
+      nextPts.push(curr);
+    }
+    pts = nextPts;
+  }
+  return pts;
+}
+
+function distToPolyBoundary(pt, poly) {
+  if (!Array.isArray(poly) || poly.length === 0) return Infinity;
+  let best = Infinity;
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i];
+    const b = poly[(i + 1) % poly.length];
+    const d = distPointToSegment2D(pt.x, pt.y, a.x, a.y, b.x, b.y);
+    if (d < best) best = d;
+  }
+  return best;
+}
+
+function isPointInPolygonRaw(pt, poly) {
+  if (!Array.isArray(poly) || poly.length < 3) return false;
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i].x, yi = poly[i].y;
+    const xj = poly[j].x, yj = poly[j].y;
+    const intersect = ((yi > pt.y) !== (yj > pt.y)) && (pt.x < ((xj - xi) * (pt.y - yi)) / ((yj - yi) || 1e-12) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+function isPointStrictlyInsidePolygon(pt, poly, boundaryEps = 1e-3) {
+  if (distToPolyBoundary(pt, poly) <= boundaryEps) return false;
+  return isPointInPolygonRaw(pt, poly);
+}
+
+function segmentsIntersect2D(a1, a2, b1, b2) {
+  const dxA = a2.x - a1.x, dyA = a2.y - a1.y;
+  const dxB = b2.x - b1.x, dyB = b2.y - b1.y;
+  const denom = dxA * dyB - dyA * dxB;
+  const lenA = Math.hypot(dxA, dyA);
+  const lenB = Math.hypot(dxB, dyB);
+  if (lenA < 1e-7 || lenB < 1e-7) return false;
+  if (Math.abs(denom) <= 1e-7 * lenA * lenB) {
+    const perp = Math.abs(dxA * (b1.y - a1.y) - dyA * (b1.x - a1.x)) / lenA;
+    if (perp > 1e-3) return false;
+    const minAx = Math.min(a1.x, a2.x) - 1e-4, maxAx = Math.max(a1.x, a2.x) + 1e-4;
+    const minAy = Math.min(a1.y, a2.y) - 1e-4, maxAy = Math.max(a1.y, a2.y) + 1e-4;
+    const minBx = Math.min(b1.x, b2.x) - 1e-4, maxBx = Math.max(b1.x, b2.x) + 1e-4;
+    const minBy = Math.min(b1.y, b2.y) - 1e-4, maxBy = Math.max(b1.y, b2.y) + 1e-4;
+    return maxAx >= minBx && maxBx >= minAx && maxAy >= minBy && maxBy >= minAy;
+  }
+  const rx = b1.x - a1.x, ry = b1.y - a1.y;
+  const t = (rx * dyB - ry * dxB) / denom;
+  const u = (rx * dyA - ry * dxA) / denom;
+  return t >= -1e-4 && t <= 1 + 1e-4 && u >= -1e-4 && u <= 1 + 1e-4;
+}
+
+function polygonsOverlapOrIntersect(polyA, polyB) {
+  if (!polyA?.length || !polyB?.length) return false;
+  for (let i = 0; i < polyA.length; i++) {
+    const a1 = polyA[i];
+    const a2 = polyA[(i + 1) % polyA.length];
+    for (let j = 0; j < polyB.length; j++) {
+      const b1 = polyB[j];
+      const b2 = polyB[(j + 1) % polyB.length];
+      if (segmentsIntersect2D(a1, a2, b1, b2)) return true;
+    }
+  }
+  return isPointInPolygonRaw(polyA[0], polyB) || isPointInPolygonRaw(polyB[0], polyA);
+}
+
+function bridgeDisjointPolygons(outer, island) {
+  if (!outer?.length || !island?.length) return outer || island || [];
+  let bestI = 0;
+  let bestJ = 0;
+  let bestD = Infinity;
+  for (let i = 0; i < outer.length; i++) {
+    for (let j = 0; j < island.length; j++) {
+      const d = Math.hypot(outer[i].x - island[j].x, outer[i].y - island[j].y);
+      if (d < bestD) {
+        bestD = d;
+        bestI = i;
+        bestJ = j;
+      }
+    }
+  }
+  return [
+    ...outer.slice(0, bestI + 1),
+    ...island.slice(bestJ),
+    ...island.slice(0, bestJ + 1),
+    ...outer.slice(bestI)
+  ];
+}
+
+function polygonBooleanUnion(rawA, rawB) {
+  const A = ensurePositiveOrientation(rawA);
+  const B = ensurePositiveOrientation(rawB);
+  if (A.length < 3) return B.map((p) => ({ x: clampPct(p.x), y: clampPct(p.y) }));
+  if (B.length < 3) return A.map((p) => ({ x: clampPct(p.x), y: clampPct(p.y) }));
+
+  // 1. Collect split parameters on all edges of A and B
+  const splitsA = A.map(() => [0, 1]);
+  const splitsB = B.map(() => [0, 1]);
+
+  for (let i = 0; i < A.length; i++) {
+    const a1 = A[i], a2 = A[(i + 1) % A.length];
+    const dxA = a2.x - a1.x, dyA = a2.y - a1.y;
+    const lenA = Math.hypot(dxA, dyA);
+    if (lenA < 1e-7) continue;
+
+    for (let j = 0; j < B.length; j++) {
+      const b1 = B[j], b2 = B[(j + 1) % B.length];
+      const dxB = b2.x - b1.x, dyB = b2.y - b1.y;
+      const lenB = Math.hypot(dxB, dyB);
+      if (lenB < 1e-7) continue;
+
+      const denom = dxA * dyB - dyA * dxB;
+      if (Math.abs(denom) > 1e-7 * lenA * lenB) {
+        const rx = b1.x - a1.x, ry = b1.y - a1.y;
+        const t = (rx * dyB - ry * dxB) / denom;
+        const u = (rx * dyA - ry * dxA) / denom;
+        if (t >= -1e-4 && t <= 1 + 1e-4 && u >= -1e-4 && u <= 1 + 1e-4) {
+          const tc = Math.max(0, Math.min(1, t));
+          const uc = Math.max(0, Math.min(1, u));
+          if (tc > 1e-5 && tc < 1 - 1e-5) splitsA[i].push(tc);
+          if (uc > 1e-5 && uc < 1 - 1e-5) splitsB[j].push(uc);
+        }
+      } else {
+        const perp = Math.abs(dxA * (b1.y - a1.y) - dyA * (b1.x - a1.x)) / lenA;
+        if (perp < 1e-3) {
+          const lenA2 = dxA * dxA + dyA * dyA;
+          const lenB2 = dxB * dxB + dyB * dyB;
+          const t1 = ((b1.x - a1.x) * dxA + (b1.y - a1.y) * dyA) / lenA2;
+          const t2 = ((b2.x - a1.x) * dxA + (b2.y - a1.y) * dyA) / lenA2;
+          if (t1 > 1e-5 && t1 < 1 - 1e-5) splitsA[i].push(t1);
+          if (t2 > 1e-5 && t2 < 1 - 1e-5) splitsA[i].push(t2);
+          const u1 = ((a1.x - b1.x) * dxB + (a1.y - b1.y) * dyB) / lenB2;
+          const u2 = ((a2.x - b1.x) * dxB + (a2.y - b1.y) * dyB) / lenB2;
+          if (u1 > 1e-5 && u1 < 1 - 1e-5) splitsB[j].push(u1);
+          if (u2 > 1e-5 && u2 < 1 - 1e-5) splitsB[j].push(u2);
+        }
+      }
+    }
+  }
+
+  // 2. Build elementary directed segments & canonical vertex table
+  const V = [];
+  const internVertex = (x, y) => {
+    for (let k = 0; k < V.length; k++) {
+      if (Math.hypot(V[k].x - x, V[k].y - y) < 1e-3) return k;
+    }
+    V.push({ x, y });
+    return V.length - 1;
+  };
+
+  const buildSegs = (poly, splits) => {
+    const segs = [];
+    for (let i = 0; i < poly.length; i++) {
+      const p1 = poly[i], p2 = poly[(i + 1) % poly.length];
+      const ts = splits[i].slice().sort((a, b) => a - b);
+      const uniq = [ts[0]];
+      for (let k = 1; k < ts.length; k++) {
+        if (ts[k] - uniq[uniq.length - 1] > 1e-5) uniq.push(ts[k]);
+      }
+      if (uniq[uniq.length - 1] < 1 - 1e-5) uniq.push(1);
+      for (let k = 0; k < uniq.length - 1; k++) {
+        const ta = uniq[k], tb = uniq[k + 1];
+        const uId = internVertex(p1.x + (p2.x - p1.x) * ta, p1.y + (p2.y - p1.y) * ta);
+        const vId = internVertex(p1.x + (p2.x - p1.x) * tb, p1.y + (p2.y - p1.y) * tb);
+        if (uId !== vId) segs.push({ u: uId, v: vId });
+      }
+    }
+    return segs;
+  };
+
+  const segsA = buildSegs(A, splitsA);
+  const segsB = buildSegs(B, splitsB);
+
+  const edgeKey = (u, v) => `${u}->${v}`;
+  const rawSetA = new Set(segsA.map((s) => edgeKey(s.u, s.v)));
+  const rawSetB = new Set(segsB.map((s) => edgeKey(s.u, s.v)));
+  const activeSegsA = segsA.filter((s) => !rawSetA.has(edgeKey(s.v, s.u)));
+  const activeSegsB = segsB.filter((s) => !rawSetB.has(edgeKey(s.v, s.u)));
+  const setA = new Set(activeSegsA.map((s) => edgeKey(s.u, s.v)));
+  const setB = new Set(activeSegsB.map((s) => edgeKey(s.u, s.v)));
+
+  const distToSegList = (pt, segs) => {
+    let best = Infinity;
+    for (const s of segs) {
+      const d = distPointToSegment2D(pt.x, pt.y, V[s.u].x, V[s.u].y, V[s.v].x, V[s.v].y);
+      if (d < best) best = d;
+    }
+    return best;
+  };
+
+  // 3. Midpoint & boundary classification
+  const kept = [];
+  const keptSet = new Set();
+  const addKept = (u, v) => {
+    const k = edgeKey(u, v);
+    if (!keptSet.has(k)) {
+      keptSet.add(k);
+      kept.push({ u, v, used: false });
+    }
+  };
+
+  for (const s of activeSegsA) {
+    if (setB.has(edgeKey(s.v, s.u))) continue; // shared opposite edge cancels
+    const mid = { x: (V[s.u].x + V[s.v].x) * 0.5, y: (V[s.u].y + V[s.v].y) * 0.5 };
+    if (setB.has(edgeKey(s.u, s.v)) || !isPointStrictlyInsidePolygon(mid, B)) {
+      addKept(s.u, s.v);
+    }
+  }
+
+  for (const s of activeSegsB) {
+    if (setA.has(edgeKey(s.u, s.v)) || setA.has(edgeKey(s.v, s.u))) continue;
+    const mid = { x: (V[s.u].x + V[s.v].x) * 0.5, y: (V[s.u].y + V[s.v].y) * 0.5 };
+    if (!isPointStrictlyInsidePolygon(mid, A) && distToSegList(mid, activeSegsA) > 1e-3) {
+      addKept(s.u, s.v);
+    }
+  }
+
+  if (kept.length === 0) return A.map((p) => ({ x: clampPct(p.x), y: clampPct(p.y) }));
+
+  // 4. Outer-loop stitching
+  const outMap = new Map();
+  kept.forEach((edge, idx) => {
+    if (!outMap.has(edge.u)) outMap.set(edge.u, []);
+    outMap.get(edge.u).push(idx);
+  });
+
+  const loops = [];
+  const TWO_PI = Math.PI * 2;
+  for (let startIdx = 0; startIdx < kept.length; startIdx++) {
+    if (kept[startIdx].used) continue;
+    const loop = [];
+    let currIdx = startIdx;
+    let safety = kept.length + 5;
+    while (currIdx !== -1 && !kept[currIdx].used && safety-- > 0) {
+      const e = kept[currIdx];
+      e.used = true;
+      loop.push({ x: V[e.u].x, y: V[e.u].y });
+      if (e.v === kept[startIdx].u && loop.length >= 3) {
+        // Check if there are still unused outgoing edges at start vertex (figure-8 pinch)
+        const candidatesAtStart = (outMap.get(e.v) || []).filter((idx) => !kept[idx].used);
+        if (candidatesAtStart.length === 0) break;
+      }
+      const candidates = (outMap.get(e.v) || []).filter((idx) => !kept[idx].used);
+      if (candidates.length === 0) break;
+      if (candidates.length === 1) {
+        currIdx = candidates[0];
+      } else {
+        const backAngle = Math.atan2(V[e.u].y - V[e.v].y, V[e.u].x - V[e.v].x);
+        let bestCand = candidates[0];
+        let bestDelta = Infinity;
+        for (const cIdx of candidates) {
+          const ce = kept[cIdx];
+          const outAngle = Math.atan2(V[ce.v].y - V[ce.u].y, V[ce.v].x - V[ce.u].x);
+          let delta = (outAngle - backAngle) % TWO_PI;
+          if (delta <= 1e-9) delta += TWO_PI;
+          if (delta < bestDelta) {
+            bestDelta = delta;
+            bestCand = cIdx;
+          }
+        }
+        currIdx = bestCand;
+      }
+    }
+    if (loop.length >= 3) loops.push(loop);
+  }
+
+  if (loops.length === 0) return A.map((p) => ({ x: clampPct(p.x), y: clampPct(p.y) }));
+
+  // 5. Pick largest-area outer loop; bridge any disjoint outer islands, ignore interior holes
+  loops.sort((l1, l2) => Math.abs(signedArea2D(l2)) - Math.abs(signedArea2D(l1)));
+  let result = ensurePositiveOrientation(loops[0]);
+  for (let k = 1; k < loops.length; k++) {
+    const candidate = ensurePositiveOrientation(loops[k]);
+    if (candidate.length < 3) continue;
+    // Sample a point slightly inside or vertex of candidate to test if it is a disjoint island
+    const probe = candidate[0];
+    if (!isPointStrictlyInsidePolygon(probe, result, 1e-4)) {
+      result = bridgeDisjointPolygons(result, candidate);
+    }
+  }
+
+  const simplified = simplifyCollinear(result);
+  return simplified.map((p) => ({ x: clampPct(p.x), y: clampPct(p.y) }));
+}
+
+function integrateClosedShapeIntoDraft(incomingPoly) {
+  const incoming = stripNearDuplicates(incomingPoly).map((p) => ({ x: clampPct(p.x), y: clampPct(p.y) }));
+  if (incoming.length < 3) return;
+  const draft = state.draftPolygonPoints;
+  if (draft.length === 0) {
+    state.draftPolygonPoints = incoming;
+    polyToolState.closedShapeMode = true;
+    return;
+  }
+  if (draft.length < 3) {
+    const keptDraft = draft.filter((p) => !isPointInPolygonRaw(p, incoming) && distToPolyBoundary(p, incoming) > 1e-3);
+    if (keptDraft.length === 0) {
+      state.draftPolygonPoints = incoming;
+      polyToolState.closedShapeMode = true;
+      return;
+    }
+    const anchor = keptDraft[keptDraft.length - 1];
+    let bestIdx = 0;
+    let bestD = Infinity;
+    for (let i = 0; i < incoming.length; i++) {
+      const d = Math.hypot(incoming[i].x - anchor.x, incoming[i].y - anchor.y);
+      if (d < bestD) { bestD = d; bestIdx = i; }
+    }
+    const rotated = [...incoming.slice(bestIdx), ...incoming.slice(0, bestIdx)];
+    state.draftPolygonPoints = [...keptDraft, ...rotated];
+    polyToolState.closedShapeMode = true;
+    return;
+  }
+  state.draftPolygonPoints = polygonBooleanUnion(draft, incoming);
+  polyToolState.closedShapeMode = true;
+}
+
+function commitRectPrimitive(a, b) {
+  const metrics = getMediaBoxMetrics();
+  const wPx = Math.abs(b.x - a.x) * metrics.w / 100;
+  const hPx = Math.abs(b.y - a.y) * metrics.h / 100;
+  if (wPx < 4 || hPx < 4) {
+    showToast('Rectángulo muy pequeño; elige 2 esquinas más separadas');
+    polyToolState.rectStart = null;
+    polyToolState.rectDragging = false;
+    updatePolygonDrawToolbarUI();
+    renderDraftPolygonOverlayOnly();
+    return;
+  }
+  const minX = Math.min(a.x, b.x), maxX = Math.max(a.x, b.x);
+  const minY = Math.min(a.y, b.y), maxY = Math.max(a.y, b.y);
+  const rectPoly = [
+    { x: round2(minX), y: round2(minY) },
+    { x: round2(maxX), y: round2(minY) },
+    { x: round2(maxX), y: round2(maxY) },
+    { x: round2(minX), y: round2(maxY) }
+  ];
+  pushDraftUndoSnapshot();
+  integrateClosedShapeIntoDraft(rectPoly);
+  polyToolState.rectStart = null;
+  polyToolState.rectDragging = false;
+  polyToolState.rectDownScreen = null;
+  updatePolygonDrawToolbarUI();
+  renderDraftPolygonOverlayOnly();
+}
+
+function samplePulledQuadraticCurve(p0, p1, pull, segments = 14) {
+  const c = {
+    x: 2 * pull.x - 0.5 * (p0.x + p1.x),
+    y: 2 * pull.y - 0.5 * (p0.y + p1.y)
+  };
+  const pts = [];
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments;
+    const omt = 1 - t;
+    const x = omt * omt * p0.x + 2 * omt * t * c.x + t * t * p1.x;
+    const y = omt * omt * p0.y + 2 * omt * t * c.y + t * t * p1.y;
+    pts.push({ x: clampPct(x), y: clampPct(y) });
+  }
+  return pts;
+}
+
+function commitCurvePrimitive() {
+  const p0 = polyToolState.curveP0;
+  const p1 = polyToolState.curveP1;
+  const pull = polyToolState.curvePull || (p0 && p1 ? { x: (p0.x + p1.x) * 0.5, y: (p0.y + p1.y) * 0.5 } : null);
+  if (!p0 || !p1 || !pull) return;
+
+  const curvePts = samplePulledQuadraticCurve(p0, p1, pull, 14);
+  const draft = state.draftPolygonPoints;
+  const snap0 = polyToolState.curveSnapIdx0;
+  const snap1 = polyToolState.curveSnapIdx1;
+
+  pushDraftUndoSnapshot();
+
+  if (draft.length === 0) {
+    state.draftPolygonPoints = curvePts;
+    polyToolState.closedShapeMode = false;
+  } else if (snap0 >= 0 && snap1 >= 0 && draft.length >= 3 && snap0 !== snap1) {
+    const n = draft.length;
+    const fwd = (snap1 - snap0 + n) % n;
+    const bwd = (snap0 - snap1 + n) % n;
+    if (fwd <= bwd) {
+      const kept = [];
+      for (let k = 0; k <= bwd; k++) kept.push(draft[(snap1 + k) % n]);
+      state.draftPolygonPoints = [...kept, ...curvePts.slice(1, -1)];
+    } else {
+      const kept = [];
+      for (let k = 0; k <= fwd; k++) kept.push(draft[(snap0 + k) % n]);
+      state.draftPolygonPoints = [...kept, ...curvePts.slice(1, -1).reverse()];
+    }
+  } else if (!polyToolState.closedShapeMode) {
+    const metrics = getMediaBoxMetrics();
+    if (snap0 === draft.length - 1 || pctDistPx(draft[draft.length - 1], p0, metrics) <= 18) {
+      state.draftPolygonPoints.push(...curvePts.slice(1));
+    } else if (snap1 === 0 || pctDistPx(draft[0], p1, metrics) <= 18) {
+      state.draftPolygonPoints.push(...curvePts.slice(0, -1));
+    } else {
+      state.draftPolygonPoints.push(...curvePts);
+    }
+  } else if (draft.length >= 3) {
+    if (Math.abs(signedArea2D(curvePts)) >= 0.05) {
+      integrateClosedShapeIntoDraft(curvePts);
+    } else {
+      const metrics = getMediaBoxMetrics();
+      const mid = { x: (p0.x + p1.x) * 0.5, y: (p0.y + p1.y) * 0.5 };
+      const eIdx = findNearestPolygonEdgeIdx(draft, mid, metrics);
+      const eA = draft[eIdx];
+      const eB = draft[(eIdx + 1) % draft.length];
+      const dForward = Math.hypot(p0.x - eA.x, p0.y - eA.y) + Math.hypot(p1.x - eB.x, p1.y - eB.y);
+      const dReverse = Math.hypot(p1.x - eA.x, p1.y - eA.y) + Math.hypot(p0.x - eB.x, p0.y - eB.y);
+      const ins = dForward <= dReverse ? curvePts : curvePts.slice().reverse();
+      state.draftPolygonPoints.splice(eIdx + 1, 0, ...ins);
+    }
+  } else {
+    state.draftPolygonPoints.push(...curvePts);
+  }
+
+  polyToolState.curveStage = 0;
+  polyToolState.curveP0 = null;
+  polyToolState.curveP1 = null;
+  polyToolState.curvePull = null;
+  polyToolState.curveSnapIdx0 = -1;
+  polyToolState.curveSnapIdx1 = -1;
+  polyToolState.curvePullDragging = false;
+  polyToolState.curveP1DownScreen = null;
+  updatePolygonDrawToolbarUI();
+  renderDraftPolygonOverlayOnly();
+}
+
+function circumcircle2D(p1, p2, p3, metrics) {
+  const ax = p1.x, ay = p1.y, bx = p2.x, by = p2.y, cx = p3.x, cy = p3.y;
+  const d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by));
+  if (Math.abs(d) < 1e-4) return null;
+  const a2 = ax * ax + ay * ay, b2 = bx * bx + by * by, c2 = cx * cx + cy * cy;
+  const ux = (a2 * (by - cy) + b2 * (cy - ay) + c2 * (ay - by)) / d;
+  const uy = (a2 * (cx - bx) + b2 * (ax - cx) + c2 * (bx - ax)) / d;
+  const r = Math.hypot(ax - ux, ay - uy);
+  if (!Number.isFinite(r) || r < 4 || r > Math.max(metrics.w, metrics.h) * 3) return null;
+  return { cx: ux, cy: uy, r };
+}
+
+function buildCircle3Polygon(pct1, pct2, pct3, allowDiameterFallback = false) {
+  const metrics = getMediaBoxMetrics();
+  const toPx = (p) => ({ x: (p.x / 100) * metrics.w, y: (p.y / 100) * metrics.h });
+  const px1 = toPx(pct1), px2 = toPx(pct2), px3 = toPx(pct3);
+  let circle = circumcircle2D(px1, px2, px3, metrics);
+  if (!circle) {
+    if (!allowDiameterFallback) return null;
+    const r = Math.hypot(px2.x - px1.x, px2.y - px1.y) * 0.5;
+    if (r < 2) return null;
+    circle = { cx: (px1.x + px2.x) * 0.5, cy: (px1.y + px2.y) * 0.5, r };
+  }
+  const N = 32;
+  const pts = [];
+  for (let i = 0; i < N; i++) {
+    const ang = (i / N) * Math.PI * 2;
+    const xPct = clampPct(((circle.cx + Math.cos(ang) * circle.r) / metrics.w) * 100);
+    const yPct = clampPct(((circle.cy + Math.sin(ang) * circle.r) / metrics.h) * 100);
+    pts.push({ x: xPct, y: yPct });
+  }
+  return pts;
+}
+
+function commitCircle3Primitive() {
+  if (polyToolState.circlePts.length < 3) return;
+  const [p1, p2, p3] = polyToolState.circlePts;
+  const circlePoly = buildCircle3Polygon(p1, p2, p3, false);
+  if (!circlePoly) {
+    polyToolState.circlePts.pop();
+    showToast('Los 3 puntos están alineados; marca un 3er punto fuera de la línea');
+    updatePolygonDrawToolbarUI();
+    renderDraftPolygonOverlayOnly();
+    return;
+  }
+  pushDraftUndoSnapshot();
+  integrateClosedShapeIntoDraft(circlePoly);
+  polyToolState.circlePts = [];
+  updatePolygonDrawToolbarUI();
+  renderDraftPolygonOverlayOnly();
+}
+
+function renderDraftPolygonOverlayOnly() {
+  const svg = document.getElementById('polygon-svg');
+  if (!svg) return;
+  const existing = svg.querySelector('#draft-overlay-group');
+  if (existing) existing.remove();
+
+  if (!isEditor() || !state.isDrawingPolygon || state.is2DPlanMode) return;
+
+  const ns = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(ns, 'g');
+  g.setAttribute('id', 'draft-overlay-group');
+
+  const pts = state.draftPolygonPoints;
+  const hoverPt = polyToolState.hoverPt;
+  const mode = polyToolState.mode;
+
+  if (pts.length >= 3) {
+    const draftPoly = document.createElementNS(ns, 'polygon');
+    draftPoly.setAttribute('points', pts.map((p) => `${p.x},${p.y}`).join(' '));
+    draftPoly.setAttribute('fill', 'rgba(245, 215, 127, 0.32)');
+    draftPoly.setAttribute('stroke', '#f5d77f');
+    draftPoly.setAttribute('stroke-width', '0.45');
+    g.appendChild(draftPoly);
+  } else if (pts.length === 2) {
+    const draftLine = document.createElementNS(ns, 'polyline');
+    draftLine.setAttribute('points', pts.map((p) => `${p.x},${p.y}`).join(' '));
+    draftLine.setAttribute('fill', 'none');
+    draftLine.setAttribute('stroke', '#f5d77f');
+    draftLine.setAttribute('stroke-width', '0.45');
+    g.appendChild(draftLine);
+  }
+
+  const deleteHoverIdx = (mode === 'delete' && hoverPt) ? findNearestDraftVertexIdx(hoverPt, 22) : -1;
+  pts.forEach((pt, idx) => {
+    const c = document.createElementNS(ns, 'circle');
+    c.setAttribute('cx', String(pt.x));
+    c.setAttribute('cy', String(pt.y));
+    const isDelHover = idx === deleteHoverIdx;
+    c.setAttribute('r', isDelHover ? '1.25' : '0.85');
+    c.setAttribute('class', isDelHover ? 'draft-vertex-dot delete-hover' : 'draft-vertex-dot');
+    g.appendChild(c);
+  });
+
+  // Active tool live previews
+  if (mode === 'point' && hoverPt) {
+    if (polyToolState.closedShapeMode && pts.length >= 3) {
+      const eIdx = findNearestPolygonEdgeIdx(pts, hoverPt);
+      const a = pts[eIdx];
+      const b = pts[(eIdx + 1) % pts.length];
+      const guide = document.createElementNS(ns, 'polyline');
+      guide.setAttribute('points', `${a.x},${a.y} ${hoverPt.x},${hoverPt.y} ${b.x},${b.y}`);
+      guide.setAttribute('class', 'draft-preview-guide');
+      g.appendChild(guide);
+    } else if (pts.length >= 1) {
+      const last = pts[pts.length - 1];
+      const l1 = document.createElementNS(ns, 'line');
+      l1.setAttribute('x1', String(last.x));
+      l1.setAttribute('y1', String(last.y));
+      l1.setAttribute('x2', String(hoverPt.x));
+      l1.setAttribute('y2', String(hoverPt.y));
+      l1.setAttribute('class', 'draft-preview-guide');
+      g.appendChild(l1);
+      if (pts.length >= 2) {
+        const l2 = document.createElementNS(ns, 'line');
+        l2.setAttribute('x1', String(hoverPt.x));
+        l2.setAttribute('y1', String(hoverPt.y));
+        l2.setAttribute('x2', String(pts[0].x));
+        l2.setAttribute('y2', String(pts[0].y));
+        l2.setAttribute('class', 'draft-preview-guide');
+        l2.setAttribute('opacity', '0.5');
+        g.appendChild(l2);
+      }
+    }
+  } else if (mode === 'rect' && polyToolState.rectStart && hoverPt) {
+    const a = polyToolState.rectStart;
+    const b = hoverPt;
+    const minX = Math.min(a.x, b.x), maxX = Math.max(a.x, b.x);
+    const minY = Math.min(a.y, b.y), maxY = Math.max(a.y, b.y);
+    const rectEl = document.createElementNS(ns, 'polygon');
+    rectEl.setAttribute('points', `${minX},${minY} ${maxX},${minY} ${maxX},${maxY} ${minX},${maxY}`);
+    rectEl.setAttribute('class', 'draft-preview-shape');
+    g.appendChild(rectEl);
+    [a, b].forEach((corner) => {
+      const d = document.createElementNS(ns, 'circle');
+      d.setAttribute('cx', String(corner.x));
+      d.setAttribute('cy', String(corner.y));
+      d.setAttribute('r', '0.8');
+      d.setAttribute('class', 'draft-subpoint-dot');
+      g.appendChild(d);
+    });
+  } else if (mode === 'curve') {
+    if (polyToolState.curveStage === 1 && polyToolState.curveP0) {
+      const p0 = polyToolState.curveP0;
+      if (hoverPt) {
+        const l = document.createElementNS(ns, 'line');
+        l.setAttribute('x1', String(p0.x));
+        l.setAttribute('y1', String(p0.y));
+        l.setAttribute('x2', String(hoverPt.x));
+        l.setAttribute('y2', String(hoverPt.y));
+        l.setAttribute('class', 'draft-preview-guide');
+        g.appendChild(l);
+      }
+      const d0 = document.createElementNS(ns, 'circle');
+      d0.setAttribute('cx', String(p0.x));
+      d0.setAttribute('cy', String(p0.y));
+      d0.setAttribute('r', '0.9');
+      d0.setAttribute('class', 'draft-subpoint-dot');
+      g.appendChild(d0);
+    } else if (polyToolState.curveStage === 2 && polyToolState.curveP0 && polyToolState.curveP1) {
+      const p0 = polyToolState.curveP0;
+      const p1 = polyToolState.curveP1;
+      const pull = polyToolState.curvePull || { x: (p0.x + p1.x) * 0.5, y: (p0.y + p1.y) * 0.5 };
+      const c = { x: 2 * pull.x - 0.5 * (p0.x + p1.x), y: 2 * pull.y - 0.5 * (p0.y + p1.y) };
+
+      const path = document.createElementNS(ns, 'path');
+      path.setAttribute('d', `M ${p0.x} ${p0.y} Q ${c.x} ${c.y} ${p1.x} ${p1.y}`);
+      path.setAttribute('class', 'draft-preview-shape');
+      g.appendChild(path);
+
+      const guide = document.createElementNS(ns, 'polyline');
+      guide.setAttribute('points', `${p0.x},${p0.y} ${pull.x},${pull.y} ${p1.x},${p1.y}`);
+      guide.setAttribute('class', 'draft-preview-guide');
+      g.appendChild(guide);
+
+      [p0, p1].forEach((ep) => {
+        const d = document.createElementNS(ns, 'circle');
+        d.setAttribute('cx', String(ep.x));
+        d.setAttribute('cy', String(ep.y));
+        d.setAttribute('r', '0.9');
+        d.setAttribute('class', 'draft-subpoint-dot');
+        g.appendChild(d);
+      });
+      const ph = document.createElementNS(ns, 'circle');
+      ph.setAttribute('cx', String(pull.x));
+      ph.setAttribute('cy', String(pull.y));
+      ph.setAttribute('r', '1.05');
+      ph.setAttribute('class', 'draft-pull-handle');
+      g.appendChild(ph);
+    }
+  } else if (mode === 'circle3') {
+    const cPts = polyToolState.circlePts;
+    if (cPts.length === 1 && hoverPt) {
+      const l = document.createElementNS(ns, 'line');
+      l.setAttribute('x1', String(cPts[0].x));
+      l.setAttribute('y1', String(cPts[0].y));
+      l.setAttribute('x2', String(hoverPt.x));
+      l.setAttribute('y2', String(hoverPt.y));
+      l.setAttribute('class', 'draft-preview-guide');
+      g.appendChild(l);
+    } else if (cPts.length === 2 && hoverPt) {
+      const previewCircle = buildCircle3Polygon(cPts[0], cPts[1], hoverPt, true);
+      if (previewCircle) {
+        const polyEl = document.createElementNS(ns, 'polygon');
+        polyEl.setAttribute('points', previewCircle.map((p) => `${p.x},${p.y}`).join(' '));
+        polyEl.setAttribute('class', 'draft-preview-shape');
+        g.appendChild(polyEl);
+      }
+    }
+    cPts.forEach((cp) => {
+      const d = document.createElementNS(ns, 'circle');
+      d.setAttribute('cx', String(cp.x));
+      d.setAttribute('cy', String(cp.y));
+      d.setAttribute('r', '0.9');
+      d.setAttribute('class', 'draft-subpoint-dot');
+      g.appendChild(d);
+    });
+  }
+
+  svg.appendChild(g);
+}
+
 function recomputePolygonCentroid(polygon) {
   if (!Array.isArray(polygon) || polygon.length === 0) return { x: 50, y: 50 };
+  if (polygon.length >= 3) {
+    let twiceArea = 0;
+    let cx = 0;
+    let cy = 0;
+    for (let i = 0; i < polygon.length; i++) {
+      const p0 = polygon[i];
+      const p1 = polygon[(i + 1) % polygon.length];
+      const cross = p0.x * p1.y - p1.x * p0.y;
+      twiceArea += cross;
+      cx += (p0.x + p1.x) * cross;
+      cy += (p0.y + p1.y) * cross;
+    }
+    if (Math.abs(twiceArea) > 1e-4) {
+      return {
+        x: clampPct(cx / (3 * twiceArea)),
+        y: clampPct(cy / (3 * twiceArea))
+      };
+    }
+  }
   const x = Math.round((polygon.reduce((s, p) => s + Number(p.x || 0), 0) / polygon.length) * 10) / 10;
   const y = Math.round((polygon.reduce((s, p) => s + Number(p.y || 0), 0) / polygon.length) * 10) / 10;
   return { x, y };
@@ -2441,12 +3637,13 @@ function enterPolygonShapeEdit(unitId) {
   if (!isEditor()) return;
   const unit = state.units.find((u) => u.id === unitId);
   if (!unit || !Array.isArray(unit.polygon) || unit.polygon.length < 3) return;
+  if (state.is2DPlanMode) {
+    state.is2DPlanMode = false;
+    syncPlanModeButtons();
+    drawMasterplanRender();
+  }
   if (state.isDrawingPolygon) {
-    state.isDrawingPolygon = false;
-    state.draftPolygonPoints = [];
-    document.body.classList.remove('drawing-polygon');
-    document.getElementById('btn-draw-polygon')?.classList.remove('active');
-    document.getElementById('polygon-draw-toolbar')?.classList.remove('active');
+    resetPolygonDrawingState(false);
   }
   shapeEditBackupPolygon = structuredClone(unit.polygon);
   state.editingShapeUnitId = unit.id;
@@ -2482,6 +3679,16 @@ function renderMasterplanOverlays() {
 
   svg.innerHTML = '';
   pinsContainer.innerHTML = '';
+  syncPlanModeButtons();
+  if (state.is2DPlanMode) {
+    clearPolygonProximityReveal();
+    hideUnitHoverTooltip();
+    closePlanActionPopover();
+    const availCount = state.units.filter((u) => u.status === 'available').length;
+    const badgeEl = document.getElementById('available-count-badge');
+    if (badgeEl) badgeEl.textContent = String(availCount);
+    return;
+  }
 
   const isExterior = state.activeLevelId === 'facade';
   const showAvail = state.showAvailability || !isExterior;
@@ -2720,22 +3927,8 @@ function renderMasterplanOverlays() {
     }
   }
 
-  if (isEditor() && state.isDrawingPolygon && state.draftPolygonPoints.length > 0) {
-    const draftPoly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-    draftPoly.setAttribute('points', state.draftPolygonPoints.map((p) => `${p.x},${p.y}`).join(' '));
-    draftPoly.setAttribute('fill', 'rgba(245, 215, 127, 0.32)');
-    draftPoly.setAttribute('stroke', '#f5d77f');
-    draftPoly.setAttribute('stroke-width', '0.45');
-    svg.appendChild(draftPoly);
-
-    state.draftPolygonPoints.forEach((pt) => {
-      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      c.setAttribute('cx', String(pt.x));
-      c.setAttribute('cy', String(pt.y));
-      c.setAttribute('r', '0.85');
-      c.setAttribute('class', 'draft-vertex-dot');
-      svg.appendChild(c);
-    });
+  if (isEditor() && state.isDrawingPolygon && !state.is2DPlanMode) {
+    renderDraftPolygonOverlayOnly();
   }
 
   const availCount = state.units.filter((u) => u.status === 'available').length;
@@ -2839,12 +4032,12 @@ async function navigateToLevelWithTransition(targetLevelId, explicitOverride = '
   const targetLvl = state.levels.find((l) => l.id === targetLevelId);
 
   const applyLevel = () => {
+    if (state.isDrawingPolygon) resetPolygonDrawingState(false);
     state.activeLevelId = targetLevelId;
     state.is2DPlanMode = false;
     state.pan = { x: 0, y: 0 };
     setNavDockExpanded(false);
-    document.getElementById('btn-mode-3drender')?.classList.add('active');
-    document.getElementById('btn-mode-2dplan')?.classList.remove('active');
+    syncPlanModeButtons();
     renderLevelsSidebar();
     drawMasterplanRender();
     const firstUnitInLevel = state.units.find((u) => u.levelId === targetLevelId);
@@ -2913,6 +4106,7 @@ function triggerPolygonTargetTransition(unit) {
 /* --- FLOOR CREATOR / EDITOR / DELETE MODAL --- */
 let floorDraft = {
   planPhotoUrl: null, planPhotoKey: null,
+  plan2DPhotoUrl: null, plan2DPhotoKey: null, plan2DCleared: false,
   nightPhotoUrl: null, nightPhotoKey: null,
   transVideoKey: null, transVideoName: null,
   transImg1Url: null, transImg1Key: null,
@@ -2930,6 +4124,114 @@ function syncFloorTransTypeUI() {
   if (imgBox) imgBox.style.display = type === 'two_images' ? 'grid' : 'none';
 }
 
+function promptAndCloneFloor(sourceLevelId) {
+  if (!isEditor() || !sourceLevelId || sourceLevelId === 'facade') {
+    showToast('Solo cuentas de Editor pueden clonar pisos');
+    return null;
+  }
+  const srcLvl = state.levels.find((l) => l.id === sourceLevelId);
+  if (!srcLvl) return null;
+
+  const rawName = window.prompt('Nombre para el nuevo piso clonado:', `${srcLvl.name} (Clon)`);
+  if (!rawName || !rawName.trim()) return null;
+  const rawBadge = window.prompt('Etiqueta corta (badge) para el piso clonado:', `${srcLvl.badge} Clon`);
+  const newName = rawName.trim();
+  const newBadge = (rawBadge && rawBadge.trim()) ? rawBadge.trim() : srcLvl.badge;
+
+  const newLevelId = `floor-clone-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  const clonedLvl = {
+    ...structuredClone(srcLvl),
+    id: newLevelId,
+    name: newName,
+    badge: newBadge,
+    floorNum: state.levels.length
+  };
+  state.levels.push(clonedLvl);
+
+  state.imageAdjustments[newLevelId] = structuredClone(
+    state.imageAdjustments[sourceLevelId] || { fit: 'contain', scale: 100, x: 0, y: 0 }
+  );
+
+  // Clone 360° rooms belonging to sourceLevelId and build oldRoomId -> newRoomId map
+  const roomMap = new Map();
+  const srcRooms = state.rooms360.filter((r) => r.levelId === sourceLevelId);
+  srcRooms.forEach((r, idx) => {
+    const newRoomId = `room-${newLevelId}-${idx + 1}-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`;
+    roomMap.set(r.id, newRoomId);
+  });
+  srcRooms.forEach((r) => {
+    const cr = structuredClone(r);
+    cr.id = roomMap.get(r.id);
+    cr.levelId = newLevelId;
+    cr.hotspots = (cr.hotspots || []).map((hs) => ({
+      ...hs,
+      targetRoomId: roomMap.get(hs.targetRoomId) || hs.targetRoomId
+    }));
+    state.rooms360.push(cr);
+  });
+
+  // Clone units/polygons belonging to sourceLevelId
+  const srcUnits = state.units.filter((u) => u.levelId === sourceLevelId);
+  srcUnits.forEach((u, idx) => {
+    const cu = structuredClone(u);
+    cu.id = `u-clone-${Date.now()}-${Math.random().toString(36).slice(2, 6)}-${idx}`;
+    cu.levelId = newLevelId;
+    if (cu.targetLevelId === sourceLevelId) cu.targetLevelId = newLevelId;
+    cu.floorLabel = newName;
+    if (cu.defaultRoom360 && roomMap.has(cu.defaultRoom360)) {
+      cu.defaultRoom360 = roomMap.get(cu.defaultRoom360);
+    }
+    cu.customButtons = (cu.customButtons || []).map((cb, cbIdx) => ({
+      ...cb,
+      id: `cb-clone-${Date.now()}-${Math.random().toString(36).slice(2, 6)}-${cbIdx}`,
+      targetRoom360Id: (cb.targetRoom360Id && roomMap.has(cb.targetRoom360Id)) ? roomMap.get(cb.targetRoom360Id) : cb.targetRoom360Id
+    }));
+    state.units.push(cu);
+  });
+
+  // Clone transition slots referencing sourceLevelId
+  const matchingSlots = (state.transitions.slots || []).filter(
+    (s) => s.toLevelId === sourceLevelId || s.fromLevelId === sourceLevelId
+  );
+  if (matchingSlots.length > 0) {
+    matchingSlots.forEach((s, idx) => {
+      const cs = structuredClone(s);
+      cs.id = `trans-clone-${newLevelId}-${idx}-${Date.now()}`;
+      if (cs.toLevelId === sourceLevelId) cs.toLevelId = newLevelId;
+      if (cs.fromLevelId === sourceLevelId) cs.fromLevelId = newLevelId;
+      cs.label = `${getLevelDisplayName(cs.fromLevelId || 'facade')} → ${getLevelDisplayName(cs.toLevelId || newLevelId)}`;
+      state.transitions.slots.push(cs);
+    });
+  } else {
+    state.transitions.slots.push({
+      id: `trans-ext-to-${newLevelId}`,
+      fromLevelId: 'facade',
+      toLevelId: newLevelId,
+      label: `Exterior Principal → ${newName}`,
+      enabled: clonedLvl.transitionType !== 'none',
+      transitionType: clonedLvl.transitionType || 'video',
+      defaultVideo: './sample-assets/transition-floors.mp4',
+      mediaKey: clonedLvl.transitionMediaKey || null,
+      customName: clonedLvl.transitionVideoName || null,
+      img1Url: clonedLvl.transImg1 || null,
+      img1Key: clonedLvl.transImg1Key || null,
+      img2Url: clonedLvl.transImg2 || null,
+      img2Key: clonedLvl.transImg2Key || null
+    });
+  }
+
+  savePersistedState();
+  renderExistingFloorsManageList();
+  renderLevelsSidebar();
+  renderTour360FloorsPanel();
+  populateTransitionSelectors();
+  renderStudioFloorsTab();
+  renderStudioTransitionsTab();
+  renderUnitsCatalog();
+  showToast(`Piso "${newName}" clonado con todas sus vistas y botones`);
+  return clonedLvl;
+}
+
 function deleteFloorById(levelId) {
   if (!isEditor() || !levelId || levelId === 'facade') {
     showToast('No se puede eliminar la vista exterior principal');
@@ -2941,7 +4243,10 @@ function deleteFloorById(levelId) {
   state.units = state.units.filter((u) => u.levelId !== levelId);
   state.rooms360 = state.rooms360.filter((r) => r.levelId !== levelId);
   state.transitions.slots = (state.transitions.slots || []).filter((s) => s.fromLevelId !== levelId && s.toLevelId !== levelId);
-  if (state.activeLevelId === levelId) state.activeLevelId = 'facade';
+  if (state.activeLevelId === levelId) {
+    state.activeLevelId = 'facade';
+    state.is2DPlanMode = false;
+  }
   if (state.editingFloorId === levelId) state.editingFloorId = null;
   savePersistedState();
   renderLevelsSidebar();
@@ -2949,6 +4254,8 @@ function deleteFloorById(levelId) {
   renderMasterplanOverlays();
   renderExistingFloorsManageList();
   renderTour360FloorsPanel();
+  renderStudioFloorsTab();
+  renderUnitsCatalog();
   showToast(`Nivel "${lvl.name}" eliminado`);
 }
 
@@ -2966,13 +4273,15 @@ function renderExistingFloorsManageList() {
     row.className = 'builder-item-row';
     row.innerHTML = `
       <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-        <strong style="color:var(--gold-bright);">${lvl.name}</strong> <small style="opacity:0.7;">(${lvl.badge})</small>
+        <strong style="color:var(--gold-bright);">${escapeHtml(lvl.name)}</strong> <small style="opacity:0.7;">(${escapeHtml(lvl.badge)})</small>
       </span>
-      <div style="display:flex;gap:4px;flex-shrink:0;">
-        <button type="button" class="glass-pill-btn" data-edit-lvl="${lvl.id}" style="height:22px;padding:0 7px;font-size:10px;">✎ Editar</button>
-        <button type="button" class="glass-pill-btn" data-del-lvl="${lvl.id}" style="height:22px;padding:0 7px;font-size:10px;color:#f87171;border-color:rgba(239,68,68,0.4);">🗑️ Eliminar</button>
+      <div style="display:flex;gap:4px;flex-shrink:0;" data-editor-only>
+        <button type="button" class="glass-pill-btn" data-editor-only data-clone-lvl="${lvl.id}" style="height:22px;padding:0 7px;font-size:10px;">📑 Clonar</button>
+        <button type="button" class="glass-pill-btn" data-editor-only data-edit-lvl="${lvl.id}" style="height:22px;padding:0 7px;font-size:10px;">✎ Editar</button>
+        <button type="button" class="glass-pill-btn" data-editor-only data-del-lvl="${lvl.id}" style="height:22px;padding:0 7px;font-size:10px;color:#f87171;border-color:rgba(239,68,68,0.4);">🗑️ Eliminar</button>
       </div>
     `;
+    row.querySelector('[data-clone-lvl]')?.addEventListener('click', () => promptAndCloneFloor(lvl.id));
     row.querySelector('[data-edit-lvl]').addEventListener('click', () => openFloorCreatorModal(lvl));
     row.querySelector('[data-del-lvl]').addEventListener('click', () => deleteFloorById(lvl.id));
     list.appendChild(row);
@@ -2989,6 +4298,9 @@ function openFloorCreatorModal(existingLevel = null, options = {}) {
   floorDraft = {
     planPhotoUrl: existingLevel?.dayPhoto || null,
     planPhotoKey: existingLevel?.dayMediaKey || null,
+    plan2DPhotoUrl: existingLevel?.plan2DPhoto || null,
+    plan2DPhotoKey: existingLevel?.plan2DMediaKey || null,
+    plan2DCleared: false,
     nightPhotoUrl: hasRealNight ? (existingLevel?.nightPhoto || null) : null,
     nightPhotoKey: existingLevel?.nightMediaKey || null,
     transVideoKey: existingLevel?.transitionMediaKey || null,
@@ -3012,6 +4324,8 @@ function openFloorCreatorModal(existingLevel = null, options = {}) {
   document.getElementById('floor-twoimg-1-lbl').textContent = floorDraft.transImg1Url ? '✅ Imagen 1 lista' : 'Sin seleccionar';
   document.getElementById('floor-twoimg-2-lbl').textContent = floorDraft.transImg2Url ? '✅ Imagen 2 lista' : 'Sin seleccionar';
   document.getElementById('floor-plan-photo-lbl').textContent = floorDraft.planPhotoKey ? '✅ Fotografía en planta cargada' : 'Se usará render de planta predeterminado o sube tu foto';
+  const p2dLbl = document.getElementById('floor-plan2d-photo-lbl');
+  if (p2dLbl) p2dLbl.textContent = floorDraft.plan2DPhotoUrl ? '✅ Plano 2D configurado en este nivel' : 'Opcional: sube o cambia el Plano 2D exclusivo de este piso';
   const nightLbl = document.getElementById('floor-night-photo-lbl');
   if (nightLbl) nightLbl.textContent = floorDraft.nightPhotoUrl ? '✅ Vista nocturna cargada' : 'Opcional: si no se sube, el modo Noche mantiene la foto principal sin oscurecer';
   const clrNightBtn = document.getElementById('btn-floor-clear-night');
@@ -3043,6 +4357,16 @@ function saveFloorFromModal() {
       if (floorDraft.planPhotoUrl) {
         lvl.dayPhoto = floorDraft.planPhotoUrl;
         lvl.dayMediaKey = floorDraft.planPhotoKey;
+      } else {
+        lvl.dayPhoto = './sample-assets/floor-piso9-3d.jpg';
+        lvl.dayMediaKey = null;
+      }
+      if (floorDraft.plan2DCleared) {
+        lvl.plan2DPhoto = null;
+        lvl.plan2DMediaKey = null;
+      } else if (floorDraft.plan2DPhotoUrl) {
+        lvl.plan2DPhoto = floorDraft.plan2DPhotoUrl;
+        lvl.plan2DMediaKey = floorDraft.plan2DPhotoKey;
       }
       lvl.nightPhoto = floorDraft.nightPhotoUrl || null;
       lvl.nightMediaKey = floorDraft.nightPhotoKey || null;
@@ -3070,8 +4394,8 @@ function saveFloorFromModal() {
       floorNum: state.levels.length,
       dayPhoto: floorDraft.planPhotoUrl || './sample-assets/floor-piso9-3d.jpg',
       nightPhoto: floorDraft.nightPhotoUrl || null,
-      plan2DPhoto: null,
-      plan2DMediaKey: null,
+      plan2DPhoto: floorDraft.plan2DPhotoUrl || null,
+      plan2DMediaKey: floorDraft.plan2DPhotoKey || null,
       dayMediaKey: floorDraft.planPhotoKey || null,
       nightMediaKey: floorDraft.nightPhotoKey || null,
       hasTour360,
@@ -3443,25 +4767,32 @@ function renderStudioFloorsTab() {
           <button type="button" class="glass-pill-btn" data-floor-act="renders" style="height:28px;font-size:10.5px;padding:0 10px;">🖼️ Editar renders de piso</button>
           <button type="button" class="glass-pill-btn active" data-floor-act="plan" style="height:28px;font-size:10.5px;padding:0 10px;">📐 Editar plano planta piso</button>
           <button type="button" class="glass-pill-btn" data-floor-act="panoramas" style="height:28px;font-size:10.5px;padding:0 10px;">🌐 Panorámicas</button>
+          ${!isFacade ? `<button type="button" class="glass-pill-btn" data-editor-only data-floor-act="clone" style="height:28px;font-size:10.5px;padding:0 10px;">📑 Clonar piso</button>` : ''}
         </div>
       </div>
       <div class="studio-floor-renders-panel" data-floor-panel="${lvl.id}">
-        <label class="glass-pill-btn active" style="cursor:pointer;height:28px;font-size:10.5px;padding:0 10px;">
-          ☀️ Subir Render Día
+        <label class="glass-pill-btn active" data-editor-only style="cursor:pointer;height:28px;font-size:10.5px;padding:0 10px;">
+          🔄 Cambiar Render Día
           <input type="file" accept="image/*" style="display:none;" data-floor-upload="day" />
         </label>
-        <label class="glass-pill-btn" style="cursor:pointer;height:28px;font-size:10.5px;padding:0 10px;">
+        <button type="button" class="glass-pill-btn" data-editor-only data-floor-clear-day style="height:28px;font-size:10.5px;padding:0 9px;color:#f87171;">🗑️ Eliminar Render Día</button>
+        <label class="glass-pill-btn" data-editor-only style="cursor:pointer;height:28px;font-size:10.5px;padding:0 10px;">
           🌙 ${hasNight ? 'Cambiar Nocturna' : 'Subir Nocturna'}
           <input type="file" accept="image/*" style="display:none;" data-floor-upload="night" />
         </label>
-        ${hasNight ? `<button type="button" class="glass-pill-btn" data-floor-clear-night style="height:28px;font-size:10.5px;padding:0 9px;color:#fdba74;">✕ Quitar Nocturna</button>` : ''}
-        <label class="glass-pill-btn" style="cursor:pointer;height:28px;font-size:10.5px;padding:0 10px;">
-          📐 Subir Plano 2D
+        ${hasNight ? `<button type="button" class="glass-pill-btn" data-editor-only data-floor-clear-night style="height:28px;font-size:10.5px;padding:0 9px;color:#fdba74;">✕ Quitar Nocturna</button>` : ''}
+        <label class="glass-pill-btn" data-editor-only style="cursor:pointer;height:28px;font-size:10.5px;padding:0 10px;">
+          📐 Cambiar Plano 2D
           <input type="file" accept="image/*" style="display:none;" data-floor-upload="plan2d" />
         </label>
+        <button type="button" class="glass-pill-btn" data-editor-only data-floor-clear-plan2d style="height:28px;font-size:10.5px;padding:0 9px;color:#f87171;">🗑️ Eliminar Plano 2D</button>
         <button type="button" class="glass-pill-btn" data-floor-open-gallery style="height:28px;font-size:10.5px;padding:0 10px;">🖼️ Abrir Galería</button>
       </div>
     `;
+
+    row.querySelector('[data-floor-act="clone"]')?.addEventListener('click', () => {
+      promptAndCloneFloor(lvl.id);
+    });
 
     row.querySelector('[data-floor-act="transitions"]').addEventListener('click', () => {
       studioTransitionsFilterLevelId = lvl.id;
@@ -3548,6 +4879,24 @@ function renderStudioFloorsTab() {
       if (state.activeLevelId === lvl.id) drawMasterplanRender();
       showToast(`Plano 2D actualizado en "${lvl.name}"`);
       e.target.value = '';
+    });
+
+    row.querySelector('[data-floor-clear-day]')?.addEventListener('click', () => {
+      lvl.dayPhoto = './sample-assets/floor-piso9-3d.jpg';
+      lvl.dayMediaKey = null;
+      savePersistedState();
+      renderStudioFloorsTab();
+      if (state.activeLevelId === lvl.id) drawMasterplanRender();
+      showToast(`Render Día restaurado en "${lvl.name}"`);
+    });
+
+    row.querySelector('[data-floor-clear-plan2d]')?.addEventListener('click', () => {
+      lvl.plan2DPhoto = null;
+      lvl.plan2DMediaKey = null;
+      savePersistedState();
+      renderStudioFloorsTab();
+      if (state.activeLevelId === lvl.id) drawMasterplanRender();
+      showToast(`Plano 2D eliminado en "${lvl.name}"`);
     });
 
     row.querySelector('[data-floor-open-gallery]')?.addEventListener('click', () => {
@@ -3921,9 +5270,32 @@ function renderDraftCustomButtons() {
       ? ` · <span style="display:inline-flex;align-items:center;gap:4px;"><i style="width:9px;height:9px;border-radius:50%;background:${btn.pinColor || '#d4af37'};display:inline-block;border:1px solid #fff;"></i>Punto en Planta</span>`
       : ' · Lista';
     row.innerHTML = `
-      <span><strong style="color:var(--gold-bright);">${btn.label}</strong> <small style="opacity:0.78;">(${badge}${nightTag}${planTag})</small></span>
-      <button type="button" class="icon-btn" data-rm-btn="${idx}" style="width:22px;height:22px;color:#f87171;">✕</button>
+      <span><strong style="color:var(--gold-bright);">${escapeHtml(btn.label)}</strong> <small style="opacity:0.78;">(${badge}${nightTag}${planTag})</small></span>
+      <div style="display:flex;align-items:center;gap:4px;" data-editor-only>
+        <label class="glass-pill-btn" data-editor-only style="height:22px;padding:0 7px;font-size:10px;cursor:pointer;" title="Cambiar imagen del botón">🔄 Cambiar<input type="file" accept="image/*" data-cb-replace="${idx}" style="display:none;" /></label>
+        <button type="button" class="icon-btn" data-editor-only data-rm-btn="${idx}" title="Eliminar botón" style="width:22px;height:22px;color:#f87171;">🗑️</button>
+      </div>
     `;
+    row.querySelector('[data-cb-replace]')?.addEventListener('change', async (e) => {
+      if (!isEditor()) return;
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const key = `custom-btn-media-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      const url = await saveMediaBlob(key, file);
+      if (btn.actionType === 'tour360' && btn.targetRoom360Id) {
+        const room = state.rooms360.find((r) => r.id === btn.targetRoom360Id);
+        if (room) {
+          room.customImageUrl = url;
+          room.mediaKey = key;
+        }
+      } else {
+        btn.photoUrl = url;
+        btn.photoMediaKey = key;
+      }
+      renderDraftCustomButtons();
+      showToast(`Imagen actualizada en botón "${btn.label}"`);
+      e.target.value = '';
+    });
     row.querySelector('[data-rm-btn]').addEventListener('click', () => {
       draftCustomButtons.splice(idx, 1);
       renderDraftCustomButtons();
@@ -4023,8 +5395,8 @@ function savePolygonFromModal() {
     selectUnit(state.editingPolygonUnitId, true);
     showToast('Polígono y panel actualizados');
   } else if (state.draftPolygonPoints.length >= 3) {
-    const cx = state.draftPolygonPoints.reduce((s, p) => s + p.x, 0) / state.draftPolygonPoints.length;
-    const cy = state.draftPolygonPoints.reduce((s, p) => s + p.y, 0) / state.draftPolygonPoints.length;
+    const center = recomputePolygonCentroid(state.draftPolygonPoints);
+    const savedPoly = state.draftPolygonPoints.map((p) => ({ x: round2(p.x), y: round2(p.y) }));
     const newId = `u-poly-${Date.now()}`;
     const activeLvl = state.levels.find((l) => l.id === state.activeLevelId);
     state.units.push({
@@ -4034,14 +5406,10 @@ function savePolygonFromModal() {
       area, beds, baths, kitchens, price, orientation: 'Vista', status, showAvailability,
       defaultRoom360: getRooms360ForScope(state.activeLevelId)[0]?.id || 'living',
       customLines, customButtons,
-      center: { x: cx, y: cy }, polygon: [...state.draftPolygonPoints]
+      center, polygon: savedPoly
     });
-    state.isDrawingPolygon = false;
-    state.draftPolygonPoints = [];
-    document.body.classList.remove('drawing-polygon');
     state.showAvailability = true;
-    document.getElementById('btn-draw-polygon').classList.remove('active');
-    document.getElementById('polygon-draw-toolbar').classList.remove('active');
+    resetPolygonDrawingState(false);
     savePersistedState();
     selectUnit(newId, true);
     showToast(`Polígono "${name}" guardado`);
@@ -4059,13 +5427,18 @@ function renderGalleryModalContent(activeId = null, animateCrossfade = false) {
   if (!mainImg || !row) return;
 
   const targetId = activeId || activeGalleryItemId;
-  const current = state.renderedViewsGallery.find((g) => g.id === targetId) || state.renderedViewsGallery[0];
+  const current = state.renderedViewsGallery.find((g) => g.id === targetId) || state.renderedViewsGallery[0] || null;
   activeGalleryItemId = current?.id || null;
   if (current) {
     const nextUrl = (state.isNightMode && current.nightUrl) ? current.nightUrl : current.url;
     crossfadeImageElement(mainImg, overlayImg, nextUrl, 'gallery', animateCrossfade && Boolean(current.nightUrl));
     mainImg.style.filter = 'none';
-    mainCap.textContent = current.title;
+    mainImg.style.display = 'block';
+    if (mainCap) mainCap.textContent = current.title;
+  } else {
+    mainImg.removeAttribute('src');
+    mainImg.style.display = 'none';
+    if (mainCap) mainCap.textContent = 'Sin vistas renderizadas';
   }
 
   const clrNightBtn = document.getElementById('btn-clear-gallery-night');
@@ -4073,12 +5446,53 @@ function renderGalleryModalContent(activeId = null, animateCrossfade = false) {
   syncDayNightButtonsUI();
 
   row.innerHTML = '';
-  state.renderedViewsGallery.forEach((item) => {
-    const btn = document.createElement('button');
-    btn.className = `room-thumb-card ${current?.id === item.id ? 'active' : ''}`;
-    btn.innerHTML = `<img src="${item.url}" alt="" style="width:44px;height:30px;object-fit:cover;border-radius:5px;" /> <span>${item.title}${item.nightUrl ? ' 🌙' : ''}</span>`;
-    btn.addEventListener('click', () => renderGalleryModalContent(item.id));
-    row.appendChild(btn);
+  const editorMode = isEditor();
+  state.renderedViewsGallery.forEach((item, idx) => {
+    const card = document.createElement('div');
+    card.className = `room-thumb-card ${current?.id === item.id ? 'active' : ''}`;
+    card.setAttribute('role', 'button');
+    card.setAttribute('tabindex', '0');
+    card.innerHTML = `
+      <img src="${item.url}" alt="" style="width:44px;height:30px;object-fit:cover;border-radius:5px;" />
+      <span>${escapeHtml(item.title)}${item.nightUrl ? ' 🌙' : ''}</span>
+      ${editorMode ? `
+        <span style="display:inline-flex;align-items:center;gap:3px;margin-left:4px;" data-editor-only>
+          <label class="icon-btn" data-editor-only data-gal-rep-lbl="${item.id}" title="Cambiar render" style="width:22px;height:22px;cursor:pointer;font-size:11px;">🔄<input type="file" accept="image/*" data-gal-replace="${item.id}" style="display:none;" /></label>
+          <button type="button" class="icon-btn" data-editor-only data-gal-del="${item.id}" title="Eliminar render" style="width:22px;height:22px;color:#f87171;font-size:11px;">🗑️</button>
+        </span>
+      ` : ''}
+    `;
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('[data-gal-replace], [data-gal-rep-lbl], [data-gal-del]')) return;
+      renderGalleryModalContent(item.id);
+    });
+    card.querySelector('[data-gal-replace]')?.addEventListener('change', async (e) => {
+      e.stopPropagation();
+      if (!isEditor()) return;
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const key = `gallery-rep-${item.id}-${Date.now()}`;
+      const url = await saveMediaBlob(key, file);
+      item.url = url;
+      item.mediaKey = key;
+      activeGalleryItemId = item.id;
+      savePersistedState();
+      renderGalleryModalContent(item.id);
+      showToast(`Render "${item.title}" actualizado`);
+      e.target.value = '';
+    });
+    card.querySelector('[data-gal-del]')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!isEditor()) return;
+      state.renderedViewsGallery.splice(idx, 1);
+      if (activeGalleryItemId === item.id) {
+        activeGalleryItemId = state.renderedViewsGallery[0]?.id || null;
+      }
+      savePersistedState();
+      renderGalleryModalContent(activeGalleryItemId);
+      showToast('Render eliminado de la galería');
+    });
+    row.appendChild(card);
   });
 }
 
@@ -4117,6 +5531,8 @@ let tour360 = {
   onPointerDownLat: 0,
   onPointerDownX: 0,
   onPointerDownY: 0,
+  lastPointerX: 0,
+  lastPointerY: 0,
   autoRotate: false,
   hotspotElements: [],
   gyroEnabled: false,
@@ -4125,6 +5541,12 @@ let tour360 = {
   gyroBaselineAlpha: null,
   gyroBaselineBeta: null,
   gyroBaselineGamma: null,
+  gyroLastRawAlpha: null,
+  gyroLastRawBeta: null,
+  gyroLastRawGamma: null,
+  gyroUnwrappedAlpha: 0,
+  gyroUnwrappedBeta: 0,
+  gyroUnwrappedGamma: 0,
   gyroBaseLon: 0,
   gyroBaseLat: 0,
   gyroLastMoveAt: 0,
@@ -4142,16 +5564,38 @@ function handleTour360DeviceOrientation(e) {
     tour360.gyroBaselineAlpha = alpha;
     tour360.gyroBaselineBeta = beta;
     tour360.gyroBaselineGamma = gamma;
+    tour360.gyroLastRawAlpha = alpha;
+    tour360.gyroLastRawBeta = beta;
+    tour360.gyroLastRawGamma = gamma;
+    tour360.gyroUnwrappedAlpha = alpha;
+    tour360.gyroUnwrappedBeta = beta;
+    tour360.gyroUnwrappedGamma = gamma;
     tour360.gyroBaseLon = tour360.lon;
     tour360.gyroBaseLat = tour360.lat;
     return;
   }
 
-  let dAlpha = alpha - tour360.gyroBaselineAlpha;
-  while (dAlpha > 180) dAlpha -= 360;
-  while (dAlpha < -180) dAlpha += 360;
-  const dBeta = beta - tour360.gyroBaselineBeta;
-  const dGamma = gamma - tour360.gyroBaselineGamma;
+  let stepAlpha = alpha - tour360.gyroLastRawAlpha;
+  while (stepAlpha > 180) stepAlpha -= 360;
+  while (stepAlpha < -180) stepAlpha += 360;
+  tour360.gyroUnwrappedAlpha += stepAlpha;
+  tour360.gyroLastRawAlpha = alpha;
+
+  let stepBeta = beta - tour360.gyroLastRawBeta;
+  while (stepBeta > 180) stepBeta -= 360;
+  while (stepBeta < -180) stepBeta += 360;
+  tour360.gyroUnwrappedBeta += stepBeta;
+  tour360.gyroLastRawBeta = beta;
+
+  let stepGamma = gamma - tour360.gyroLastRawGamma;
+  while (stepGamma > 90) stepGamma -= 180;
+  while (stepGamma < -90) stepGamma += 180;
+  tour360.gyroUnwrappedGamma += stepGamma;
+  tour360.gyroLastRawGamma = gamma;
+
+  const dAlpha = tour360.gyroUnwrappedAlpha - tour360.gyroBaselineAlpha;
+  const dBeta = tour360.gyroUnwrappedBeta - tour360.gyroBaselineBeta;
+  const dGamma = tour360.gyroUnwrappedGamma - tour360.gyroBaselineGamma;
 
   if (!tour360.isUserInteracting) {
     const rawAngle = window.screen?.orientation?.angle ?? window.orientation ?? 0;
@@ -4161,7 +5605,15 @@ function handleTour360DeviceOrientation(e) {
     else if (orientAngle === 270) adjPitch = dGamma;
     else if (orientAngle === 180) adjPitch = -dBeta;
     tour360.lon = tour360.gyroBaseLon - dAlpha;
-    tour360.lat = Math.max(-85, Math.min(85, tour360.gyroBaseLat + adjPitch * 0.85));
+    let nextLat = tour360.gyroBaseLat + adjPitch * 3.2;
+    if (
+      (orientAngle === 90 && tour360.gyroUnwrappedGamma <= -85) ||
+      (orientAngle === 270 && tour360.gyroUnwrappedGamma >= 85) ||
+      (orientAngle === 0 && tour360.gyroUnwrappedBeta >= 110)
+    ) {
+      nextLat = Math.max(nextLat, 75);
+    }
+    tour360.lat = Math.max(-85, Math.min(85, nextLat));
     if (Math.abs(dAlpha) > 0.4 || Math.abs(adjPitch) > 0.4) {
       tour360.gyroLastMoveAt = Date.now();
     }
@@ -4326,32 +5778,47 @@ function initTour360Viewer() {
   const initialTex = generateEquirectangularPanoramaTexture(state.rooms360[0], state.isNightMode);
   tour360.currentTexture = initialTex;
   tour360.sphereMesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: initialTex }));
+  tour360.sphereMesh.rotation.y = Math.PI;
   tour360.scene.add(tour360.sphereMesh);
 
   const domEl = tour360.renderer.domElement;
   domEl.style.cursor = 'grab';
+  domEl.style.touchAction = 'none';
+  container.style.touchAction = 'none';
 
-  domEl.addEventListener('pointerdown', (e) => {
+  if (!tour360.gyroListenerBound) {
+    window.addEventListener('deviceorientation', handleTour360DeviceOrientation);
+    tour360.gyroListenerBound = true;
+  }
+
+  const startTour360Drag = (clientX, clientY, rawEvent = null) => {
     document.getElementById('tour360-drag-hint')?.classList.add('hidden');
-    if (isEditor() && state.isPlacingHotspot360) {
-      openHotspot360Modal(e, null);
+    if (isEditor() && state.isPlacingHotspot360 && rawEvent) {
+      openHotspot360Modal(rawEvent, null);
       return;
     }
     tour360.isUserInteracting = true;
     domEl.style.cursor = 'grabbing';
-    tour360.onPointerDownX = e.clientX;
-    tour360.onPointerDownY = e.clientY;
+    tour360.onPointerDownX = clientX;
+    tour360.onPointerDownY = clientY;
+    tour360.lastPointerX = clientX;
+    tour360.lastPointerY = clientY;
     tour360.onPointerDownLon = tour360.lon;
     tour360.onPointerDownLat = tour360.lat;
-  });
+  };
 
-  window.addEventListener('pointermove', (e) => {
+  const moveTour360Drag = (clientX, clientY) => {
     if (!tour360.isUserInteracting) return;
-    tour360.lon = (tour360.onPointerDownX - e.clientX) * 0.16 + tour360.onPointerDownLon;
-    tour360.lat = (e.clientY - tour360.onPointerDownY) * 0.16 + tour360.onPointerDownLat;
-  });
+    const dx = clientX - tour360.lastPointerX;
+    const dy = clientY - tour360.lastPointerY;
+    if (dx === 0 && dy === 0) return;
+    tour360.lastPointerX = clientX;
+    tour360.lastPointerY = clientY;
+    tour360.lon = tour360.lon - dx * 0.16;
+    tour360.lat = Math.max(-85, Math.min(85, tour360.lat + dy * 0.16));
+  };
 
-  window.addEventListener('pointerup', () => {
+  const endTour360Drag = () => {
     if (tour360.isUserInteracting && tour360.gyroEnabled) {
       tour360.gyroBaselineAlpha = null;
       tour360.gyroBaselineBeta = null;
@@ -4359,6 +5826,37 @@ function initTour360Viewer() {
     }
     tour360.isUserInteracting = false;
     domEl.style.cursor = (isEditor() && state.isPlacingHotspot360) ? 'crosshair' : 'grab';
+  };
+
+  domEl.addEventListener('pointerdown', (e) => {
+    startTour360Drag(e.clientX, e.clientY, e);
+  });
+
+  window.addEventListener('pointermove', (e) => {
+    moveTour360Drag(e.clientX, e.clientY);
+  });
+
+  window.addEventListener('pointerup', () => {
+    endTour360Drag();
+  });
+
+  domEl.addEventListener('touchstart', (e) => {
+    const t = e.touches?.[0];
+    if (!t) return;
+    if (e.cancelable) e.preventDefault();
+    startTour360Drag(t.clientX, t.clientY, null);
+  }, { passive: false });
+
+  window.addEventListener('touchmove', (e) => {
+    if (!tour360.isUserInteracting) return;
+    const t = e.touches?.[0];
+    if (!t) return;
+    if (e.cancelable) e.preventDefault();
+    moveTour360Drag(t.clientX, t.clientY);
+  }, { passive: false });
+
+  window.addEventListener('touchend', () => {
+    endTour360Drag();
   });
 
   domEl.addEventListener('wheel', (e) => {
@@ -4403,6 +5901,7 @@ function startTour360Crossfade(oldTexture) {
     depthWrite: false
   });
   tour360.fadeMesh = new THREE.Mesh(geo, mat);
+  tour360.fadeMesh.rotation.y = Math.PI;
   tour360.fadeMesh.renderOrder = 2;
   tour360.scene.add(tour360.fadeMesh);
   tour360.fadeStartTime = performance.now();
@@ -4424,6 +5923,9 @@ function loadRoom360(roomId, opts = {}) {
   const reqSeq = ++tour360.loadSeq;
   const prevRoomId = state.activeRoom360Id;
   if (!opts.preserveView) {
+    if (tour360.gyroEnabled) {
+      toggleTour360Gyroscope(false, false);
+    }
     resetTour360CameraToCenter();
   }
   state.activeRoom360Id = roomId;
@@ -6081,7 +7583,9 @@ function createUnitCatalogCard(u) {
   card.querySelector('[data-goto-poly]').addEventListener('click', () => {
     pushNavHistory();
     state.activeLevelId = u.levelId || 'facade';
+    state.is2DPlanMode = false;
     state.showAvailability = true;
+    syncPlanModeButtons();
     switchView('masterplan', false, true);
     renderLevelsSidebar();
     drawMasterplanRender();
@@ -6133,13 +7637,39 @@ function renderUnitsCatalog() {
               <span style="font-size:10.5px;color:var(--ink-silver);">${lvlUnits.length} unidades / ambientes · ${lvl.hasTour360 !== false ? 'Tour 360° habilitado' : 'Sin Tour 360°'}</span>
             </div>
           </div>
-          <div style="display:flex;gap:6px;">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+            ${isEditor() ? `
+              <label class="glass-pill-btn" data-editor-only style="cursor:pointer;" title="Cambiar imagen render del nivel">🔄 Cambiar<input type="file" accept="image/*" data-unit-lvl-replace="${lvl.id}" style="display:none;" /></label>
+              <button type="button" class="glass-pill-btn" data-editor-only data-unit-lvl-del="${lvl.id}" style="color:#f87171;" title="Eliminar imagen render del nivel">🗑️ Eliminar</button>
+            ` : ''}
             <button class="glass-pill-btn active" data-open-lvl="${lvl.id}">🗺️ Abrir Planta</button>
             ${lvl.hasTour360 !== false ? `<button class="glass-pill-btn" data-open-lvl-360="${lvl.id}">🌐 360° del Nivel</button>` : ''}
           </div>
         </div>
         <div class="units-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;"></div>
       `;
+      sec.querySelector('[data-unit-lvl-replace]')?.addEventListener('change', async (e) => {
+        if (!isEditor()) return;
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const key = `floor-day-${lvl.id}-${Date.now()}`;
+        lvl.dayPhoto = await saveMediaBlob(key, file);
+        lvl.dayMediaKey = key;
+        savePersistedState();
+        renderUnitsCatalog();
+        if (state.activeLevelId === lvl.id) drawMasterplanRender();
+        showToast(`Render de "${lvl.name}" actualizado`);
+        e.target.value = '';
+      });
+      sec.querySelector('[data-unit-lvl-del]')?.addEventListener('click', () => {
+        if (!isEditor()) return;
+        lvl.dayPhoto = './sample-assets/floor-piso9-3d.jpg';
+        lvl.dayMediaKey = null;
+        savePersistedState();
+        renderUnitsCatalog();
+        if (state.activeLevelId === lvl.id) drawMasterplanRender();
+        showToast(`Render de "${lvl.name}" restaurado`);
+      });
       sec.querySelector('[data-open-lvl]').addEventListener('click', () => {
         switchView('masterplan', false, true);
         navigateToLevelWithTransition(lvl.id, 'auto', true);
@@ -6195,12 +7725,40 @@ function renderUnitsCatalog() {
       fItem.style.padding = '10px';
       fItem.innerHTML = `
         <img src="${lvl.dayPhoto}" alt="" style="width:100%;height:105px;object-fit:cover;border-radius:8px;border:1px solid var(--gold-border);" />
-        <strong style="font-family:var(--font-display);font-size:13px;color:var(--gold-bright);">${lvl.name}</strong>
+        <strong style="font-family:var(--font-display);font-size:13px;color:var(--gold-bright);">${escapeHtml(lvl.name)}</strong>
+        ${isEditor() ? `
+          <div style="display:flex;gap:5px;flex-wrap:wrap;" data-editor-only>
+            <label class="glass-pill-btn" data-editor-only style="flex:1;justify-content:center;cursor:pointer;font-size:10px;" title="Cambiar render del piso">🔄 Cambiar<input type="file" accept="image/*" data-house-lvl-replace="${lvl.id}" style="display:none;" /></label>
+            <button type="button" class="glass-pill-btn" data-editor-only data-house-lvl-del="${lvl.id}" style="color:#f87171;font-size:10px;" title="Eliminar render del piso">🗑️ Eliminar</button>
+          </div>
+        ` : ''}
         <div style="display:flex;gap:5px;">
           <button class="action-btn gold-cta" style="flex:1;grid-column:auto;padding:6px;" data-ch-lvl="${lvl.id}">🗺️ Ver Planta</button>
           ${lvl.hasTour360 !== false ? `<button class="action-btn" style="padding:6px 9px;" data-ch-360="${lvl.id}">🌐 360°</button>` : ''}
         </div>
       `;
+      fItem.querySelector('[data-house-lvl-replace]')?.addEventListener('change', async (e) => {
+        if (!isEditor()) return;
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const key = `floor-day-${lvl.id}-${Date.now()}`;
+        lvl.dayPhoto = await saveMediaBlob(key, file);
+        lvl.dayMediaKey = key;
+        savePersistedState();
+        renderUnitsCatalog();
+        if (state.activeLevelId === lvl.id) drawMasterplanRender();
+        showToast(`Render de "${lvl.name}" actualizado`);
+        e.target.value = '';
+      });
+      fItem.querySelector('[data-house-lvl-del]')?.addEventListener('click', () => {
+        if (!isEditor()) return;
+        lvl.dayPhoto = './sample-assets/floor-piso9-3d.jpg';
+        lvl.dayMediaKey = null;
+        savePersistedState();
+        renderUnitsCatalog();
+        if (state.activeLevelId === lvl.id) drawMasterplanRender();
+        showToast(`Render de "${lvl.name}" restaurado`);
+      });
       fItem.querySelector('[data-ch-lvl]').addEventListener('click', () => {
         switchView('masterplan', false, true);
         navigateToLevelWithTransition(lvl.id, 'auto', true);
@@ -6238,8 +7796,10 @@ async function switchView(viewName, allowTransition = false, skipHistory = false
     setNavDockExpanded(false);
     document.querySelectorAll('.nav-btn[data-view]').forEach((btn) => btn.classList.toggle('active', btn.dataset.view === viewName));
     document.querySelectorAll('.view-panel').forEach((panel) => panel.classList.toggle('active', panel.id === `view-${viewName}`));
-    if (viewName !== 'masterplan') document.body.classList.remove('has-exterior-360-btn');
-    else {
+    if (viewName !== 'masterplan') {
+      document.body.classList.remove('has-exterior-360-btn');
+      if (state.isDrawingPolygon) resetPolygonDrawingState(false);
+    } else {
       const portalEl = document.getElementById('exterior-portal-360');
       document.body.classList.toggle('has-exterior-360-btn', Boolean(portalEl && portalEl.style.display !== 'none'));
       requestAnimationFrame(() => syncSceneMediaBox());
@@ -6249,6 +7809,9 @@ async function switchView(viewName, allowTransition = false, skipHistory = false
     if (strip) strip.style.visibility = (viewName === 'masterplan' && isEditor()) ? 'visible' : 'hidden';
 
     if (viewName === 'tour360') {
+      if (tour360.gyroEnabled) {
+        toggleTour360Gyroscope(false, false);
+      }
       if (tour360.renderer) {
         resetTour360CameraToCenter();
         const c = document.getElementById('tour360-container');
@@ -6258,12 +7821,12 @@ async function switchView(viewName, allowTransition = false, skipHistory = false
       }
       renderNumbered360Bar();
       renderTour360FloorsPanel();
-      if (typeof window.DeviceOrientationEvent !== 'undefined' && !tour360.gyroEnabled) {
-        toggleTour360Gyroscope(true, false);
-      }
-      if (window.innerHeight <= 480) {
+      if (window.innerHeight <= 520 || window.innerWidth <= 520) {
         document.getElementById('tour360-hud-panel')?.classList.add('minimized');
         document.getElementById('restore-360-panel')?.classList.add('visible');
+        document.getElementById('tour360-floors-panel')?.classList.add('minimized');
+        document.getElementById('restore-360-floors')?.classList.add('visible');
+        document.getElementById('view-tour360')?.classList.add('tour360-floors-hidden');
       }
     }
     if (viewName === 'model3d' && model3d.renderer) {
@@ -6629,22 +8192,28 @@ function bindEvents() {
 
   const handleQuickFinishReplace = async (side, file) => {
     if (!isEditor() || !file) return;
-    const tab = state.finishes?.tabs?.find((t) => t.id === state.finishes.activeTabId);
+    const tab = getActiveFinishTab();
     if (!tab) return;
-    const key = `quick-fin-${tab.id}-${side}-${Date.now()}`;
+    const itemId = side === 'left' ? tab.leftId : tab.rightId;
+    const item = (tab.items || []).find((i) => i.id === itemId) || tab.items?.[0];
+    if (!item) return;
+    const key = `finish-${tab.id}-${item.id}-${Date.now()}`;
     const url = await saveMediaBlob(key, file);
-    if (side === 'left') { tab.leftImgUrl = url; tab.leftMediaKey = key; }
-    else { tab.rightImgUrl = url; tab.rightMediaKey = key; }
+    item.url = url;
+    item.mediaKey = key;
     savePersistedState();
     renderActiveFinishTabControlsAndImages();
     showToast(`Imagen ${side === 'left' ? 'izquierda' : 'derecha'} de Acabados actualizada`);
   };
   const handleQuickFinishDelete = (side) => {
     if (!isEditor()) return;
-    const tab = state.finishes?.tabs?.find((t) => t.id === state.finishes.activeTabId);
+    const tab = getActiveFinishTab();
     if (!tab) return;
-    if (side === 'left') { tab.leftImgUrl = null; tab.leftMediaKey = null; }
-    else { tab.rightImgUrl = null; tab.rightMediaKey = null; }
+    const itemId = side === 'left' ? tab.leftId : tab.rightId;
+    const item = (tab.items || []).find((i) => i.id === itemId) || tab.items?.[0];
+    if (!item) return;
+    item.url = null;
+    item.mediaKey = null;
     savePersistedState();
     renderActiveFinishTabControlsAndImages();
     showToast(`Imagen ${side === 'left' ? 'izquierda' : 'derecha'} de Acabados eliminada`);
@@ -6954,6 +8523,35 @@ function bindEvents() {
     document.getElementById('floor-plan-photo-lbl').textContent = `✅ ${file.name}`;
     e.target.value = '';
   });
+  document.getElementById('btn-floor-clear-plan-photo')?.addEventListener('click', () => {
+    if (!isEditor()) return;
+    floorDraft.planPhotoUrl = null;
+    floorDraft.planPhotoKey = null;
+    const lbl = document.getElementById('floor-plan-photo-lbl');
+    if (lbl) lbl.textContent = 'Fotografía en planta restaurada a predeterminada';
+    showToast('Fotografía en planta eliminada del borrador');
+  });
+  document.getElementById('floor-upload-plan2d-photo')?.addEventListener('change', async (e) => {
+    if (!isEditor()) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const key = `floor-plan2d-photo-${Date.now()}`;
+    floorDraft.plan2DPhotoUrl = await saveMediaBlob(key, file);
+    floorDraft.plan2DPhotoKey = key;
+    floorDraft.plan2DCleared = false;
+    const lbl = document.getElementById('floor-plan2d-photo-lbl');
+    if (lbl) lbl.textContent = `✅ Plano 2D: ${file.name}`;
+    e.target.value = '';
+  });
+  document.getElementById('btn-floor-clear-plan2d')?.addEventListener('click', () => {
+    if (!isEditor()) return;
+    floorDraft.plan2DPhotoUrl = null;
+    floorDraft.plan2DPhotoKey = null;
+    floorDraft.plan2DCleared = true;
+    const lbl = document.getElementById('floor-plan2d-photo-lbl');
+    if (lbl) lbl.textContent = 'Plano 2D eliminado en este nivel';
+    showToast('Plano 2D eliminado');
+  });
   document.getElementById('floor-input-night-file')?.addEventListener('change', async (e) => {
     const file = e.target.files[0]; if (!file) return;
     const key = `floor-night-photo-${Date.now()}`;
@@ -7142,9 +8740,53 @@ function bindEvents() {
     const u = document.getElementById('new-editor-user').value.trim();
     const p = document.getElementById('new-editor-pin').value.trim();
     if (!u || !p) { showToast('Ingresa usuario y clave'); return; }
+    if (portalState.auth.editors.some((ed) => String(ed.username || '').toLowerCase() === u.toLowerCase())) {
+      showToast(`El usuario "${u}" ya existe. Usa "🔑 Cambiar Clave" para actualizar su contraseña.`);
+      return;
+    }
     portalState.auth.editors.push({ username: u, pin: p, role: 'Editor Autorizado' });
-    document.getElementById('new-editor-user').value = ''; document.getElementById('new-editor-pin').value = '';
-    savePortalState(); renderAuthorizedEditorsList(); showToast(`Editor "${u}" autorizado`);
+    state.auth = portalState.auth;
+    document.getElementById('new-editor-user').value = '';
+    document.getElementById('new-editor-pin').value = '';
+    savePortalState();
+    savePersistedState();
+    renderAuthorizedEditorsList();
+    showToast(`Editor "${u}" autorizado`);
+  });
+
+  // Portal Noticias (TikTok links)
+  const handleAddPortalNews = () => {
+    if (!isEditor()) return;
+    const titleInp = document.getElementById('news-input-title');
+    const urlInp = document.getElementById('news-input-url');
+    const rawTitle = (titleInp?.value || '').trim();
+    const rawUrl = (urlInp?.value || '').trim();
+    const parsed = parseTikTokVideoUrl(rawUrl);
+    if (!parsed) {
+      showToast('Ingresa un enlace válido de TikTok (https://www.tiktok.com/...)');
+      return;
+    }
+    if (!Array.isArray(portalState.news)) portalState.news = [];
+    portalState.news.unshift({
+      id: `news-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      title: rawTitle || 'Noticia SALO · Video TikTok',
+      url: parsed.url,
+      videoId: parsed.videoId,
+      createdAt: new Date().toISOString()
+    });
+    if (titleInp) titleInp.value = '';
+    if (urlInp) urlInp.value = '';
+    savePortalState();
+    renderPortalNews();
+    showToast('Video de TikTok publicado en Noticias');
+  };
+  document.getElementById('btn-add-news-item')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    handleAddPortalNews();
+  });
+  document.getElementById('portal-news-editor-form')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    handleAddPortalNews();
   });
 
   // Panel Minimize / Restore for ALL 6 side panels
@@ -7208,6 +8850,31 @@ function bindEvents() {
     savePersistedState();
     renderGalleryModalContent(current.id);
     showToast('Vista nocturna eliminada de la vista');
+  });
+  document.getElementById('input-replace-gallery-render')?.addEventListener('change', async (e) => {
+    if (!isEditor()) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const current = state.renderedViewsGallery.find((g) => g.id === activeGalleryItemId) || state.renderedViewsGallery[0];
+    if (!current) return;
+    const key = `gallery-rep-${current.id}-${Date.now()}`;
+    current.url = await saveMediaBlob(key, file);
+    current.mediaKey = key;
+    savePersistedState();
+    renderGalleryModalContent(current.id);
+    showToast(`Render "${current.title}" actualizado`);
+    e.target.value = '';
+  });
+  document.getElementById('btn-delete-gallery-render')?.addEventListener('click', () => {
+    if (!isEditor()) return;
+    const idx = state.renderedViewsGallery.findIndex((g) => g.id === activeGalleryItemId);
+    const delIdx = idx >= 0 ? idx : 0;
+    if (state.renderedViewsGallery.length === 0) return;
+    state.renderedViewsGallery.splice(delIdx, 1);
+    activeGalleryItemId = state.renderedViewsGallery[0]?.id || null;
+    savePersistedState();
+    renderGalleryModalContent(activeGalleryItemId);
+    showToast('Render eliminado de la galería');
   });
 
   // Transitions Manager
@@ -7348,49 +9015,194 @@ function bindEvents() {
     e.target.value = '';
   });
 
-  // Polygon Drawing
+  // Polygon Drawing (Combinable Tools)
   const drawBtn = document.getElementById('btn-draw-polygon');
   const drawToolbar = document.getElementById('polygon-draw-toolbar');
-  const updateDraftCounter = () => { document.getElementById('draft-points-count').textContent = String(state.draftPolygonPoints.length); };
   drawBtn.addEventListener('click', () => {
     if (!isEditor()) return;
+    if (state.is2DPlanMode) {
+      state.is2DPlanMode = false;
+      syncPlanModeButtons();
+      drawMasterplanRender();
+    }
     switchView('masterplan');
-    state.isDrawingPolygon = !state.isDrawingPolygon;
+    if (state.isDrawingPolygon) {
+      resetPolygonDrawingState();
+      return;
+    }
+    if (state.editingShapeUnitId) exitPolygonShapeEdit(false);
+    state.isDrawingPolygon = true;
     state.draftPolygonPoints = [];
-    document.body.classList.toggle('drawing-polygon', state.isDrawingPolygon);
-    drawBtn.classList.toggle('active', state.isDrawingPolygon);
-    drawToolbar.classList.toggle('active', state.isDrawingPolygon);
-    updateDraftCounter(); renderMasterplanOverlays();
+    polyToolState.mode = 'point';
+    polyToolState.undoStack = [];
+    polyToolState.closedShapeMode = false;
+    polyToolState.hoverPt = null;
+    resetActivePolySubstate();
+    document.body.classList.add('drawing-polygon');
+    document.body.dataset.polyTool = 'point';
+    drawBtn.classList.add('active');
+    drawToolbar.classList.add('active');
+    updatePolygonDrawToolbarUI();
+    renderMasterplanOverlays();
   });
+
+  document.querySelectorAll('.poly-tool-btn[data-poly-tool]').forEach((toolBtn) => {
+    toolBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!isEditor() || !state.isDrawingPolygon) return;
+      setPolygonDrawTool(toolBtn.dataset.polyTool);
+    });
+  });
+
   const sceneFrame = document.getElementById('scene-frame');
   sceneFrame.addEventListener('click', (e) => {
     if (!isEditor()) return;
-    const mediaBox = document.getElementById('scene-media-box') || sceneFrame;
-    const rect = mediaBox.getBoundingClientRect();
-    const px = Math.max(0, Math.min(100, Math.round(((e.clientX - rect.left) / rect.width) * 1000) / 10));
-    const py = Math.max(0, Math.min(100, Math.round(((e.clientY - rect.top) / rect.height) * 1000) / 10));
-
-    if (state.isPlacingPlanPoint) {
-      pendingNewBtnPoint = { x: px, y: py };
+    if (state.isPlacingPlanPoint && !state.isDrawingPolygon) {
+      const pt = clientToMediaPct(e.clientX, e.clientY);
+      pendingNewBtnPoint = { x: pt.x, y: pt.y };
       state.isPlacingPlanPoint = false;
       document.body.classList.remove('placing-plan-point');
       document.getElementById('plan-point-place-banner')?.classList.remove('active');
       const ptLbl = document.getElementById('new-btn-point-coords-lbl');
-      if (ptLbl) ptLbl.textContent = `✅ Punto fijado en planta (${px}%, ${py}%)`;
+      if (ptLbl) ptLbl.textContent = `✅ Punto fijado en planta (${pt.x}%, ${pt.y}%)`;
       document.getElementById('modal-polygon-editor')?.classList.add('open');
-      showToast(`Punto sobre planta fijado (${px}%, ${py}%)`);
-      return;
+      showToast(`Punto sobre planta fijado (${pt.x}%, ${pt.y}%)`);
     }
-
-    if (!state.isDrawingPolygon) return;
-    state.draftPolygonPoints.push({ x: px, y: py });
-    updateDraftCounter(); renderMasterplanOverlays();
   });
-  document.getElementById('btn-undo-polygon-pt').addEventListener('click', () => { state.draftPolygonPoints.pop(); updateDraftCounter(); renderMasterplanOverlays(); });
+
+  sceneFrame.addEventListener('pointerdown', (e) => {
+    if (!isEditor() || !state.isDrawingPolygon || state.is2DPlanMode) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (e.target.closest('#polygon-draw-toolbar, .modal-backdrop, .floor-elevator-panel, .unit-drawer, .top-bar, .nav-dock, .editor-quick-strip')) return;
+
+    const pt = clientToMediaPct(e.clientX, e.clientY);
+    polyToolState.hoverPt = pt;
+
+    if (polyToolState.mode === 'point') {
+      pushDraftUndoSnapshot();
+      if (polyToolState.closedShapeMode && state.draftPolygonPoints.length >= 3) {
+        const eIdx = findNearestPolygonEdgeIdx(state.draftPolygonPoints, pt);
+        state.draftPolygonPoints.splice(eIdx + 1, 0, pt);
+      } else {
+        state.draftPolygonPoints.push(pt);
+      }
+      updatePolygonDrawToolbarUI();
+      renderDraftPolygonOverlayOnly();
+    } else if (polyToolState.mode === 'delete') {
+      const idx = findNearestDraftVertexIdx(pt, 22);
+      if (idx !== -1) {
+        pushDraftUndoSnapshot();
+        state.draftPolygonPoints.splice(idx, 1);
+        if (state.draftPolygonPoints.length < 3) polyToolState.closedShapeMode = false;
+        updatePolygonDrawToolbarUI();
+        renderDraftPolygonOverlayOnly();
+      }
+    } else if (polyToolState.mode === 'rect') {
+      if (polyToolState.rectStart === null) {
+        polyToolState.rectStart = pt;
+        polyToolState.rectDragging = true;
+        polyToolState.rectDownScreen = { clientX: e.clientX, clientY: e.clientY };
+        updatePolygonDrawToolbarUI();
+        renderDraftPolygonOverlayOnly();
+      } else {
+        commitRectPrimitive(polyToolState.rectStart, pt);
+      }
+    } else if (polyToolState.mode === 'curve') {
+      if (polyToolState.curveStage === 0) {
+        const snapIdx = findNearestDraftVertexIdx(pt, 16);
+        polyToolState.curveSnapIdx0 = snapIdx;
+        polyToolState.curveP0 = snapIdx >= 0 ? { ...state.draftPolygonPoints[snapIdx] } : pt;
+        polyToolState.curveStage = 1;
+        updatePolygonDrawToolbarUI();
+        renderDraftPolygonOverlayOnly();
+      } else if (polyToolState.curveStage === 1) {
+        const snapIdx = findNearestDraftVertexIdx(pt, 16, polyToolState.curveSnapIdx0);
+        const p1 = snapIdx >= 0 ? { ...state.draftPolygonPoints[snapIdx] } : pt;
+        if (pctDistPx(polyToolState.curveP0, p1) < 6) {
+          showToast('Marca el 2° extremo de la curva en otro punto');
+          return;
+        }
+        polyToolState.curveSnapIdx1 = snapIdx;
+        polyToolState.curveP1 = p1;
+        polyToolState.curvePull = {
+          x: round2((polyToolState.curveP0.x + p1.x) * 0.5),
+          y: round2((polyToolState.curveP0.y + p1.y) * 0.5)
+        };
+        polyToolState.curveStage = 2;
+        polyToolState.curvePullDragging = true;
+        polyToolState.curveP1DownScreen = { clientX: e.clientX, clientY: e.clientY };
+        updatePolygonDrawToolbarUI();
+        renderDraftPolygonOverlayOnly();
+      } else if (polyToolState.curveStage === 2 && !polyToolState.curvePullDragging) {
+        polyToolState.curvePull = pt;
+        commitCurvePrimitive();
+      }
+    } else if (polyToolState.mode === 'circle3') {
+      const metrics = getMediaBoxMetrics();
+      if (polyToolState.circlePts.some((cp) => pctDistPx(cp, pt, metrics) < 4)) {
+        showToast('Marca un punto distinto para el círculo');
+        return;
+      }
+      polyToolState.circlePts.push(pt);
+      if (polyToolState.circlePts.length >= 3) {
+        commitCircle3Primitive();
+      } else {
+        updatePolygonDrawToolbarUI();
+        renderDraftPolygonOverlayOnly();
+      }
+    }
+  });
+
+  window.addEventListener('pointermove', (e) => {
+    if (!isEditor() || !state.isDrawingPolygon || state.is2DPlanMode || state.activeView !== 'masterplan') return;
+    if (!polyToolState.rectDragging && !polyToolState.curvePullDragging && !e.target.closest('#scene-frame')) return;
+    const pt = clientToMediaPct(e.clientX, e.clientY);
+    polyToolState.hoverPt = pt;
+    if (polyToolState.mode === 'curve' && polyToolState.curveStage === 2) {
+      polyToolState.curvePull = pt;
+    }
+    renderDraftPolygonOverlayOnly();
+  });
+
+  window.addEventListener('pointerup', (e) => {
+    if (!isEditor() || !state.isDrawingPolygon || state.is2DPlanMode) return;
+    const pt = clientToMediaPct(e.clientX, e.clientY);
+    polyToolState.hoverPt = pt;
+    if (polyToolState.mode === 'rect' && polyToolState.rectDragging && polyToolState.rectStart) {
+      const down = polyToolState.rectDownScreen || { clientX: e.clientX, clientY: e.clientY };
+      const movedPx = Math.hypot(e.clientX - down.clientX, e.clientY - down.clientY);
+      polyToolState.rectDragging = false;
+      polyToolState.rectDownScreen = null;
+      if (movedPx >= 10) {
+        commitRectPrimitive(polyToolState.rectStart, pt);
+      } else {
+        updatePolygonDrawToolbarUI();
+        renderDraftPolygonOverlayOnly();
+      }
+    } else if (polyToolState.mode === 'curve' && polyToolState.curveStage === 2 && polyToolState.curvePullDragging) {
+      const down = polyToolState.curveP1DownScreen || { clientX: e.clientX, clientY: e.clientY };
+      const movedPx = Math.hypot(e.clientX - down.clientX, e.clientY - down.clientY);
+      polyToolState.curvePullDragging = false;
+      polyToolState.curveP1DownScreen = null;
+      polyToolState.curvePull = pt;
+      if (movedPx >= 12) {
+        commitCurvePrimitive();
+      } else {
+        updatePolygonDrawToolbarUI();
+        renderDraftPolygonOverlayOnly();
+      }
+    }
+  });
+
+  sceneFrame.addEventListener('pointerleave', () => {
+    if (!state.isDrawingPolygon || polyToolState.rectDragging || polyToolState.curvePullDragging) return;
+    polyToolState.hoverPt = null;
+    renderDraftPolygonOverlayOnly();
+  });
+
+  document.getElementById('btn-undo-polygon-pt').addEventListener('click', undoPolygonDraftStep);
   document.getElementById('btn-cancel-polygon').addEventListener('click', () => {
-    state.isDrawingPolygon = false; state.draftPolygonPoints = [];
-    document.body.classList.remove('drawing-polygon');
-    drawBtn.classList.remove('active'); drawToolbar.classList.remove('active'); renderMasterplanOverlays();
+    resetPolygonDrawingState();
   });
   document.getElementById('btn-finish-polygon').addEventListener('click', () => {
     if (state.draftPolygonPoints.length < 3) { showToast('Marca al menos 3 puntos'); return; }
@@ -7469,6 +9281,12 @@ function bindEvents() {
   });
   document.getElementById('btn-pick-plan-point')?.addEventListener('click', () => {
     if (!isEditor()) return;
+    if (state.is2DPlanMode) {
+      state.is2DPlanMode = false;
+      syncPlanModeButtons();
+      drawMasterplanRender();
+      renderMasterplanOverlays();
+    }
     state.isPlacingPlanPoint = true;
     document.getElementById('modal-polygon-editor')?.classList.remove('open');
     document.body.classList.add('placing-plan-point');
@@ -7587,11 +9405,11 @@ function bindEvents() {
   document.getElementById('drawer-floor-photo-preview').addEventListener('click', goFloorWithVideo);
   document.getElementById('btn-floor-up').addEventListener('click', () => stepMasterplanLevel(-1));
   document.getElementById('btn-floor-down').addEventListener('click', () => stepMasterplanLevel(1));
-  document.getElementById('btn-mode-3drender').addEventListener('click', (e) => {
-    state.is2DPlanMode = false; e.currentTarget.classList.add('active'); document.getElementById('btn-mode-2dplan').classList.remove('active'); drawMasterplanRender();
+  document.getElementById('btn-mode-3drender').addEventListener('click', () => {
+    setPlanMode(false);
   });
-  document.getElementById('btn-mode-2dplan').addEventListener('click', (e) => {
-    state.is2DPlanMode = true; e.currentTarget.classList.add('active'); document.getElementById('btn-mode-3drender').classList.remove('active'); drawMasterplanRender();
+  document.getElementById('btn-mode-2dplan').addEventListener('click', () => {
+    setPlanMode(true);
   });
 
   document.getElementById('btn-zoom-in').addEventListener('click', () => { state.zoom = Math.min(2.6, state.zoom + 0.25); updateMasterplanZoomTransform(); });
@@ -8425,19 +10243,41 @@ function bindEvents() {
   document.getElementById('input-import-project').addEventListener('change', (e) => { doImportJson(e.target.files[0]); e.target.value = ''; });
   document.getElementById('menu-input-import-project').addEventListener('change', (e) => { closeDropdown(); doImportJson(e.target.files[0]); e.target.value = ''; });
 
-  // Keyboard Shortcuts (Escape / Arrow Navigation)
+  // Keyboard Shortcuts (Escape / Ctrl+Z / Enter / Arrow Navigation)
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      document.querySelectorAll('.modal-backdrop.open').forEach((m) => m.classList.remove('open'));
-      document.getElementById('modal-photo-viewer')?.classList.remove('open');
+      const openModals = document.querySelectorAll('.modal-backdrop.open');
+      const photoOpen = document.getElementById('modal-photo-viewer')?.classList.contains('open');
+      if (openModals.length > 0 || photoOpen) {
+        openModals.forEach((m) => m.classList.remove('open'));
+        document.getElementById('modal-photo-viewer')?.classList.remove('open');
+        closeMenuDrawer();
+        closeDropdown();
+        return;
+      }
+      if (isEditor() && state.isDrawingPolygon) {
+        if (polyToolState.rectStart !== null || polyToolState.curveStage > 0 || polyToolState.circlePts.length > 0) {
+          resetActivePolySubstate();
+          updatePolygonDrawToolbarUI();
+          renderDraftPolygonOverlayOnly();
+        } else {
+          resetPolygonDrawingState();
+        }
+        return;
+      }
       closeMenuDrawer();
       closeDropdown();
       return;
     }
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && isEditor() && state.isDrawingPolygon) {
+      e.preventDefault();
+      undoPolygonDraftStep();
+      return;
+    }
     if (e.key === 'Enter' && isEditor() && state.isDrawingPolygon && state.draftPolygonPoints.length >= 3) {
       openPolygonEditorModal(null);
-    } else if (state.activeView === 'masterplan') {
+    } else if (state.activeView === 'masterplan' && !state.isDrawingPolygon) {
       if (e.key === 'ArrowLeft') rotateExteriorFlyby(-1);
       if (e.key === 'ArrowRight') rotateExteriorFlyby(1);
     } else if (state.activeView === 'tour360') {
@@ -8515,8 +10355,20 @@ window.addEventListener('DOMContentLoaded', async () => {
     portalState.auth = { mode: 'public', currentUser: '', editors: [] };
     try {
       const pubPortal = await fetchPublishedPortal('./');
-      portalState.projects = pubPortal.projects || [];
+      portalState.projects = Array.isArray(pubPortal.projects) ? [...pubPortal.projects] : [];
+      if (!portalState.projects.some((p) => String(p?.code || '').toUpperCase() === 'SALO-001')) {
+        portalState.projects.unshift({
+          code: 'SALO-001',
+          buildingName: 'Torre Imperial SALO',
+          subtitle: 'Showroom Interactivo 3D · Panorámica · Plantas',
+          whatsappPhone: '59173080076',
+          coverUrl: './sample-assets/exterior-tower.webp',
+          requiresCode: false,
+          published: true
+        });
+      }
       portalState.examplePhotos = pubPortal.examplePhotos || [];
+      portalState.news = Array.isArray(pubPortal.news) ? pubPortal.news : [];
       portalState.publishVersion = pubPortal.publishVersion || '';
       portalState.visitsScriptUrl = pubPortal.visitsScriptUrl || '';
       if (portalState.projects[0]?.code) portalState.activeProjectCode = portalState.projects[0].code;
@@ -8544,6 +10396,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   renderPortalProjects();
   renderPortalExamples();
+  renderPortalNews();
   syncPortalEditorTabUI();
 
   if (!publishedMode) {

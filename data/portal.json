@@ -1,6 +1,6 @@
 {
-  "publishVersion": "1795242404973",
-  "publishedAt": "2026-11-21T06:26:44.973Z",
+  "publishVersion": "1795304620715",
+  "publishedAt": "2026-11-21T23:43:40.715Z",
   "visitsScriptUrl": "https://script.google.com/macros/s/AKfycbz4XDuDUinem9hZzjQrFKxP2dZjrP1VekhQ3lmwHcDwnKuUOkYtPLiWNrWshdSMT6t9/exec",
   "projects": [
     {
@@ -40,5 +40,6 @@
       "title": "propuesta fachada vivienda",
       "url": "./media/PORTAL/portal-example-ex-1795026677355-uagw.jpg"
     }
-  ]
+  ],
+  "news": []
 }
