@@ -390,9 +390,12 @@
       </div>
     </header>
 
-    <!-- BOTÓN UNIVERSAL "← VOLVER ATRÁS" -->
+    <!-- BOTÓN UNIVERSAL "← VOLVER ATRÁS" + BOTÓN DIRECTO "🏛️ IR A EDIFICIO EXTERIOR" -->
     <button class="global-back-btn" id="btn-global-back" title="Volver a la vista anterior">
       ← Volver Atrás
+    </button>
+    <button class="global-back-btn go-exterior-btn" id="btn-go-exterior-direct" title="Volver directamente al Edificio Exterior">
+      🏛️ Ir a Edificio Exterior
     </button>
 
     <!-- BANNER ACTIVO AL UBICAR UN PUNTO PERSONALIZABLE DE RENDER / 360° SOBRE LA PLANTA -->
@@ -479,6 +482,15 @@
            1. EXTERIOR & PLANTAS FOTO-RENDER (CON POLÍGONOS + PISOS PERSONALIZADOS)
            ================================================================= -->
       <section class="view-panel active" id="view-masterplan">
+        <!-- MINI BARRA FLOTANTE SOLO EDITOR: CAMBIAR / ELIMINAR IMAGEN ACTIVA -->
+        <div class="editor-img-quickbar mp-quickbar" id="editor-mp-img-bar" data-editor-only>
+          <span class="eiq-label" id="editor-mp-img-label">Exterior · Día</span>
+          <label class="eiq-btn" style="cursor:pointer;" title="Cambiar imagen activa">
+            🔄 Cambiar
+            <input type="file" id="input-quick-replace-mp" accept="image/*" style="display:none;" />
+          </label>
+          <button type="button" class="eiq-btn danger" id="btn-quick-delete-mp" title="Eliminar imagen activa">🗑️ Eliminar</button>
+        </div>
 
         <!-- Barra flotante activa al Trazar un Polígono (Solo Editor) -->
         <div class="polygon-draw-toolbar" id="polygon-draw-toolbar" data-editor-only>
@@ -742,6 +754,15 @@
            2. RECORRIDO VIRTUAL 360° PRO (BOTÓN DE PISO + PAGINADOR NUMÉRICO BLANCO)
            ================================================================= -->
       <section class="view-panel" id="view-tour360">
+        <!-- MINI BARRA FLOTANTE SOLO EDITOR: CAMBIAR / ELIMINAR PANORÁMICA 360° -->
+        <div class="editor-img-quickbar tour360-quickbar" id="editor-360-img-bar" data-editor-only>
+          <span class="eiq-label" id="editor-360-img-label">360° · Día</span>
+          <label class="eiq-btn" style="cursor:pointer;" title="Cambiar panorámica 360° activa">
+            🔄 Cambiar
+            <input type="file" id="input-quick-replace-360" accept="image/*" style="display:none;" />
+          </label>
+          <button type="button" class="eiq-btn danger" id="btn-quick-delete-360" title="Eliminar panorámica 360° activa">🗑️ Eliminar</button>
+        </div>
         <div class="tour360-canvas-container" id="tour360-container">
           <div id="tour360-hotspots-layer"></div>
         </div>
@@ -777,7 +798,10 @@
           <div id="tour360-floors-stack" class="tour360-floors-stack"></div>
         </aside>
 
-        <div class="tour360-drag-hint" id="tour360-drag-hint">ARRASTRA PARA MIRAR ALREDEDOR 360°</div>
+        <div class="tour360-drag-hint" id="tour360-drag-hint" style="display:none;">ARRASTRA PARA MIRAR ALREDEDOR 360°</div>
+        <button type="button" class="tour360-gyro-hint-btn" id="btn-360-gyro-hint" title="Activar sensor de movimiento del teléfono">
+          📱 Mueva el teléfono para ver todo el ambiente
+        </button>
 
         <!-- Left Minimizable 360° HUD Panel -->
         <button class="restore-edge-tab left-edge" id="restore-360-panel" title="Mostrar Panel 360°">
@@ -920,7 +944,15 @@
           </button>
         </aside>
         <div class="finish-side-badge left" id="finish-badge-left">Lado A</div>
+        <div class="editor-img-quickbar finish-quickbar-left" id="editor-finish-left-bar" data-editor-only>
+          <label class="eiq-btn" style="cursor:pointer;" title="Cambiar imagen izquierda">🔄 Cambiar<input type="file" id="input-quick-replace-fin-left" accept="image/*" style="display:none;" /></label>
+          <button type="button" class="eiq-btn danger" id="btn-quick-delete-fin-left" title="Eliminar imagen izquierda">🗑️ Eliminar</button>
+        </div>
         <div class="finish-side-badge right" id="finish-badge-right">Lado B</div>
+        <div class="editor-img-quickbar finish-quickbar-right" id="editor-finish-right-bar" data-editor-only>
+          <label class="eiq-btn" style="cursor:pointer;" title="Cambiar imagen derecha">🔄 Cambiar<input type="file" id="input-quick-replace-fin-right" accept="image/*" style="display:none;" /></label>
+          <button type="button" class="eiq-btn danger" id="btn-quick-delete-fin-right" title="Eliminar imagen derecha">🗑️ Eliminar</button>
+        </div>
 
         <div class="finishes-comparator-stage" id="finishes-stage">
           <div class="finish-layer" id="finish-layer-right">
@@ -2197,6 +2229,45 @@
         </div>
       </div>
       <div class="portfolio-folder-grid" id="pf-viewer-grid"></div>
+    </div>
+  </div>
+
+  <!-- POPOVER FLOTANTE CON BOTÓN "👁️ VER" PARA BOTONES EN PLANTA Y POLÍGONOS -->
+  <div class="plan-action-popover" id="plan-action-popover" role="dialog" aria-label="Vista asignada">
+    <div class="pap-header">
+      <div>
+        <div class="pap-title" id="pap-title">Vista Renderizada</div>
+        <div class="pap-type" id="pap-type">🖼️ Foto Render</div>
+      </div>
+      <button type="button" class="icon-btn" id="btn-pap-close" style="width:24px;height:24px;">✕</button>
+    </div>
+    <button type="button" class="action-btn gold-cta" id="btn-pap-view" style="grid-column:auto;width:100%;padding:8px 14px;font-size:12px;">
+      👁️ Ver
+    </button>
+  </div>
+
+  <!-- TUTORIAL INTERACTIVO CON MANO GUÍA (EXTERIOR + MINI TUTORIAL PLANTA) -->
+  <div class="salo-tutorial-overlay" id="salo-tutorial-overlay" role="dialog" aria-label="Guía rápida interactiva">
+    <div class="salo-tut-hand" id="salo-tut-hand" aria-hidden="true">
+      <span class="salo-tut-ripple"></span>
+      <svg viewBox="0 0 64 64" width="54" height="54" fill="none">
+        <path d="M29 8 C26.2 8 24 10.2 24 13 L24 31 L20.8 27.8 C18.8 25.8 15.6 25.8 13.7 27.8 C11.8 29.7 11.8 32.9 13.7 34.8 L24.5 46.8 C27.2 49.8 31 52 35.5 52 L42 52 C48.6 52 54 46.6 54 40 L54 27 C54 24.4 51.9 22.3 49.3 22.3 C48 22.3 46.8 22.9 46 23.8 C45.5 21.5 43.5 19.8 41 19.8 C39.5 19.8 38.2 20.5 37.3 21.5 C36.6 19.5 34.7 18.2 32.5 18.2 C31.8 18.2 31.1 18.4 30.5 18.7 L30.5 13 C30.5 10.2 31.8 8 29 8 Z" fill="#f5d77f" stroke="#060608" stroke-width="2.4" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="salo-tut-card" id="salo-tut-card">
+      <div class="salo-tut-card-top">
+        <span class="salo-tut-step-badge" id="salo-tut-step-badge">1 / 7</span>
+        <span style="font-size:10px;color:var(--gold-bright);font-weight:700;letter-spacing:0.8px;">GUÍA RÁPIDA</span>
+      </div>
+      <p class="salo-tut-text" id="salo-tut-text">Presionar para ver cada nivel y resaltará la vista</p>
+      <div class="salo-tut-card-actions">
+        <button type="button" class="action-btn gold-cta" id="btn-tut-next" style="grid-column:auto;padding:7px 16px;font-size:12px;">Siguiente ›</button>
+      </div>
+    </div>
+    <div class="salo-tut-bottom-bar">
+      <button type="button" class="salo-tut-dismiss-btn" id="btn-tut-dismiss">
+        Saltar tutorial · No volver a ver
+      </button>
     </div>
   </div>
 

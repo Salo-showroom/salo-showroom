@@ -1284,7 +1284,10 @@ async function openProjectByCode(rawCode, forceRole = null) {
   requestAnimationFrame(() => syncSceneMediaBox());
 
   if (state.intro?.enabled) {
+    pendingTutorialAfterIntro = 'exterior';
     playIntroVideo(false);
+  } else {
+    setTimeout(() => startOnboardingTutorial('exterior'), 320);
   }
   return true;
 }
@@ -1389,10 +1392,13 @@ function pushNavHistory() {
 
 function updateBackButtonUI() {
   const btn = document.getElementById('btn-global-back');
+  const goExtBtn = document.getElementById('btn-go-exterior-direct');
   if (!btn) return;
   const shouldShow = navHistory.length > 0 || state.activeView !== 'masterplan' || state.activeLevelId !== 'facade';
+  const showGoExterior = state.activeView !== 'masterplan' || state.activeLevelId !== 'facade';
   btn.classList.toggle('visible', shouldShow);
-  document.body.classList.toggle('has-back-btn', shouldShow);
+  if (goExtBtn) goExtBtn.classList.toggle('visible', showGoExterior);
+  document.body.classList.toggle('has-back-btn', shouldShow || showGoExterior);
 }
 
 function goBackHistory() {
@@ -1445,6 +1451,19 @@ function syncProjectLogoUI() {
   const pos = (state.project.logoPosition === 'pos-bottom-right') ? 'pos-bottom-right' : 'pos-above-exterior';
   const visible = Boolean(state.project.showLogo && state.project.logoUrl && state.activeView === 'masterplan');
   wrap.className = `main-project-logo-wrap ${pos} ${visible ? 'visible' : ''}`;
+  if (state.project.logoCustomPos && Number.isFinite(state.project.logoCustomPos.x) && Number.isFinite(state.project.logoCustomPos.y)) {
+    wrap.style.left = `${state.project.logoCustomPos.x}%`;
+    wrap.style.top = `${state.project.logoCustomPos.y}%`;
+    wrap.style.bottom = 'auto';
+    wrap.style.right = 'auto';
+    wrap.style.transform = 'translate(-50%, -50%)';
+  } else {
+    wrap.style.left = '';
+    wrap.style.top = '';
+    wrap.style.bottom = '';
+    wrap.style.right = '';
+    wrap.style.transform = '';
+  }
   if (state.project.logoUrl) img.src = state.project.logoUrl;
   img.style.height = `${Math.max(24, Math.min(140, Number(state.project.logoSizePx) || 48))}px`;
   const opacityPct = Math.max(10, Math.min(100, Number(state.project.logoOpacity ?? 100)));
@@ -1762,8 +1781,235 @@ function drawMasterplanRender(animateCrossfade = false) {
   }
   applyActiveImageAdjustment();
   syncSceneMediaBox();
+  syncEditorImgQuickBars();
   updateBackButtonUI();
   syncProjectLogoUI();
+}
+
+function syncEditorImgQuickBars() {
+  const mpLbl = document.getElementById('editor-mp-img-label');
+  if (mpLbl) {
+    const isExt = state.activeLevelId === 'facade';
+    const lvl = state.levels.find((l) => l.id === state.activeLevelId);
+    if (isExt) {
+      mpLbl.textContent = state.isNightMode ? `Exterior #${state.exteriorAngleIndex + 1} · Noche` : `Exterior #${state.exteriorAngleIndex + 1} · Día`;
+    } else if (state.is2DPlanMode) {
+      mpLbl.textContent = `Plano 2D · ${lvl?.badge || lvl?.name || 'Piso'}`;
+    } else {
+      mpLbl.textContent = `${lvl?.badge || 'Planta'} · ${state.isNightMode ? 'Noche' : 'Día'}`;
+    }
+  }
+  const t360Lbl = document.getElementById('editor-360-img-label');
+  if (t360Lbl) {
+    t360Lbl.textContent = state.isNightMode ? '360° · Noche' : '360° · Día';
+  }
+}
+
+let activePlanPopoverAction = null;
+
+function closePlanActionPopover() {
+  activePlanPopoverAction = null;
+  document.getElementById('plan-action-popover')?.classList.remove('open');
+}
+
+function openPlanActionPopover(cb, unit, anchorEvent = null) {
+  const pop = document.getElementById('plan-action-popover');
+  const titleEl = document.getElementById('pap-title');
+  const typeEl = document.getElementById('pap-type');
+  if (!pop || !cb) return;
+
+  if (titleEl) titleEl.textContent = cb.label || 'Vista';
+  if (typeEl) typeEl.textContent = cb.actionType === 'tour360' ? '🌐 Recorrido Panorámico 360°' : '🖼️ Fotografía / Render';
+
+  activePlanPopoverAction = async () => {
+    closePlanActionPopover();
+    if (cb.actionType === 'tour360') {
+      const scopeLvl = state.activeLevelId !== 'facade' ? state.activeLevelId : (unit?.targetLevelId || null);
+      await openFloorTour360(scopeLvl, cb.targetRoom360Id || null, true);
+    } else {
+      const photoSrc = cb.photoMediaKey ? (await getMediaUrl(cb.photoMediaKey)) || cb.photoUrl : cb.photoUrl;
+      const nightSrc = cb.nightPhotoMediaKey ? (await getMediaUrl(cb.nightPhotoMediaKey)) || cb.nightPhotoUrl : (cb.nightPhotoUrl || null);
+      if (photoSrc) openPhotoLightbox(photoSrc, cb.label, nightSrc);
+      else showToast('Este botón aún no tiene una foto render asignada');
+    }
+  };
+
+  const cx = anchorEvent?.clientX ?? (window.innerWidth / 2);
+  const cy = anchorEvent?.clientY ?? (window.innerHeight / 2);
+  const left = Math.max(12, Math.min(window.innerWidth - 260, cx - 110));
+  const top = Math.max(60, Math.min(window.innerHeight - 150, cy - 20));
+  pop.style.left = `${left}px`;
+  pop.style.top = `${top}px`;
+  pop.classList.add('open');
+}
+
+/* ==========================================================================
+   V11: ONBOARDING TUTORIAL WITH ANIMATED POINTING HAND (EXTERIOR & FLOOR)
+   ========================================================================== */
+const TUTORIAL_STORAGE_KEYS = {
+  exterior: 'salo_tutorial_dismissed_exterior_v11',
+  floor: 'salo_tutorial_dismissed_floor_v11'
+};
+let tutorialState = { active: false, kind: 'exterior', steps: [], index: 0, expandedNavForTut: false };
+let pendingTutorialAfterIntro = null;
+
+function buildTutorialSteps(kind) {
+  if (kind === 'floor') {
+    return [
+      {
+        target: () => document.querySelector('#polygon-svg .unit-polygon') || document.getElementById('scene-frame'),
+        text: 'Toca cualquier ambiente o botón en la planta para ver sus detalles y fotografías',
+        expandNav: false
+      },
+      {
+        target: () => {
+          const btn2d = document.getElementById('btn-mode-2dplan');
+          if (btn2d && btn2d.getBoundingClientRect().width > 0) return btn2d;
+          return document.getElementById('restore-floors-panel') || document.getElementById('floor-elevator-panel');
+        },
+        text: 'Alterna entre Render 3D, Plano 2D o explora las vistas panorámicas 360°',
+        expandNav: false
+      },
+      {
+        target: () => document.getElementById('btn-go-exterior-direct'),
+        text: 'Presiona "Ir a Edificio Exterior" cuando desees volver a la vista principal',
+        expandNav: false
+      }
+    ];
+  }
+
+  // Exterior main tutorial
+  const steps = [
+    {
+      target: () => document.querySelector('#polygon-svg .unit-polygon') || document.getElementById('scene-frame'),
+      text: 'Presionar para ver cada nivel y resaltará la vista',
+      expandNav: false
+    },
+    {
+      target: () => {
+        const panel = document.getElementById('floor-elevator-panel');
+        if (panel && !panel.classList.contains('minimized') && panel.getBoundingClientRect().width > 0) return panel;
+        return document.getElementById('restore-floors-panel') || panel;
+      },
+      text: 'Buscar el nivel que necesite ver y se resaltará en el edificio',
+      expandNav: false
+    },
+    {
+      target: () => document.getElementById('btn-day-night'),
+      text: 'Cambiar de vista Día y Noche',
+      expandNav: false
+    },
+    {
+      target: () => document.getElementById('nav-tour360'),
+      text: 'Vista Panorámica: puede ver inmerso cada ambiente',
+      expandNav: true
+    },
+    {
+      target: () => document.getElementById('nav-finishes'),
+      text: 'Vista de Acabados: para comparar antes y después',
+      expandNav: true
+    },
+    {
+      target: () => document.getElementById('nav-location'),
+      text: 'Ubicación: puede ver dónde se encuentra la obra y lugares cercanos',
+      expandNav: true
+    }
+  ];
+  const unitsNav = document.getElementById('nav-units');
+  if (unitsNav && getComputedStyle(unitsNav).display !== 'none') {
+    steps.push({
+      target: () => document.getElementById('nav-units'),
+      text: 'Precios y áreas disponibles: donde puede ver opciones para comprar',
+      expandNav: true
+    });
+  }
+  return steps;
+}
+
+function renderTutorialStep() {
+  const ov = document.getElementById('salo-tutorial-overlay');
+  const hand = document.getElementById('salo-tut-hand');
+  const card = document.getElementById('salo-tut-card');
+  const badge = document.getElementById('salo-tut-step-badge');
+  const txt = document.getElementById('salo-tut-text');
+  const nextBtn = document.getElementById('btn-tut-next');
+  if (!ov || !hand || !card || !tutorialState.active) return;
+
+  const step = tutorialState.steps[tutorialState.index];
+  if (!step) {
+    closeOnboardingTutorial(true);
+    return;
+  }
+
+  if (step.expandNav) {
+    setNavDockExpanded(true);
+    tutorialState.expandedNavForTut = true;
+  } else if (tutorialState.expandedNavForTut) {
+    setNavDockExpanded(false);
+    tutorialState.expandedNavForTut = false;
+  }
+
+  if (badge) badge.textContent = `${tutorialState.index + 1} / ${tutorialState.steps.length}`;
+  if (txt) txt.textContent = step.text;
+  if (nextBtn) nextBtn.textContent = tutorialState.index === tutorialState.steps.length - 1 ? 'Entendido ✓' : 'Siguiente ›';
+
+  requestAnimationFrame(() => {
+    const el = typeof step.target === 'function' ? step.target() : null;
+    const vw = window.innerWidth || 1024;
+    const vh = window.innerHeight || 768;
+    let tx = vw / 2;
+    let ty = vh / 2;
+    if (el) {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) {
+        tx = Math.max(24, Math.min(vw - 24, r.left + r.width / 2));
+        ty = Math.max(24, Math.min(vh - 70, r.top + r.height / 2));
+      }
+    }
+    hand.style.left = `${tx}px`;
+    hand.style.top = `${ty}px`;
+
+    const cardRect = card.getBoundingClientRect();
+    const cw = cardRect.width || Math.min(vw * 0.9, 340);
+    const ch = cardRect.height || 130;
+    const cardLeft = Math.max(cw / 2 + 12, Math.min(vw - cw / 2 - 12, tx));
+    let cardTop = ty + 62;
+    if (cardTop + ch > vh - 72) cardTop = Math.max(54, ty - ch - 36);
+    card.style.left = `${cardLeft}px`;
+    card.style.top = `${cardTop}px`;
+  });
+}
+
+function closeOnboardingTutorial(persistDismiss = true) {
+  const ov = document.getElementById('salo-tutorial-overlay');
+  if (ov) ov.classList.remove('open');
+  if (tutorialState.expandedNavForTut) {
+    setNavDockExpanded(false);
+    tutorialState.expandedNavForTut = false;
+  }
+  if (persistDismiss && tutorialState.kind) {
+    try { localStorage.setItem(TUTORIAL_STORAGE_KEYS[tutorialState.kind], '1'); } catch (_) {}
+  }
+  tutorialState.active = false;
+}
+
+function startOnboardingTutorial(kind = 'exterior') {
+  const key = TUTORIAL_STORAGE_KEYS[kind];
+  if (!key) return;
+  try {
+    if (localStorage.getItem(key) === '1') return;
+  } catch (_) {}
+  if (document.body.dataset.screen !== 'showroom') return;
+  const introOv = document.getElementById('intro-video-overlay');
+  if (introOv && introOv.classList.contains('playing')) {
+    pendingTutorialAfterIntro = kind;
+    return;
+  }
+  const steps = buildTutorialSteps(kind);
+  if (steps.length === 0) return;
+  tutorialState = { active: true, kind, steps, index: 0, expandedNavForTut: false };
+  document.getElementById('salo-tutorial-overlay')?.classList.add('open');
+  renderTutorialStep();
 }
 
 function rotateExteriorFlyby(stepDir) {
@@ -1812,6 +2058,11 @@ async function playIntroVideo(forcePlay = false) {
       tapPlayBtn.onclick = null;
     }
     overlay.classList.remove('playing');
+    if (pendingTutorialAfterIntro) {
+      const k = pendingTutorialAfterIntro;
+      pendingTutorialAfterIntro = null;
+      setTimeout(() => startOnboardingTutorial(k), 250);
+    }
   };
 
   video.muted = true;
@@ -2193,6 +2444,7 @@ function enterPolygonShapeEdit(unitId) {
   if (state.isDrawingPolygon) {
     state.isDrawingPolygon = false;
     state.draftPolygonPoints = [];
+    document.body.classList.remove('drawing-polygon');
     document.getElementById('btn-draw-polygon')?.classList.remove('active');
     document.getElementById('polygon-draw-toolbar')?.classList.remove('active');
   }
@@ -2242,6 +2494,7 @@ function renderMasterplanOverlays() {
   visibleUnits.forEach((unit) => {
     const isSelected = state.selectedUnitId === unit.id && document.getElementById('unit-drawer')?.classList.contains('open');
     const isEditingTarget = isEditor() && state.editingShapeUnitId === unit.id;
+    const isPreviewMatch = Boolean(isExterior && state.previewFloorLevelId && unit.targetLevelId === state.previewFloorLevelId);
     const hideAvailColor = unit.showAvailability === false;
     const color = hideAvailColor ? '#d4af37' : (statusColorMap[unit.status] || '#22c55e');
     const pointsAttr = unit.polygon.map((p) => `${p.x},${p.y}`).join(' ');
@@ -2249,9 +2502,9 @@ function renderMasterplanOverlays() {
     const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
     poly.setAttribute('points', pointsAttr);
     poly.setAttribute('fill', color);
-    poly.setAttribute('stroke', isSelected ? '#f5d77f' : '#ffffff');
+    poly.setAttribute('stroke', (isSelected || isPreviewMatch) ? '#f5d77f' : '#ffffff');
     poly.setAttribute('data-unit-id', unit.id);
-    poly.setAttribute('class', `unit-polygon ${isEditingTarget ? 'editing-target' : ''} ${isSelected ? 'selected' : ''}`);
+    poly.setAttribute('class', `unit-polygon ${isEditingTarget ? 'editing-target' : ''} ${isPreviewMatch ? 'preview-highlight' : ''} ${isSelected ? 'selected' : ''}`);
 
     poly.addEventListener('mouseenter', (e) => { if (!state.isDrawingPolygon) showUnitHoverTooltip(unit, e.clientX, e.clientY); });
     poly.addEventListener('mousemove', (e) => { if (!state.isDrawingPolygon) showUnitHoverTooltip(unit, e.clientX, e.clientY); });
@@ -2433,23 +2686,39 @@ function renderMasterplanOverlays() {
       pt.style.setProperty('--pt-color', cb.pinColor || '#d4af37');
       pt.title = cb.actionType === 'tour360' ? `Ir a 360°: ${cb.label}` : `Ver Render: ${cb.label}`;
       pt.innerHTML = `<span class="plan-render-point-dot"></span><span>${cb.label}</span>`;
-      pt.addEventListener('click', async (e) => {
+      pt.addEventListener('click', (e) => {
         if (state.isDrawingPolygon || state.isPlacingPlanPoint) return;
         e.stopPropagation();
         hideUnitHoverTooltip();
-        if (cb.actionType === 'tour360') {
-          const scopeLvl = state.activeLevelId !== 'facade' ? state.activeLevelId : (unit.targetLevelId || null);
-          await openFloorTour360(scopeLvl, cb.targetRoom360Id || null, true);
-        } else {
-          const photoSrc = cb.photoMediaKey ? (await getMediaUrl(cb.photoMediaKey)) || cb.photoUrl : cb.photoUrl;
-          const nightSrc = cb.nightPhotoMediaKey ? (await getMediaUrl(cb.nightPhotoMediaKey)) || cb.nightPhotoUrl : (cb.nightPhotoUrl || null);
-          if (photoSrc) openPhotoLightbox(photoSrc, cb.label, nightSrc);
-          else showToast('Este punto aún no tiene una foto render asignada');
-        }
+        openPlanActionPopover(cb, unit, e);
       });
       pinsContainer.appendChild(pt);
     });
   });
+
+  // Render floating "🏢 Ir a Planta →" button when previewing a floor from Exterior sidebar
+  if (isExterior && state.previewFloorLevelId && !state.isDrawingPolygon && !state.isPlacingPlanPoint) {
+    const previewLvl = state.levels.find((l) => l.id === state.previewFloorLevelId);
+    if (previewLvl) {
+      const matchedUnit = visibleUnits.find((u) => u.targetLevelId === previewLvl.id);
+      const goBtn = document.createElement('button');
+      goBtn.type = 'button';
+      goBtn.id = 'btn-preview-go-floor';
+      goBtn.className = 'preview-go-floor-btn';
+      const gx = matchedUnit?.center?.x ?? 50;
+      const gy = matchedUnit?.center?.y ? Math.max(12, matchedUnit.center.y - 5) : 52;
+      goBtn.style.left = `${gx}%`;
+      goBtn.style.top = `${gy}%`;
+      goBtn.textContent = `🏢 Ir a ${previewLvl.name || previewLvl.badge} →`;
+      goBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const targetId = previewLvl.id;
+        state.previewFloorLevelId = null;
+        navigateToLevelWithTransition(targetId, 'auto', true);
+      });
+      pinsContainer.appendChild(goBtn);
+    }
+  }
 
   if (isEditor() && state.isDrawingPolygon && state.draftPolygonPoints.length > 0) {
     const draftPoly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
@@ -2586,6 +2855,9 @@ async function navigateToLevelWithTransition(targetLevelId, explicitOverride = '
       renderMasterplanOverlays();
     }
     updateBackButtonUI();
+    if (targetLevelId && targetLevelId !== 'facade') {
+      setTimeout(() => startOnboardingTutorial('floor'), 260);
+    }
   };
 
   if (explicitOverride !== 'none' && state.transitions.globalEnabled) {
@@ -2798,7 +3070,8 @@ function saveFloorFromModal() {
       floorNum: state.levels.length,
       dayPhoto: floorDraft.planPhotoUrl || './sample-assets/floor-piso9-3d.jpg',
       nightPhoto: floorDraft.nightPhotoUrl || null,
-      plan2DPhoto: floorDraft.planPhotoUrl || './sample-assets/floor-piso9-plan.webp',
+      plan2DPhoto: null,
+      plan2DMediaKey: null,
       dayMediaKey: floorDraft.planPhotoKey || null,
       nightMediaKey: floorDraft.nightPhotoKey || null,
       hasTour360,
@@ -3498,16 +3771,9 @@ function selectUnit(unitId, ensureOpen = false) {
       const icon = cb.actionType === 'tour360' ? '🌐' : '🖼️';
       const tag = cb.actionType === 'tour360' ? '360° →' : 'Render →';
       b.innerHTML = `<span>${icon} ${cb.label}</span><small style="opacity:0.8;">${tag}</small>`;
-      b.addEventListener('click', async () => {
-        if (cb.actionType === 'tour360') {
-          const scopeLvl = state.activeLevelId !== 'facade' ? state.activeLevelId : (unit.targetLevelId || null);
-          await openFloorTour360(scopeLvl, cb.targetRoom360Id || null, true);
-        } else {
-          const photoSrc = cb.photoMediaKey ? (await getMediaUrl(cb.photoMediaKey)) || cb.photoUrl : cb.photoUrl;
-          const nightSrc = cb.nightPhotoMediaKey ? (await getMediaUrl(cb.nightPhotoMediaKey)) || cb.nightPhotoUrl : (cb.nightPhotoUrl || null);
-          if (photoSrc) openPhotoLightbox(photoSrc, cb.label, nightSrc);
-          else showToast('Este botón aún no tiene una foto asignada');
-        }
+      b.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openPlanActionPopover(cb, unit, e);
       });
       btnsEl.appendChild(b);
     });
@@ -3537,11 +3803,30 @@ function renderLevelsSidebar() {
 
   state.levels.forEach((lvl) => {
     const btn = document.createElement('button');
-    btn.className = `level-btn ${state.activeLevelId === lvl.id ? 'active' : ''}`;
+    const isActive = state.activeLevelId === lvl.id;
+    const isPreviewing = state.activeLevelId === 'facade' && state.previewFloorLevelId === lvl.id;
+    btn.className = `level-btn ${isActive ? 'active' : ''} ${isPreviewing ? 'previewing' : ''}`;
     const transBadge = lvl.transitionType === 'two_images' ? '🖼️ ' : (lvl.hasTour360 === false ? '🚫360 ' : '');
     btn.innerHTML = `<span>${lvl.name}</span><small>${transBadge}${lvl.badge}</small>`;
     btn.addEventListener('click', () => {
-      if (lvl.id === state.activeLevelId) return;
+      if (lvl.id === state.activeLevelId) {
+        if (state.previewFloorLevelId) {
+          state.previewFloorLevelId = null;
+          renderLevelsSidebar();
+          renderMasterplanOverlays();
+        }
+        return;
+      }
+      // On Exterior main view: selecting a floor previews its polygon & shows "Ir a Planta" button instead of jumping immediately
+      if (state.activeLevelId === 'facade' && lvl.id !== 'facade') {
+        state.previewFloorLevelId = lvl.id;
+        state.exteriorAngleIndex = 0;
+        drawMasterplanRender();
+        renderLevelsSidebar();
+        renderMasterplanOverlays();
+        return;
+      }
+      state.previewFloorLevelId = null;
       navigateToLevelWithTransition(lvl.id, 'auto', true);
     });
     container.appendChild(btn);
@@ -3753,6 +4038,7 @@ function savePolygonFromModal() {
     });
     state.isDrawingPolygon = false;
     state.draftPolygonPoints = [];
+    document.body.classList.remove('drawing-polygon');
     state.showAvailability = true;
     document.getElementById('btn-draw-polygon').classList.remove('active');
     document.getElementById('polygon-draw-toolbar').classList.remove('active');
@@ -3890,15 +4176,15 @@ async function toggleTour360Gyroscope(forceState = null, fromUserTap = false) {
   }
   const wantEnable = forceState === null ? !tour360.gyroEnabled : Boolean(forceState);
   if (wantEnable) {
-    if (fromUserTap && typeof window.DeviceOrientationEvent.requestPermission === 'function') {
+    if (typeof window.DeviceOrientationEvent.requestPermission === 'function') {
       try {
         const perm = await window.DeviceOrientationEvent.requestPermission();
         if (perm !== 'granted') {
-          showToast('Permiso de sensor denegado');
+          if (fromUserTap) showToast('Permiso de sensor denegado');
           return false;
         }
       } catch (_) {
-        showToast('No se pudo solicitar permiso del sensor');
+        if (fromUserTap) showToast('Toca "Mueva el teléfono" para autorizar el sensor');
         return false;
       }
     }
@@ -5962,20 +6248,22 @@ async function switchView(viewName, allowTransition = false, skipHistory = false
     const strip = document.getElementById('editor-quick-strip');
     if (strip) strip.style.visibility = (viewName === 'masterplan' && isEditor()) ? 'visible' : 'hidden';
 
-    if (viewName === 'tour360' && tour360.renderer) {
-      resetTour360CameraToCenter();
-      const c = document.getElementById('tour360-container');
-      tour360.camera.aspect = c.clientWidth / c.clientHeight;
-      tour360.camera.updateProjectionMatrix();
-      tour360.renderer.setSize(c.clientWidth, c.clientHeight);
+    if (viewName === 'tour360') {
+      if (tour360.renderer) {
+        resetTour360CameraToCenter();
+        const c = document.getElementById('tour360-container');
+        tour360.camera.aspect = c.clientWidth / c.clientHeight;
+        tour360.camera.updateProjectionMatrix();
+        tour360.renderer.setSize(c.clientWidth, c.clientHeight);
+      }
       renderNumbered360Bar();
       renderTour360FloorsPanel();
-      if (('ontouchstart' in window || navigator.maxTouchPoints > 0)
-        && typeof window.DeviceOrientationEvent !== 'undefined'
-        && typeof window.DeviceOrientationEvent.requestPermission !== 'function'
-        && !tour360.gyroEnabled && !tour360.gyroAutoAttempted) {
-        tour360.gyroAutoAttempted = true;
+      if (typeof window.DeviceOrientationEvent !== 'undefined' && !tour360.gyroEnabled) {
         toggleTour360Gyroscope(true, false);
+      }
+      if (window.innerHeight <= 480) {
+        document.getElementById('tour360-hud-panel')?.classList.add('minimized');
+        document.getElementById('restore-360-panel')?.classList.add('visible');
       }
     }
     if (viewName === 'model3d' && model3d.renderer) {
@@ -6199,8 +6487,172 @@ function bindEvents() {
   document.getElementById('menu-back-to-portal')?.addEventListener('click', goToPortalHome);
   document.getElementById('drawer-link-portal')?.addEventListener('click', goToPortalHome);
 
-  // Universal Back Button ("← Volver Atrás") & Photo Lightbox Back Button
+  // Universal Back Button ("← Volver Atrás"), Direct Exterior Button & Photo Lightbox Back Button
   document.getElementById('btn-global-back')?.addEventListener('click', goBackHistory);
+  document.getElementById('btn-go-exterior-direct')?.addEventListener('click', () => {
+    state.previewFloorLevelId = null;
+    state.activeLevelId = 'facade';
+    state.is2DPlanMode = false;
+    state.pan = { x: 0, y: 0 };
+    document.getElementById('btn-mode-3drender')?.classList.add('active');
+    document.getElementById('btn-mode-2dplan')?.classList.remove('active');
+    switchView('masterplan', false, false);
+    renderLevelsSidebar();
+    drawMasterplanRender();
+    renderMasterplanOverlays();
+  });
+
+  // Plan / Polygon Action Popover ("👁️ Ver") & V11 Onboarding Tutorial
+  document.getElementById('btn-tut-next')?.addEventListener('click', () => {
+    if (!tutorialState.active) return;
+    tutorialState.index++;
+    renderTutorialStep();
+  });
+  document.getElementById('btn-tut-dismiss')?.addEventListener('click', () => {
+    closeOnboardingTutorial(true);
+  });
+  window.addEventListener('resize', () => {
+    if (tutorialState.active) renderTutorialStep();
+  });
+  document.getElementById('btn-pap-close')?.addEventListener('click', closePlanActionPopover);
+  document.getElementById('btn-pap-view')?.addEventListener('click', () => {
+    if (typeof activePlanPopoverAction === 'function') activePlanPopoverAction();
+  });
+  window.addEventListener('click', (e) => {
+    if (!e.target.closest('#plan-action-popover, .plan-render-point, .custom-view-btn')) closePlanActionPopover();
+  });
+
+  // V11 Editor-Only Floating Image Quick Bars (Cambiar / Eliminar) for Masterplan, Plano 2D, 360°, and Acabados
+  document.getElementById('input-quick-replace-mp')?.addEventListener('change', async (e) => {
+    if (!isEditor()) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const isExt = state.activeLevelId === 'facade';
+    const lvl = state.levels.find((l) => l.id === state.activeLevelId);
+    const key = `quick-mp-${state.activeLevelId}-${state.is2DPlanMode ? '2d' : (state.isNightMode ? 'night' : 'day')}-${Date.now()}`;
+    const url = await saveMediaBlob(key, file);
+    if (isExt) {
+      const ang = state.exteriorAngles[state.exteriorAngleIndex] || state.exteriorAngles[0];
+      if (state.isNightMode) {
+        ang.nightPhoto = url; ang.nightMediaKey = key;
+        if (state.exteriorAngleIndex === 0 && lvl) { lvl.nightPhoto = url; lvl.nightMediaKey = key; }
+      } else {
+        ang.photo = url; ang.mediaKey = key;
+        if (state.exteriorAngleIndex === 0 && lvl) { lvl.dayPhoto = url; lvl.dayMediaKey = key; }
+      }
+    } else if (lvl) {
+      if (state.is2DPlanMode) {
+        lvl.plan2DPhoto = url; lvl.plan2DMediaKey = key;
+      } else if (state.isNightMode) {
+        lvl.nightPhoto = url; lvl.nightMediaKey = key;
+      } else {
+        lvl.dayPhoto = url; lvl.dayMediaKey = key;
+      }
+    }
+    savePersistedState();
+    drawMasterplanRender();
+    showToast('Imagen actualizada en calidad original');
+    e.target.value = '';
+  });
+
+  document.getElementById('btn-quick-delete-mp')?.addEventListener('click', () => {
+    if (!isEditor()) return;
+    const isExt = state.activeLevelId === 'facade';
+    const lvl = state.levels.find((l) => l.id === state.activeLevelId);
+    if (isExt) {
+      const ang = state.exteriorAngles[state.exteriorAngleIndex] || state.exteriorAngles[0];
+      if (state.isNightMode) {
+        ang.nightPhoto = null; ang.nightMediaKey = null;
+        if (state.exteriorAngleIndex === 0 && lvl) { lvl.nightPhoto = null; lvl.nightMediaKey = null; }
+        showToast('Vista nocturna de exterior eliminada');
+      } else if (state.exteriorAngles.length > 1) {
+        state.exteriorAngles.splice(state.exteriorAngleIndex, 1);
+        state.exteriorAngleIndex = Math.min(state.exteriorAngleIndex, state.exteriorAngles.length - 1);
+        showToast('Ángulo exterior eliminado');
+      } else {
+        ang.photo = './sample-assets/exterior-tower.webp'; ang.mediaKey = null;
+        if (lvl) { lvl.dayPhoto = ang.photo; lvl.dayMediaKey = null; }
+        showToast('Vista exterior restaurada a imagen base');
+      }
+    } else if (lvl) {
+      if (state.is2DPlanMode) {
+        lvl.plan2DPhoto = null; lvl.plan2DMediaKey = null;
+        showToast(`Plano 2D eliminado en "${lvl.name}"`);
+      } else if (state.isNightMode) {
+        lvl.nightPhoto = null; lvl.nightMediaKey = null;
+        showToast(`Vista nocturna eliminada en "${lvl.name}"`);
+      } else {
+        lvl.dayPhoto = './sample-assets/floor-piso9-3d.jpg'; lvl.dayMediaKey = null;
+        showToast(`Render de planta restaurado en "${lvl.name}"`);
+      }
+    }
+    savePersistedState();
+    drawMasterplanRender();
+  });
+
+  document.getElementById('input-quick-replace-360')?.addEventListener('change', async (e) => {
+    if (!isEditor()) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const room = state.rooms360.find((r) => r.id === state.activeRoom360Id);
+    if (!room) { showToast('Primero crea o selecciona una vista 360°'); e.target.value = ''; return; }
+    const key = `quick-360-${room.id}-${state.isNightMode ? 'night' : 'day'}-${Date.now()}`;
+    const url = await saveMediaBlob(key, file);
+    if (state.isNightMode) {
+      room.customNightImageUrl = url; room.nightMediaKey = key;
+    } else {
+      room.customImageUrl = url; room.mediaKey = key;
+    }
+    savePersistedState();
+    loadRoom360(room.id, { preserveView: true });
+    showToast(`Panorama 360° (${state.isNightMode ? 'Noche' : 'Día'}) actualizado`);
+    e.target.value = '';
+  });
+
+  document.getElementById('btn-quick-delete-360')?.addEventListener('click', () => {
+    if (!isEditor()) return;
+    const idx = state.rooms360.findIndex((r) => r.id === state.activeRoom360Id);
+    if (idx < 0) return;
+    const room = state.rooms360[idx];
+    if (state.isNightMode) {
+      room.customNightImageUrl = null; room.nightMediaKey = null;
+      savePersistedState();
+      loadRoom360(room.id, { preserveView: true });
+      showToast('Panorámica 360° nocturna eliminada');
+    } else {
+      room.customImageUrl = null; room.mediaKey = null;
+      savePersistedState();
+      loadRoom360(room.id, { preserveView: true });
+      showToast('Imagen 360° eliminada');
+    }
+  });
+
+  const handleQuickFinishReplace = async (side, file) => {
+    if (!isEditor() || !file) return;
+    const tab = state.finishes?.tabs?.find((t) => t.id === state.finishes.activeTabId);
+    if (!tab) return;
+    const key = `quick-fin-${tab.id}-${side}-${Date.now()}`;
+    const url = await saveMediaBlob(key, file);
+    if (side === 'left') { tab.leftImgUrl = url; tab.leftMediaKey = key; }
+    else { tab.rightImgUrl = url; tab.rightMediaKey = key; }
+    savePersistedState();
+    renderActiveFinishTabControlsAndImages();
+    showToast(`Imagen ${side === 'left' ? 'izquierda' : 'derecha'} de Acabados actualizada`);
+  };
+  const handleQuickFinishDelete = (side) => {
+    if (!isEditor()) return;
+    const tab = state.finishes?.tabs?.find((t) => t.id === state.finishes.activeTabId);
+    if (!tab) return;
+    if (side === 'left') { tab.leftImgUrl = null; tab.leftMediaKey = null; }
+    else { tab.rightImgUrl = null; tab.rightMediaKey = null; }
+    savePersistedState();
+    renderActiveFinishTabControlsAndImages();
+    showToast(`Imagen ${side === 'left' ? 'izquierda' : 'derecha'} de Acabados eliminada`);
+  };
+  document.getElementById('input-quick-replace-fin-left')?.addEventListener('change', (e) => { handleQuickFinishReplace('left', e.target.files?.[0]); e.target.value = ''; });
+  document.getElementById('btn-quick-delete-fin-left')?.addEventListener('click', () => handleQuickFinishDelete('left'));
+  document.getElementById('input-quick-replace-fin-right')?.addEventListener('change', (e) => { handleQuickFinishReplace('right', e.target.files?.[0]); e.target.value = ''; });
+  document.getElementById('btn-quick-delete-fin-right')?.addEventListener('click', () => handleQuickFinishDelete('right'));
   document.getElementById('btn-close-photo-viewer')?.addEventListener('click', () => {
     document.getElementById('modal-photo-viewer')?.classList.remove('open');
   });
@@ -6905,6 +7357,7 @@ function bindEvents() {
     switchView('masterplan');
     state.isDrawingPolygon = !state.isDrawingPolygon;
     state.draftPolygonPoints = [];
+    document.body.classList.toggle('drawing-polygon', state.isDrawingPolygon);
     drawBtn.classList.toggle('active', state.isDrawingPolygon);
     drawToolbar.classList.toggle('active', state.isDrawingPolygon);
     updateDraftCounter(); renderMasterplanOverlays();
@@ -6936,6 +7389,7 @@ function bindEvents() {
   document.getElementById('btn-undo-polygon-pt').addEventListener('click', () => { state.draftPolygonPoints.pop(); updateDraftCounter(); renderMasterplanOverlays(); });
   document.getElementById('btn-cancel-polygon').addEventListener('click', () => {
     state.isDrawingPolygon = false; state.draftPolygonPoints = [];
+    document.body.classList.remove('drawing-polygon');
     drawBtn.classList.remove('active'); drawToolbar.classList.remove('active'); renderMasterplanOverlays();
   });
   document.getElementById('btn-finish-polygon').addEventListener('click', () => {
@@ -7489,6 +7943,37 @@ function bindEvents() {
     resetTour360CameraToCenter();
   });
   document.getElementById('btn-360-gyro')?.addEventListener('click', () => toggleTour360Gyroscope(null, true));
+  document.getElementById('btn-360-gyro-hint')?.addEventListener('click', () => toggleTour360Gyroscope(true, true));
+
+  // V11 Draggable Project Logo in Editor Mode
+  const logoWrap = document.getElementById('main-project-logo-wrap');
+  if (logoWrap) {
+    let logoDrag = null;
+    logoWrap.addEventListener('pointerdown', (e) => {
+      if (!isEditor() || !logoWrap.classList.contains('visible')) return;
+      e.preventDefault();
+      e.stopPropagation();
+      logoDrag = { active: true };
+      logoWrap.setPointerCapture?.(e.pointerId);
+    });
+    window.addEventListener('pointermove', (e) => {
+      if (!logoDrag?.active) return;
+      const vw = window.innerWidth || 1;
+      const vh = window.innerHeight || 1;
+      const xPct = Math.max(3, Math.min(97, Math.round((e.clientX / vw) * 1000) / 10));
+      const yPct = Math.max(5, Math.min(95, Math.round((e.clientY / vh) * 1000) / 10));
+      state.project.logoCustomPos = { x: xPct, y: yPct };
+      syncProjectLogoUI();
+    });
+    const finishLogoDrag = () => {
+      if (!logoDrag?.active) return;
+      logoDrag = null;
+      savePersistedState();
+      showToast('Posición del logo guardada');
+    };
+    window.addEventListener('pointerup', finishLogoDrag);
+    window.addEventListener('pointercancel', finishLogoDrag);
+  }
   const t360Panel = document.getElementById('tour360-floors-panel');
   const t360Restore = document.getElementById('restore-360-floors');
   const view360El = document.getElementById('view-tour360');

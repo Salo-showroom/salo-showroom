@@ -1,18 +1,18 @@
 {
-  "publishVersion": "1795098149101",
-  "publishedAt": "2026-11-19T14:22:29.101Z",
+  "publishVersion": "1795242404973",
+  "publishedAt": "2026-11-21T06:26:44.973Z",
   "visitsScriptUrl": "https://script.google.com/macros/s/AKfycbz4XDuDUinem9hZzjQrFKxP2dZjrP1VekhQ3lmwHcDwnKuUOkYtPLiWNrWshdSMT6t9/exec",
   "projects": [
     {
-      "code": "SALO-002",
-      "buildingName": "VIVIENDA FAMILIAR",
-      "subtitle": "Showroom Interactivo 3D · 360° · Plantas",
-      "whatsappPhone": "59167134994",
+      "code": "SALO-003",
+      "buildingName": "Vivienda Sopocachi",
+      "subtitle": "Showroom Interactivo 3D",
+      "whatsappPhone": "59173080076",
       "published": true,
       "requiresCode": false,
       "accessCodeHash": null,
-      "coverUrl": "https://noisy-bread-2236.salazarlopezalcidesmario.workers.dev/Salo-showroom/salo-showroom/releases/download/media-SALO-002/lvl-day-facade-1795008537783.png",
-      "createdAt": "2026-11-18"
+      "coverUrl": "https://noisy-bread-2236.salazarlopezalcidesmario.workers.dev/Salo-showroom/salo-showroom/releases/download/media-SALO-003/quick-mp-facade-day-1795223615321.jpg",
+      "createdAt": "2026-11-21"
     }
   ],
   "examplePhotos": [
