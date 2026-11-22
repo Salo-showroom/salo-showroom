@@ -1042,9 +1042,11 @@ body.mode-2d-plan #unit-hover-tooltip {
   cursor: copy;
   pointer-events: stroke;
 }
+
 .edit-edge-hit:hover {
   stroke: rgba(245, 215, 127, 0.7);
 }
+
 .edit-vertex-handle {
   fill: #f5d77f;
   stroke: #060608;
@@ -1053,11 +1055,13 @@ body.mode-2d-plan #unit-hover-tooltip {
   pointer-events: all;
   transition: fill 0.12s;
 }
+
 .edit-vertex-handle:hover,
 .edit-vertex-handle:active {
   fill: #ffffff;
   cursor: grabbing;
 }
+
 .poly-edit-quick-btn {
   position: absolute;
   transform: translate(-50%, 60%);
@@ -1075,14 +1079,17 @@ body.mode-2d-plan #unit-hover-tooltip {
   pointer-events: auto;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.75);
 }
+
 .poly-edit-quick-btn:hover {
   background: var(--gold-gradient);
   color: #060608;
 }
+
 body.editing-poly-shape #pins-container,
 body.editing-poly-shape #pins-container * {
   pointer-events: none !important;
 }
+
 body.editing-poly-shape .unit-pin,
 body.editing-poly-shape .plan-render-point {
   opacity: 0.35;
@@ -1926,6 +1933,7 @@ body.editing-poly-shape .plan-render-point {
   right: 234px;
   transition: right 0.25s var(--ease-luxury), background 0.18s ease, transform 0.18s ease;
 }
+
 #view-tour360.tour360-floors-hidden .tour360-side-nav.next {
   right: 16px;
 }
@@ -1946,6 +1954,7 @@ body.editing-poly-shape .plan-render-point {
   gap: 5px;
   transition: right 0.25s var(--ease-luxury);
 }
+
 #view-tour360.tour360-floors-hidden .tour360-pro-controls {
   right: 16px;
 }
@@ -1969,16 +1978,19 @@ body.editing-poly-shape .plan-render-point {
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.85);
   transition: transform 0.25s var(--ease-luxury), opacity 0.2s ease;
 }
+
 .tour360-floors-panel.minimized {
   transform: translateX(calc(100% + 24px));
   opacity: 0;
   pointer-events: none;
 }
+
 .tour360-floors-stack {
   display: flex;
   flex-direction: column;
   gap: 5px;
 }
+
 .tour360-floor-btn {
   width: 100%;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1997,22 +2009,26 @@ body.editing-poly-shape .plan-render-point {
   text-align: left;
   transition: all 0.18s ease;
 }
+
 .tour360-floor-btn:hover {
   border-color: var(--gold-border-strong);
   color: var(--ink-white);
   background: rgba(212, 175, 55, 0.12);
 }
+
 .tour360-floor-btn.active {
   background: rgba(212, 175, 55, 0.22);
   border-color: var(--gold-bright);
   color: var(--gold-bright);
   font-weight: 700;
 }
+
 .tour360-floor-btn small {
   font-size: 9.5px;
   opacity: 0.78;
   flex-shrink: 0;
 }
+
 .tour360-floor-btn.is-empty {
   opacity: 0.62;
 }
@@ -2517,11 +2533,13 @@ body.editing-poly-shape .plan-render-point {
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.78);
   transition: transform 0.25s var(--ease-luxury), opacity 0.2s;
 }
+
 .finishes-tabs-panel.minimized {
   transform: translateX(calc(100% + 30px));
   opacity: 0;
   pointer-events: none;
 }
+
 .finishes-tabs-list {
   display: flex;
   flex-direction: column;
@@ -2529,6 +2547,7 @@ body.editing-poly-shape .plan-render-point {
   overflow-y: auto;
   touch-action: pan-y;
 }
+
 .finish-tab-row {
   display: flex;
   align-items: center;
@@ -2538,10 +2557,12 @@ body.editing-poly-shape .plan-render-point {
   border-radius: 9px;
   padding: 3px;
 }
+
 .finish-tab-row.active {
   border-color: var(--gold-bright);
   background: rgba(212, 175, 55, 0.16);
 }
+
 .finish-tab-select-btn {
   flex: 1;
   min-width: 0;
@@ -2558,10 +2579,12 @@ body.editing-poly-shape .plan-render-point {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 .finish-tab-row.active .finish-tab-select-btn {
   color: var(--gold-bright);
   font-weight: 700;
 }
+
 .finishes-pagination-bar {
   display: flex;
   align-items: center;
@@ -2570,6 +2593,7 @@ body.editing-poly-shape .plan-render-point {
   padding-top: 4px;
   border-top: 1px solid rgba(212, 175, 55, 0.18);
 }
+
 .finishes-pagination-bar button:disabled {
   opacity: 0.35;
   cursor: not-allowed;
@@ -2628,6 +2652,7 @@ body.editing-poly-shape .plan-render-point {
   right: 294px;
   transition: right 0.25s var(--ease-luxury);
 }
+
 #view-finishes.finishes-panel-hidden .finish-side-badge.right {
   right: 16px;
 }
@@ -3041,6 +3066,7 @@ body.editing-poly-shape .plan-render-point {
   filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.58));
   transition: transform 0.22s var(--ease-luxury), filter 0.22s ease;
 }
+
 .hotspot-360-marker:hover .hs360-floor-ring-wrap {
   transform: scale(1.16);
   filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.9));
@@ -3064,7 +3090,10 @@ body.editing-poly-shape .plan-render-point {
   opacity: 0;
   transition: opacity 0.18s ease;
 }
-.hotspot-360-marker:hover .hs360-edit-mini { opacity: 1; }
+
+.hotspot-360-marker:hover .hs360-edit-mini {
+  opacity: 1;
+}
 
 /* 2. 360° NUMBERED SEMI-TRANSPARENT VIEW SWITCHER (Numbers Only + Scroll Arrows) */
 .tour360-number-bar {
@@ -3094,7 +3123,10 @@ body.editing-poly-shape .plan-render-point {
   max-width: 66vw;
   scroll-behavior: smooth;
 }
-.tour360-numbers-track::-webkit-scrollbar { display: none; }
+
+.tour360-numbers-track::-webkit-scrollbar {
+  display: none;
+}
 
 .tour360-num-btn {
   width: 34px;
@@ -3113,11 +3145,13 @@ body.editing-poly-shape .plan-render-point {
   place-items: center;
   transition: all 0.2s var(--ease-luxury);
 }
+
 .tour360-num-btn:hover {
   background: rgba(255, 255, 255, 0.24);
   border-color: #ffffff;
   transform: scale(1.08);
 }
+
 .tour360-num-btn.active {
   background: rgba(212, 175, 55, 0.88);
   border-color: #ffffff;
@@ -3141,7 +3175,10 @@ body.editing-poly-shape .plan-render-point {
   place-items: center;
   transition: background 0.18s ease;
 }
-.tour360-num-scroll-btn:hover { background: rgba(255, 255, 255, 0.25); }
+
+.tour360-num-scroll-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
 
 /* 3. UNIVERSAL BACK BUTTON ("← Volver Atrás") */
 .global-back-btn {
@@ -3166,15 +3203,36 @@ body.editing-poly-shape .plan-render-point {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.72);
   transition: all 0.18s ease;
 }
-.global-back-btn.visible { display: inline-flex; }
-.global-back-btn:hover { background: var(--gold-gradient); color: #060608; }
+
+.global-back-btn.visible {
+  display: inline-flex;
+}
+
+.global-back-btn:hover {
+  background: var(--gold-gradient);
+  color: #060608;
+}
 
 /* Adjust left edge tabs slightly below back button when back is visible */
-body.has-back-btn .restore-edge-tab.left-edge { top: 96px; }
-body.has-back-btn .floor-elevator-panel { top: 96px; }
-body.has-back-btn .tour360-hud-panel { top: 96px; }
-body.has-back-btn .model3d-hud-left { top: 96px; }
-body.has-back-btn .location-sidebar { top: 96px; }
+body.has-back-btn .restore-edge-tab.left-edge {
+  top: 96px;
+}
+
+body.has-back-btn .floor-elevator-panel {
+  top: 96px;
+}
+
+body.has-back-btn .tour360-hud-panel {
+  top: 96px;
+}
+
+body.has-back-btn .model3d-hud-left {
+  top: 96px;
+}
+
+body.has-back-btn .location-sidebar {
+  top: 96px;
+}
 
 /* 4. RESIZABLE SMALL MAIN PROJECT LOGO (No circular frame) */
 .main-project-logo-wrap {
@@ -3184,10 +3242,27 @@ body.has-back-btn .location-sidebar { top: 96px; }
   display: none;
   transition: all 0.2s ease;
 }
-.main-project-logo-wrap.visible { display: block; }
-.main-project-logo-wrap.pos-top-left { top: 56px; left: 14px; }
-.main-project-logo-wrap.pos-bottom-left { bottom: 66px; left: 16px; }
-.main-project-logo-wrap.pos-top-center { top: 54px; left: 50%; transform: translateX(-50%); }
+
+.main-project-logo-wrap.visible {
+  display: block;
+}
+
+.main-project-logo-wrap.pos-top-left {
+  top: 56px;
+  left: 14px;
+}
+
+.main-project-logo-wrap.pos-bottom-left {
+  bottom: 66px;
+  left: 16px;
+}
+
+.main-project-logo-wrap.pos-top-center {
+  top: 54px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
 .main-project-logo-wrap img {
   display: block;
   width: auto;
@@ -3206,8 +3281,17 @@ body.has-back-btn .location-sidebar { top: 96px; }
   align-items: center;
   justify-content: center;
 }
-.intro-video-overlay.playing { display: flex; }
-.intro-video-overlay video { width: 100%; height: 100%; object-fit: cover; }
+
+.intro-video-overlay.playing {
+  display: flex;
+}
+
+.intro-video-overlay video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .intro-brand-caption {
   position: absolute;
   bottom: 72px;
@@ -3217,13 +3301,19 @@ body.has-back-btn .location-sidebar { top: 96px; }
   pointer-events: none;
   text-shadow: 0 6px 24px rgba(0, 0, 0, 0.9);
 }
+
 .intro-brand-caption h2 {
   font-family: var(--font-display);
   font-size: 26px;
   letter-spacing: 3px;
   color: var(--gold-bright);
 }
-.intro-brand-caption p { font-size: 12px; color: rgba(250, 248, 245, 0.85); margin-top: 4px; }
+
+.intro-brand-caption p {
+  font-size: 12px;
+  color: rgba(250, 248, 245, 0.85);
+  margin-top: 4px;
+}
 
 .two-image-transition-overlay {
   position: fixed;
@@ -3233,7 +3323,11 @@ body.has-back-btn .location-sidebar { top: 96px; }
   display: none;
   overflow: hidden;
 }
-.two-image-transition-overlay.playing { display: block; }
+
+.two-image-transition-overlay.playing {
+  display: block;
+}
+
 .two-img-frame {
   position: absolute;
   inset: 0;
@@ -3244,7 +3338,11 @@ body.has-back-btn .location-sidebar { top: 96px; }
   transform: scale(1);
   transition: opacity 0.65s ease, transform 1.2s var(--ease-luxury);
 }
-.two-img-frame.active { opacity: 1; transform: scale(1.07); }
+
+.two-img-frame.active {
+  opacity: 1;
+  transform: scale(1.07);
+}
 
 /* 6. PROMINENT FEATURED DRAWER TITLE + DYNAMIC LINES + UNLIMITED CUSTOM BUTTONS */
 .drawer-featured-title {
@@ -3261,6 +3359,7 @@ body.has-back-btn .location-sidebar { top: 96px; }
   flex-direction: column;
   gap: 5px;
 }
+
 .custom-line-row {
   background: rgba(212, 175, 55, 0.06);
   border: 1px solid rgba(212, 175, 55, 0.22);
@@ -3272,8 +3371,18 @@ body.has-back-btn .location-sidebar { top: 96px; }
   gap: 8px;
   font-size: 11px;
 }
-.custom-line-row .cl-label { color: var(--ink-silver); font-weight: 500; }
-.custom-line-row .cl-val { color: var(--gold-bright); font-weight: 700; white-space: nowrap; }
+
+.custom-line-row .cl-label {
+  color: var(--ink-silver);
+  font-weight: 500;
+}
+
+.custom-line-row .cl-val {
+  color: var(--gold-bright);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .custom-line-desc {
   background: rgba(255, 255, 255, 0.03);
   border-left: 2.5px solid var(--gold-primary);
@@ -3289,6 +3398,7 @@ body.has-back-btn .location-sidebar { top: 96px; }
   flex-direction: column;
   gap: 5px;
 }
+
 .custom-view-btn {
   width: 100%;
   background: linear-gradient(135deg, rgba(212, 175, 55, 0.16), rgba(10, 10, 14, 0.92));
@@ -3306,7 +3416,11 @@ body.has-back-btn .location-sidebar { top: 96px; }
   gap: 6px;
   transition: all 0.18s ease;
 }
-.custom-view-btn:hover { background: var(--gold-gradient); color: #060608; }
+
+.custom-view-btn:hover {
+  background: var(--gold-gradient);
+  color: #060608;
+}
 
 /* Dynamic Line/Button Builder Rows inside Modals */
 .builder-item-row {
@@ -3334,7 +3448,11 @@ body.has-back-btn .location-sidebar { top: 96px; }
   justify-content: center;
   padding: 20px;
 }
-.photo-lightbox-backdrop.open { display: flex; }
+
+.photo-lightbox-backdrop.open {
+  display: flex;
+}
+
 .photo-lightbox-backdrop img {
   max-width: 94vw;
   max-height: 82vh;
@@ -3354,6 +3472,7 @@ body.has-back-btn .location-sidebar { top: 96px; }
   flex-direction: column;
   gap: 10px;
 }
+
 .casa-total-card {
   background: linear-gradient(135deg, rgba(212, 175, 55, 0.10), rgba(10, 10, 14, 0.94));
   border: 1.5px solid var(--gold-border-strong);
@@ -3363,6 +3482,7 @@ body.has-back-btn .location-sidebar { top: 96px; }
   flex-direction: column;
   gap: 16px;
 }
+
 .units-mode-tabs {
   display: inline-flex;
   gap: 4px;
@@ -3385,6 +3505,7 @@ body.has-back-btn .location-sidebar { top: 96px; }
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.72);
   pointer-events: auto;
 }
+
 .ext-step-mini {
   width: 30px;
   height: 30px;
@@ -3397,7 +3518,12 @@ body.has-back-btn .location-sidebar { top: 96px; }
   cursor: pointer;
   transition: all 0.18s ease;
 }
-.ext-step-mini:hover { background: var(--gold-gradient); color: #060608; }
+
+.ext-step-mini:hover {
+  background: var(--gold-gradient);
+  color: #060608;
+}
+
 .ext-label-btn {
   background: transparent;
   border: none;
@@ -3417,8 +3543,13 @@ body.has-back-btn .location-sidebar { top: 96px; }
    ========================================================================== */
 
 /* Screen toggle: Portal Homepage vs Active Project Showroom */
-body[data-screen="portal"] .showroom-shell { display: none !important; }
-body[data-screen="showroom"] .salo-portal-home { display: none !important; }
+body[data-screen="portal"] .showroom-shell {
+  display: none !important;
+}
+
+body[data-screen="showroom"] .salo-portal-home {
+  display: none !important;
+}
 
 /* 1. SALO SHOWROOM Fixed Top-Left Brand + Editable Building Subtitle + Fixed WhatsApp */
 .brand-header-group {
@@ -3444,6 +3575,7 @@ body[data-screen="showroom"] .salo-portal-home { display: none !important; }
   line-height: 1.12;
   text-align: left;
 }
+
 .salo-brand-fixed-name {
   font-family: var(--font-display);
   font-size: 11px;
@@ -3451,6 +3583,7 @@ body[data-screen="showroom"] .salo-portal-home { display: none !important; }
   letter-spacing: 1.5px;
   color: var(--gold-bright);
 }
+
 .salo-building-sub {
   font-family: var(--font-sans);
   font-size: 9.5px;
@@ -3482,6 +3615,7 @@ body[data-screen="showroom"] .salo-portal-home { display: none !important; }
   transition: transform 0.18s ease, box-shadow 0.18s ease;
   white-space: nowrap;
 }
+
 .salo-fixed-wa-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 8px 22px rgba(34, 197, 94, 0.45);
@@ -3506,6 +3640,7 @@ body[data-screen="showroom"] .salo-portal-home { display: none !important; }
   gap: 4px;
   transition: all 0.18s ease;
 }
+
 .portal-home-back-btn:hover {
   background: var(--gold-gradient);
   color: #060608;
@@ -3519,9 +3654,11 @@ body[data-screen="showroom"] .salo-portal-home { display: none !important; }
   right: auto;
   transform: translateX(-50%);
 }
+
 body.has-exterior-360-btn .main-project-logo-wrap.pos-above-exterior {
   bottom: 118px;
 }
+
 .main-project-logo-wrap.pos-bottom-right {
   bottom: 62px;
   right: 16px;
@@ -3536,10 +3673,12 @@ body.has-exterior-360-btn .main-project-logo-wrap.pos-above-exterior {
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
 }
+
 #view-masterplan .bottom-hud .flyby-rotate-dock {
   grid-column: 2;
   justify-self: center;
 }
+
 #view-masterplan .bottom-hud .zoom-controls {
   grid-column: 3;
   justify-self: end;
@@ -3568,10 +3707,12 @@ body.has-exterior-360-btn .main-project-logo-wrap.pos-above-exterior {
   transition: transform 0.2s var(--ease-luxury), box-shadow 0.2s ease;
   white-space: nowrap;
 }
+
 .plan-render-point:hover {
   transform: translate(-50%, -50%) scale(1.1);
   z-index: 42;
 }
+
 .plan-render-point-dot {
   width: 12px;
   height: 12px;
@@ -3600,8 +3741,14 @@ body.has-exterior-360-btn .main-project-logo-wrap.pos-above-exterior {
   font-weight: 700;
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.85);
 }
-.plan-point-place-banner.active { display: inline-flex; }
-body.placing-plan-point #scene-frame { cursor: crosshair !important; }
+
+.plan-point-place-banner.active {
+  display: inline-flex;
+}
+
+body.placing-plan-point #scene-frame {
+  cursor: crosshair !important;
+}
 
 /* 4. 3D EDITABLE CAMERAS & FLOORS CONTROLS */
 .cam3d-item-wrap {
@@ -3610,6 +3757,7 @@ body.placing-plan-point #scene-frame { cursor: crosshair !important; }
   align-items: stretch;
   gap: 2px;
 }
+
 .cam3d-item-wrap .cam3d-main-btn {
   flex: 1;
   min-width: 0;
@@ -3620,10 +3768,12 @@ body.placing-plan-point #scene-frame { cursor: crosshair !important; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 .cam3d-mini-actions {
   display: flex;
   gap: 2px;
 }
+
 .cam3d-mini-btn {
   width: 22px;
   height: 26px;
@@ -3637,19 +3787,39 @@ body.placing-plan-point #scene-frame { cursor: crosshair !important; }
   place-items: center;
   padding: 0;
 }
-.cam3d-mini-btn:hover { background: var(--gold-gradient); color: #060608; }
-.cam3d-mini-btn.danger { color: #f87171; border-color: rgba(239, 68, 68, 0.4); }
-.cam3d-mini-btn.danger:hover { background: #ef4444; color: #fff; }
+
+.cam3d-mini-btn:hover {
+  background: var(--gold-gradient);
+  color: #060608;
+}
+
+.cam3d-mini-btn.danger {
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.cam3d-mini-btn.danger:hover {
+  background: #ef4444;
+  color: #fff;
+}
 
 .floor3d-row-wrap {
   display: flex;
   align-items: center;
   gap: 3px;
 }
-.floor3d-row-wrap .floor3d-btn { flex: 1; min-width: 0; }
+
+.floor3d-row-wrap .floor3d-btn {
+  flex: 1;
+  min-width: 0;
+}
 
 /* Wider editable 3D floors panel so custom floor names stay readable */
-body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc(100vw - 32px); }
+body[data-role="editor"] .model3d-floor-selector {
+  width: 268px;
+  max-width: calc(100vw - 32px);
+}
+
 .model3d-floor-selector .floor3d-btn {
   flex-direction: column;
   align-items: flex-start;
@@ -3662,8 +3832,14 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   padding-bottom: 4px;
   text-align: left;
 }
-.model3d-floor-selector .floor3d-btn > span { max-width: 100%; }
-.model3d-floor-selector .floor3d-btn > small { font-size: 9px; }
+
+.model3d-floor-selector .floor3d-btn>span {
+  max-width: 100%;
+}
+
+.model3d-floor-selector .floor3d-btn>small {
+  font-size: 9px;
+}
 
 /* 5. RIGHT MENU DRAWER PROMO FOOTER */
 .salo-drawer-promo-footer {
@@ -3675,12 +3851,16 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   color: rgba(250, 248, 245, 0.72);
   text-align: center;
 }
+
 .salo-drawer-promo-footer a {
   color: var(--gold-bright);
   font-weight: 700;
   text-decoration: none;
 }
-.salo-drawer-promo-footer a:hover { text-decoration: underline; }
+
+.salo-drawer-promo-footer a:hover {
+  text-decoration: underline;
+}
 
 /* 6. SALO MULTI-PROJECT PORTAL HOMEPAGE (#portal-home) */
 .salo-portal-home {
@@ -3715,6 +3895,7 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   align-items: center;
   gap: 10px;
 }
+
 .portal-brand-emblem {
   width: 36px;
   height: 36px;
@@ -3728,6 +3909,7 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   place-items: center;
   box-shadow: 0 0 18px rgba(212, 175, 55, 0.35);
 }
+
 .portal-brand-titles h1 {
   font-family: var(--font-display);
   font-size: 15px;
@@ -3735,6 +3917,7 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   color: var(--gold-bright);
   line-height: 1.1;
 }
+
 .portal-brand-titles span {
   font-size: 10px;
   color: var(--ink-silver);
@@ -3751,6 +3934,7 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   border-radius: 999px;
   padding: 3px;
 }
+
 .portal-tab-btn {
   border: none;
   background: transparent;
@@ -3763,8 +3947,16 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   cursor: pointer;
   transition: all 0.18s ease;
 }
-.portal-tab-btn:hover { color: var(--gold-bright); }
-.portal-tab-btn.active { background: var(--gold-gradient); color: #060608; font-weight: 700; }
+
+.portal-tab-btn:hover {
+  color: var(--gold-bright);
+}
+
+.portal-tab-btn.active {
+  background: var(--gold-gradient);
+  color: #060608;
+  font-weight: 700;
+}
 
 .portal-social-bar {
   display: inline-flex;
@@ -3772,12 +3964,14 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   gap: 7px;
   flex-wrap: wrap;
 }
+
 .social-brand-icon {
   width: 14px;
   height: 14px;
   flex-shrink: 0;
   display: inline-block;
 }
+
 .portal-tiktok-btn {
   height: 32px;
   padding: 0 12px;
@@ -3794,7 +3988,12 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   gap: 6px;
   transition: all 0.18s ease;
 }
-.portal-tiktok-btn:hover { border-color: var(--gold-bright); color: var(--gold-bright); box-shadow: 0 0 18px rgba(212, 175, 55, 0.45); }
+
+.portal-tiktok-btn:hover {
+  border-color: var(--gold-bright);
+  color: var(--gold-bright);
+  box-shadow: 0 0 18px rgba(212, 175, 55, 0.45);
+}
 
 .portal-main {
   max-width: 1260px;
@@ -3811,8 +4010,11 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   gap: 20px;
   align-items: stretch;
 }
+
 @media (max-width: 920px) {
-  .portal-hero-grid { grid-template-columns: 1fr; }
+  .portal-hero-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .portal-hero-card {
@@ -3843,6 +4045,7 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   display: flex;
   gap: 7px;
 }
+
 .portal-input-row input {
   flex: 1;
   min-width: 0;
@@ -3854,6 +4057,7 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   font-family: inherit;
   font-size: 12px;
 }
+
 .portal-input-row input:focus {
   outline: none;
   border-color: var(--gold-bright);
@@ -3876,24 +4080,31 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   transition: transform 0.24s var(--ease-luxury), border-color 0.24s ease, box-shadow 0.24s ease;
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.65);
 }
+
 .portal-project-card:hover {
   transform: translateY(-4px);
   border-color: var(--gold-bright);
   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.85), 0 0 24px rgba(212, 175, 55, 0.16);
 }
+
 .portal-project-cover {
   position: relative;
   height: 175px;
   overflow: hidden;
   background: #0a0a0e;
 }
+
 .portal-project-cover img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   transition: transform 0.4s var(--ease-luxury);
 }
-.portal-project-card:hover .portal-project-cover img { transform: scale(1.05); }
+
+.portal-project-card:hover .portal-project-cover img {
+  transform: scale(1.05);
+}
+
 .portal-project-code-pill {
   position: absolute;
   top: 10px;
@@ -3909,6 +4120,7 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   padding: 4px 10px;
   border-radius: 999px;
 }
+
 .portal-project-body {
   padding: 14px 16px 16px;
   display: flex;
@@ -3922,6 +4134,7 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 14px;
 }
+
 .portal-example-card {
   position: relative;
   border-radius: 14px;
@@ -3930,6 +4143,7 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   background: #09090d;
   cursor: pointer;
 }
+
 .portal-example-card img {
   width: 100%;
   height: 170px;
@@ -3937,7 +4151,11 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   display: block;
   transition: transform 0.35s var(--ease-luxury);
 }
-.portal-example-card:hover img { transform: scale(1.05); }
+
+.portal-example-card:hover img {
+  transform: scale(1.05);
+}
+
 .portal-example-caption {
   padding: 8px 11px;
   display: flex;
@@ -3975,7 +4193,11 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   background: rgba(6, 6, 10, 0.72);
   backdrop-filter: blur(8px);
 }
-.model3d-loading-overlay.visible { display: flex; }
+
+.model3d-loading-overlay.visible {
+  display: flex;
+}
+
 .model3d-loading-card {
   width: min(380px, 90vw);
   padding: 18px 20px;
@@ -3988,8 +4210,17 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   gap: 8px;
   text-align: center;
 }
-.model3d-loading-card strong { color: var(--gold-bright); font-size: 13px; }
-.model3d-loading-card span { color: var(--ink-silver); font-size: 11px; }
+
+.model3d-loading-card strong {
+  color: var(--gold-bright);
+  font-size: 13px;
+}
+
+.model3d-loading-card span {
+  color: var(--ink-silver);
+  font-size: 11px;
+}
+
 .model3d-loading-track {
   width: 100%;
   height: 8px;
@@ -3998,6 +4229,7 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   overflow: hidden;
   border: 1px solid rgba(212, 175, 55, 0.35);
 }
+
 .model3d-loading-bar {
   width: 0%;
   height: 100%;
@@ -4024,6 +4256,7 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.78), 0 0 0 2px rgba(212, 175, 55, 0.35);
   transition: transform 0.2s var(--ease-luxury), filter 0.2s;
 }
+
 .floating-goto-dept-btn:hover {
   transform: translate(-50%, -152%) scale(1.04);
   filter: brightness(1.08);
@@ -4043,6 +4276,7 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   overflow-y: auto;
   padding-right: 4px;
 }
+
 .assign-poly-group {
   border: 1px solid rgba(212, 175, 55, 0.22);
   background: rgba(255, 255, 255, 0.025);
@@ -4052,6 +4286,7 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   flex-direction: column;
   gap: 5px;
 }
+
 .assign-poly-group-title {
   font-size: 10px;
   text-transform: uppercase;
@@ -4059,6 +4294,7 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   color: var(--gold-bright);
   font-weight: 700;
 }
+
 .assign-poly-item {
   display: flex;
   align-items: center;
@@ -4070,8 +4306,16 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   font-size: 11.5px;
   color: var(--ink-white);
 }
-.assign-poly-item:hover { background: rgba(212, 175, 55, 0.12); }
-.assign-poly-item input[type="checkbox"] { accent-color: var(--gold-bright); width: 14px; height: 14px; }
+
+.assign-poly-item:hover {
+  background: rgba(212, 175, 55, 0.12);
+}
+
+.assign-poly-item input[type="checkbox"] {
+  accent-color: var(--gold-bright);
+  width: 14px;
+  height: 14px;
+}
 
 .portal-pub-badge {
   position: absolute;
@@ -4084,11 +4328,13 @@ body[data-role="editor"] .model3d-floor-selector { width: 268px; max-width: calc
   letter-spacing: 0.4px;
   backdrop-filter: blur(8px);
 }
+
 .portal-pub-badge.pub {
   background: rgba(22, 163, 74, 0.85);
   color: #fff;
   border: 1px solid rgba(134, 239, 172, 0.7);
 }
+
 .portal-pub-badge.draft {
   background: rgba(15, 15, 22, 0.88);
   color: #f5d77f;
@@ -4116,10 +4362,12 @@ body[data-runtime="published"] [data-editor-only] {
   background: rgba(0, 0, 0, 0.35);
   font-size: 11px;
 }
+
 .drive-profile-row.active {
   border-color: #4ade80;
   background: rgba(34, 197, 94, 0.12);
 }
+
 .cloud-log-box {
   margin: 0;
   max-height: 120px;
@@ -4130,6 +4378,7 @@ body[data-runtime="published"] [data-editor-only] {
   white-space: pre-wrap;
   line-height: 1.4;
 }
+
 .cloud-code-box {
   margin: 0;
   max-height: 130px;
@@ -4147,7 +4396,8 @@ body[data-runtime="published"] [data-editor-only] {
 /* ==========================================================================
    SALO v9 TABLET & MOBILE RESPONSIVE BREAKPOINTS (No Overlap / No Clipping)
    ========================================================================== */
-@media (max-height: 840px), (max-width: 1120px) {
+@media (max-height: 840px),
+(max-width: 1120px) {
   .tour360-pro-controls {
     top: 92px;
     flex-direction: row-reverse;
@@ -4155,6 +4405,7 @@ body[data-runtime="published"] [data-editor-only] {
     max-width: 220px;
     justify-content: flex-start;
   }
+
   .tour360-floors-panel {
     top: 92px;
     max-height: calc(100vh - 170px);
@@ -4167,15 +4418,31 @@ body[data-runtime="published"] [data-editor-only] {
     right: 8px;
     gap: 6px;
   }
-  .salo-building-sub { max-width: 120px; }
-  .project-tab-btn.salo-brand-tab { padding: 4px 8px; gap: 6px; }
+
+  .salo-building-sub {
+    max-width: 120px;
+  }
+
+  .project-tab-btn.salo-brand-tab {
+    padding: 4px 8px;
+    gap: 6px;
+  }
+
   .portal-home-back-btn,
   .salo-fixed-wa-btn {
     padding: 0 8px;
     font-size: 10px;
   }
-  .nav-btn { padding: 5px 8px; font-size: 10.5px; }
-  .consult-cta-btn { padding: 0 9px; font-size: 10.5px; }
+
+  .nav-btn {
+    padding: 5px 8px;
+    font-size: 10.5px;
+  }
+
+  .consult-cta-btn {
+    padding: 0 9px;
+    font-size: 10.5px;
+  }
 }
 
 @media (max-width: 1080px) {
@@ -4186,36 +4453,50 @@ body[data-runtime="published"] [data-editor-only] {
     flex-wrap: wrap;
     row-gap: 6px;
   }
+
   .brand-header-group {
     flex: 1 1 auto;
     max-width: 100%;
   }
+
   .maihuenia-right-toolbar {
     margin-left: auto;
   }
+
   .nav-dock-wrapper {
     order: 3;
     flex: 1 0 100%;
     max-width: 100%;
   }
+
   .nav-dock {
     width: fit-content;
     max-width: 100%;
     margin: 0 auto;
     justify-content: center;
   }
-  .global-back-btn { top: 88px; left: 10px; }
+
+  .global-back-btn {
+    top: 88px;
+    left: 10px;
+  }
+
   .location-sidebar,
   .finishes-tabs-panel,
   .tour360-hud-panel,
   .tour360-floors-panel,
-  .tour360-pro-controls { top: 92px; }
+  .tour360-pro-controls {
+    top: 92px;
+  }
+
   body.has-back-btn .restore-edge-tab.left-edge,
   body.has-back-btn .floor-elevator-panel,
   body.has-back-btn .tour360-hud-panel,
   body.has-back-btn .model3d-hud-left,
   body.has-back-btn .location-sidebar,
-  body.has-back-btn .finish-side-badge.left { top: 128px; }
+  body.has-back-btn .finish-side-badge.left {
+    top: 128px;
+  }
 }
 
 @media (max-width: 820px) {
@@ -4223,13 +4504,16 @@ body[data-runtime="published"] [data-editor-only] {
     width: 100%;
     justify-content: flex-start;
   }
+
   .tour360-hud-panel {
     width: 184px;
   }
+
   .tour360-floors-panel {
     width: 166px;
     max-height: calc(100vh - 188px);
   }
+
   #view-tour360 .tour360-pro-controls {
     top: auto;
     bottom: 72px;
@@ -4237,42 +4521,73 @@ body[data-runtime="published"] [data-editor-only] {
     max-width: calc(100vw - 20px);
     flex-direction: row;
   }
+
   #view-tour360 .tour360-side-nav.next {
     right: 184px;
   }
+
   #view-tour360.tour360-floors-hidden .tour360-side-nav.next {
     right: 10px;
   }
+
   .location-sidebar {
     width: 220px;
   }
+
   .finishes-tabs-panel {
     width: 204px;
   }
 }
 
 @media (max-width: 540px) {
-  .salo-building-sub { display: none; }
-  .consult-cta-btn { display: none; }
+  .salo-building-sub {
+    display: none;
+  }
+
+  .consult-cta-btn {
+    display: none;
+  }
+
   .salo-fixed-wa-btn {
     padding: 0 7px;
     font-size: 9.5px;
     height: 28px;
   }
+
   .portal-home-back-btn {
     padding: 0 7px;
     font-size: 9.5px;
     height: 28px;
   }
+
   .project-tab-btn.salo-brand-tab {
     min-height: 28px;
     padding: 3px 7px;
   }
-  .tour360-hud-panel { width: 158px; padding: 8px; }
-  .tour360-floors-panel { width: 150px; padding: 8px; }
-  #view-tour360 .tour360-side-nav.next { right: 166px; }
-  .location-sidebar { width: 176px; padding: 8px; }
-  .finishes-tabs-panel { width: 168px; padding: 8px; }
+
+  .tour360-hud-panel {
+    width: 158px;
+    padding: 8px;
+  }
+
+  .tour360-floors-panel {
+    width: 150px;
+    padding: 8px;
+  }
+
+  #view-tour360 .tour360-side-nav.next {
+    right: 166px;
+  }
+
+  .location-sidebar {
+    width: 176px;
+    padding: 8px;
+  }
+
+  .finishes-tabs-panel {
+    width: 168px;
+    padding: 8px;
+  }
 }
 
 /* ==========================================================================
@@ -4412,7 +4727,10 @@ body[data-runtime="published"] [data-editor-only] {
 }
 
 @media (max-width: 900px) {
-  .studio-trans-header { display: none; }
+  .studio-trans-header {
+    display: none;
+  }
+
   .transition-row.editable-grid {
     grid-template-columns: 1fr;
   }
@@ -4502,6 +4820,7 @@ body[data-runtime="published"] [data-editor-only] {
     gap: 6px;
     padding: 0 8px;
   }
+
   #view-masterplan .bottom-hud .flyby-rotate-dock {
     position: static;
     left: auto;
@@ -4509,15 +4828,18 @@ body[data-runtime="published"] [data-editor-only] {
     grid-column: auto;
     justify-self: auto;
   }
+
   #view-masterplan .exterior-single-pill {
     padding: 4px 8px;
     font-size: 10px;
     max-width: 170px;
   }
+
   #view-masterplan .zoom-controls {
     padding: 2px 4px;
     gap: 2px;
   }
+
   #view-masterplan #zoom-percentage {
     font-size: 9.5px;
     min-width: 28px;
@@ -4617,10 +4939,12 @@ body.drawing-polygon[data-poly-tool="delete"] #scene-media-box {
     flex-wrap: nowrap !important;
     gap: 4px;
   }
+
   .brand-header-group {
     flex: 0 1 auto !important;
     gap: 4px;
   }
+
   .portal-home-back-btn,
   .salo-fixed-wa-btn {
     height: 24px !important;
@@ -4628,30 +4952,36 @@ body.drawing-polygon[data-poly-tool="delete"] #scene-media-box {
     font-size: 9px !important;
     gap: 3px;
   }
+
   .project-tab-btn.salo-brand-tab {
     min-height: 24px !important;
     height: 24px !important;
     padding: 0 7px !important;
     gap: 4px !important;
   }
+
   .salo-brand-fixed-name {
     font-size: 9.5px !important;
     letter-spacing: 0.6px;
   }
+
   .salo-building-sub {
     display: none !important;
   }
+
   .nav-dock-wrapper {
     order: 0 !important;
     flex: 0 0 auto !important;
     max-width: none !important;
   }
+
   .nav-dock-toggle-btn {
     height: 22px;
     min-width: 34px;
     padding: 0 8px;
     font-size: 10px;
   }
+
   .nav-dock {
     position: fixed !important;
     top: 34px !important;
@@ -4663,16 +4993,19 @@ body.drawing-polygon[data-poly-tool="delete"] #scene-media-box {
     gap: 2px !important;
     z-index: 96;
   }
+
   .nav-btn {
     padding: 2px 6px !important;
     font-size: 9px !important;
     height: 22px;
   }
+
   .maihuenia-right-toolbar {
     padding: 2px 4px !important;
     gap: 2px !important;
     border-radius: 9px;
   }
+
   .consult-cta-btn {
     display: inline-flex !important;
     height: 22px !important;
@@ -4680,20 +5013,24 @@ body.drawing-polygon[data-poly-tool="delete"] #scene-media-box {
     font-size: 9px !important;
     gap: 3px;
   }
+
   .role-chip-btn {
     height: 22px !important;
     padding: 0 5px !important;
     font-size: 9px !important;
   }
+
   .toolbar-icon-btn {
     width: 22px !important;
     height: 22px !important;
     font-size: 11px !important;
   }
+
   .toolbar-sep {
     height: 14px;
     margin: 0 1px;
   }
+
   .global-back-btn {
     top: 35px !important;
     left: 6px !important;
@@ -4701,44 +5038,53 @@ body.drawing-polygon[data-poly-tool="delete"] #scene-media-box {
     padding: 0 7px !important;
     font-size: 9px !important;
   }
+
   .global-back-btn.go-exterior-btn {
     left: 92px !important;
   }
+
   .maihuenia-sub-tools {
     top: 35px !important;
     right: 6px !important;
     gap: 4px !important;
   }
+
   .finder-sonar-btn {
     width: 23px !important;
     height: 23px !important;
     font-size: 11px !important;
     border-radius: 7px;
   }
+
   .finder-sonar-ring {
     width: 23px !important;
     height: 23px !important;
   }
+
   .avance-pill-btn {
     height: 23px !important;
     padding: 0 7px !important;
     font-size: 9px !important;
     gap: 4px;
   }
+
   .editor-img-quickbar.tour360-quickbar {
     top: 35px !important;
-    left: 218px !important;
+    left: 204px !important;
     transform: none !important;
     padding: 2px 6px !important;
     gap: 4px !important;
   }
+
   .editor-img-quickbar.tour360-quickbar .eiq-label {
     font-size: 8.5px !important;
   }
+
   .editor-img-quickbar.tour360-quickbar .eiq-btn {
     padding: 1px 6px !important;
     font-size: 8.5px !important;
   }
+
   #view-masterplan .bottom-hud {
     bottom: 6px;
     padding: 0 8px;
@@ -4747,64 +5093,78 @@ body.drawing-polygon[data-poly-tool="delete"] #scene-media-box {
     justify-content: space-between;
     gap: 6px;
   }
+
   #view-masterplan .bottom-hud .flyby-rotate-dock {
     position: static;
     left: auto;
     transform: none;
   }
+
   #view-masterplan .exterior-single-pill {
     height: 28px;
     padding: 0 9px;
     font-size: 10px;
   }
+
   #view-masterplan .zoom-controls {
     height: 28px;
     padding: 2px 5px;
     gap: 3px;
   }
+
   #view-masterplan .zoom-controls button {
     width: 22px;
     height: 22px;
     font-size: 11px;
   }
+
   .portal-360-hotspot {
     bottom: 44px;
   }
+
   .portal-360-btn {
     width: 30px;
     height: 30px;
   }
+
   .portal-360-aura {
     width: 32px;
     height: 32px;
   }
+
   .portal-360-text {
     font-size: 8px;
   }
+
   body.has-exterior-360-btn .main-project-logo-wrap.pos-above-exterior {
     bottom: 84px;
   }
+
   .floor-elevator-panel {
     width: 152px;
     padding: 6px;
     max-height: calc(100vh - 96px);
   }
+
   .level-btn {
     padding: 5px 7px;
     font-size: 10px;
   }
+
   #view-tour360 .restore-edge-tab.left-edge {
     top: 66px !important;
     left: 0 !important;
     padding: 4px 8px !important;
     font-size: 9.5px !important;
   }
+
   #view-tour360 .restore-edge-tab.right-edge {
     top: 66px !important;
     right: 0 !important;
     padding: 4px 8px !important;
     font-size: 9.5px !important;
   }
+
   .tour360-hud-panel {
     width: 152px !important;
     padding: 6px !important;
@@ -4813,8 +5173,8 @@ body.drawing-polygon[data-poly-tool="delete"] #scene-media-box {
     left: 6px !important;
     max-height: 176px !important;
     overflow-y: auto;
-    transition: none !important;
   }
+
   .tour360-floors-panel {
     width: 144px !important;
     padding: 6px !important;
@@ -4823,15 +5183,8 @@ body.drawing-polygon[data-poly-tool="delete"] #scene-media-box {
     right: 6px !important;
     max-height: 176px !important;
     overflow-y: auto;
-    transition: none !important;
   }
-  .tour360-hud-panel.minimized,
-  .tour360-floors-panel.minimized {
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    transform: none !important;
-  }
+
   #view-tour360 .tour360-pro-controls {
     top: 64px !important;
     bottom: auto !important;
@@ -4843,16 +5196,19 @@ body.drawing-polygon[data-poly-tool="delete"] #scene-media-box {
     max-width: none !important;
     gap: 4px !important;
   }
+
   .tour360-compass-pill {
     padding: 2px 7px !important;
     font-size: 9px !important;
     height: 24px !important;
   }
+
   .tour360-circle-btn {
     width: 24px !important;
     height: 24px !important;
     font-size: 11px !important;
   }
+
   #view-tour360 .tour360-side-nav {
     top: auto !important;
     bottom: 68px !important;
@@ -4860,33 +5216,40 @@ body.drawing-polygon[data-poly-tool="delete"] #scene-media-box {
     width: 30px !important;
     height: 30px !important;
   }
+
   #view-tour360 .tour360-side-nav.prev {
     left: 8px !important;
   }
+
   #view-tour360 .tour360-side-nav.next,
   #view-tour360.tour360-floors-hidden .tour360-side-nav.next {
     right: 8px !important;
   }
+
   .tour360-number-bar {
     bottom: 4px !important;
     padding: 2px 6px !important;
     max-width: 74vw !important;
   }
+
   .tour360-numbers-track {
     max-width: 56vw !important;
   }
+
   .tour360-num-btn {
     width: 24px !important;
     height: 24px !important;
     min-width: 24px !important;
     font-size: 10px !important;
   }
+
   .tour360-num-scroll-btn {
     width: 22px !important;
     height: 22px !important;
     min-width: 22px !important;
     font-size: 12px !important;
   }
+
   .finishes-tabs-panel {
     width: 172px;
     padding: 7px;
@@ -4894,6 +5257,7 @@ body.drawing-polygon[data-poly-tool="delete"] #scene-media-box {
     max-height: calc(100vh - 94px);
     overflow-y: auto;
   }
+
   .finish-side-badge {
     padding: 4px 8px;
     font-size: 10px;
@@ -5121,13 +5485,27 @@ body[data-role="editor"] .main-project-logo-wrap.visible:hover {
 }
 
 @keyframes tut-hand-tap {
-  0%, 100% { transform: translate(-45%, -14%) scale(1); }
-  50% { transform: translate(-45%, -22%) scale(0.92); }
+
+  0%,
+  100% {
+    transform: translate(-45%, -14%) scale(1);
+  }
+
+  50% {
+    transform: translate(-45%, -22%) scale(0.92);
+  }
 }
 
 @keyframes tut-ripple-pulse {
-  0% { transform: scale(0.5); opacity: 0.9; }
-  100% { transform: scale(2.1); opacity: 0; }
+  0% {
+    transform: scale(0.5);
+    opacity: 0.9;
+  }
+
+  100% {
+    transform: scale(2.1);
+    opacity: 0;
+  }
 }
 
 .salo-tut-card {
@@ -5209,10 +5587,24 @@ body[data-role="editor"] .main-project-logo-wrap.visible:hover {
 }
 
 @media (max-height: 500px) {
-  .salo-tut-hand svg { width: 42px; height: 42px; }
-  .salo-tut-card { padding: 8px 12px; gap: 6px; }
-  .salo-tut-bottom-bar { bottom: 8px; }
-  .salo-tut-dismiss-btn { padding: 5px 13px; font-size: 11px; }
+  .salo-tut-hand svg {
+    width: 42px;
+    height: 42px;
+  }
+
+  .salo-tut-card {
+    padding: 8px 12px;
+    gap: 6px;
+  }
+
+  .salo-tut-bottom-bar {
+    bottom: 8px;
+  }
+
+  .salo-tut-dismiss-btn {
+    padding: 5px 13px;
+    font-size: 11px;
+  }
 }
 
 /* ==========================================================================
