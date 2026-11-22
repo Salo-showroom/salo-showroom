@@ -59,13 +59,13 @@
     "y": 0
   },
   "visibleFields": {
-    "availability": false,
+    "availability": true,
     "name": true,
-    "area": false,
-    "rooms": false,
+    "area": true,
+    "rooms": true,
     "baths": false,
-    "kitchen": false,
-    "price": false,
+    "kitchen": true,
+    "price": true,
     "pinButton": true
   },
   "imageAdjustments": {
@@ -113,9 +113,9 @@
     },
     "floor-custom-1795267840136": {
       "fit": "contain",
-      "scale": 67,
+      "scale": 110,
       "x": 1,
-      "y": 13
+      "y": 20
     },
     "floor-clone-1795297212667-wnif": {
       "fit": "contain",
@@ -128,6 +128,18 @@
       "scale": 75,
       "x": 0,
       "y": 7
+    },
+    "floor-clone-1795386272370-vdxb": {
+      "fit": "contain",
+      "scale": 75,
+      "x": 0,
+      "y": 7
+    },
+    "floor-custom-1795386277554": {
+      "fit": "contain",
+      "scale": 100,
+      "x": 0,
+      "y": 0
     }
   },
   "transitions": {
@@ -153,7 +165,7 @@
         "fromLevelId": "facade",
         "toLevelId": "floor-custom-1795267840136",
         "label": "Exterior Principal → Planta baja",
-        "enabled": true,
+        "enabled": false,
         "transitionType": "video",
         "defaultVideo": "./sample-assets/transition-floors.mp4",
         "mediaKey": null,
@@ -164,10 +176,10 @@
         "img2Key": null
       },
       {
-        "id": "trans-ext-to-floor-clone-1795315191220-633n",
+        "id": "trans-ext-to-floor-clone-1795386272370-vdxb",
         "fromLevelId": "facade",
-        "toLevelId": "floor-clone-1795315191220-633n",
-        "label": "Exterior Principal → Nivel 2",
+        "toLevelId": "floor-clone-1795386272370-vdxb",
+        "label": "Exterior Principal → 2 do Nivel",
         "enabled": true,
         "transitionType": "video",
         "defaultVideo": "./sample-assets/transition-floors.mp4",
@@ -383,7 +395,7 @@
     },
     {
       "id": "floor-custom-1795232229698",
-      "name": "Nivel 1",
+      "name": "1 er Nivel",
       "badge": "Nivel 1",
       "floorNum": 1,
       "dayPhoto": "https://noisy-bread-2236.salazarlopezalcidesmario.workers.dev/Salo-showroom/salo-showroom/releases/download/media-SALO-003/floor-plan-photo-1795232614880.jpg",
@@ -404,12 +416,12 @@
     },
     {
       "id": "floor-custom-1795267840136",
-      "name": "Planta baja",
+      "name": "0 Planta baja",
       "badge": "PB",
       "floorNum": 2,
       "dayPhoto": "./media/SALO-003/quick-mp-floor-custom-1795267840136-da_e03fb077.jpg",
       "nightPhoto": "./media/SALO-003/quick-mp-floor-custom-1795267840136-ni_0e38cbf4.jpg",
-      "plan2DPhoto": "./sample-assets/floor-piso9-plan.webp",
+      "plan2DPhoto": "./media/SALO-003/quick-mp-floor-custom-1795267840136-2d_ca55a4e2.png",
       "plan2DMediaKey": null,
       "dayMediaKey": null,
       "nightMediaKey": null,
@@ -424,8 +436,8 @@
       "transitionVideo": null
     },
     {
-      "id": "floor-clone-1795315191220-633n",
-      "name": "Nivel 2",
+      "id": "floor-clone-1795386272370-vdxb",
+      "name": "2 do Nivel",
       "badge": "Nivel 2",
       "floorNum": 3,
       "dayPhoto": "https://noisy-bread-2236.salazarlopezalcidesmario.workers.dev/Salo-showroom/salo-showroom/releases/download/media-SALO-003/floor-plan-photo-1795232614880.jpg",
@@ -456,9 +468,9 @@
       "transitionVideo": "auto",
       "floorNum": 1,
       "floorLabel": "Exterior Principal",
-      "area": 190,
+      "area": 150,
       "beds": 3,
-      "baths": 2,
+      "baths": 3,
       "kitchens": 1,
       "price": 120000,
       "orientation": "Vista",
@@ -895,7 +907,7 @@
         }
       ],
       "center": {
-        "x": 78.9,
+        "x": 78.95,
         "y": 21.4
       },
       "polygon": [
@@ -1051,18 +1063,18 @@
       "floorLabel": "Exterior Principal",
       "area": 150,
       "beds": 3,
-      "baths": 2,
+      "baths": 1,
       "kitchens": 1,
       "price": 165000,
       "orientation": "Vista",
-      "status": "available",
-      "showAvailability": false,
+      "status": "sold",
+      "showAvailability": true,
       "defaultRoom360": "room-floor-custom-1795232229698-1",
       "customLines": [],
       "customButtons": [],
       "center": {
-        "x": 48.3,
-        "y": 58.9
+        "x": 49.69,
+        "y": 58.89
       },
       "polygon": [
         {
@@ -1113,7 +1125,7 @@
       "buttonText": "Piso 2",
       "type": "Ambiente / Unidad",
       "levelId": "facade",
-      "targetLevelId": "floor-clone-1795315191220-633n",
+      "targetLevelId": "floor-clone-1795386272370-vdxb",
       "transitionVideo": "auto",
       "floorNum": 1,
       "floorLabel": "Exterior Principal",
@@ -1123,14 +1135,14 @@
       "kitchens": 1,
       "price": 165000,
       "orientation": "Vista",
-      "status": "available",
-      "showAvailability": false,
+      "status": "reserved",
+      "showAvailability": true,
       "defaultRoom360": "room-floor-custom-1795232229698-1",
       "customLines": [],
       "customButtons": [],
       "center": {
-        "x": 49.9,
-        "y": 37.5
+        "x": 49.95,
+        "y": 37.28
       },
       "polygon": [
         {
@@ -1292,7 +1304,24 @@
       "showAvailability": true,
       "defaultRoom360": "room-floor-custom-1795232229698-1",
       "customLines": [],
-      "customButtons": [],
+      "customButtons": [
+        {
+          "id": "cb-1795381302627",
+          "label": "Ver",
+          "actionType": "tour360",
+          "photoUrl": "./sample-assets/render-interior-1.jpg",
+          "photoMediaKey": null,
+          "nightPhotoUrl": null,
+          "nightPhotoMediaKey": null,
+          "targetRoom360Id": "room-1795380878503",
+          "showOnPlan": true,
+          "pinColor": "#3dff24",
+          "pinCoords": {
+            "x": 34.37,
+            "y": 19.78
+          }
+        }
+      ],
       "center": {
         "x": 34.43,
         "y": 15.89
@@ -1317,15 +1346,15 @@
       ]
     },
     {
-      "id": "u-clone-1795315191221-7vsd-0",
-      "code": "Dormitorio 1",
-      "buttonText": "Dormitorio 1",
+      "id": "u-poly-1795377678834",
+      "code": "Ambiente 24",
+      "buttonText": "Ambiente 24",
       "type": "Ambiente / Unidad",
-      "levelId": "floor-clone-1795315191220-633n",
-      "targetLevelId": "floor-clone-1795315191220-633n",
+      "levelId": "floor-custom-1795267840136",
+      "targetLevelId": "floor-custom-1795267840136",
       "transitionVideo": "auto",
-      "floorNum": 1,
-      "floorLabel": "Nivel 2",
+      "floorNum": 2,
+      "floorLabel": "Planta baja",
       "area": 150,
       "beds": 3,
       "baths": 2,
@@ -1334,18 +1363,314 @@
       "orientation": "Vista",
       "status": "available",
       "showAvailability": true,
-      "defaultRoom360": "room-floor-clone-1795315191220-633n-1-1795315191220-24v",
+      "defaultRoom360": "room-floor-custom-1795267840136-1",
       "customLines": [],
       "customButtons": [
         {
-          "id": "cb-clone-1795315191221-nfd3-0",
+          "id": "cb-1795380005743",
           "label": "Ver",
           "actionType": "tour360",
           "photoUrl": "./sample-assets/render-interior-1.jpg",
           "photoMediaKey": null,
           "nightPhotoUrl": null,
           "nightPhotoMediaKey": null,
-          "targetRoom360Id": "room-floor-clone-1795315191220-633n-2-1795315191220-3jq",
+          "targetRoom360Id": "room-btn-1795380005743",
+          "showOnPlan": true,
+          "pinColor": "#3dff24",
+          "pinCoords": {
+            "x": 41.12,
+            "y": 48.92
+          }
+        }
+      ],
+      "center": {
+        "x": 43.08,
+        "y": 55.02
+      },
+      "polygon": [
+        {
+          "x": 32.22,
+          "y": 40.32
+        },
+        {
+          "x": 53.93,
+          "y": 40.32
+        },
+        {
+          "x": 53.93,
+          "y": 69.71
+        },
+        {
+          "x": 32.22,
+          "y": 69.71
+        }
+      ]
+    },
+    {
+      "id": "u-poly-1795378143310",
+      "code": "Hall",
+      "buttonText": "Hall",
+      "type": "Ambiente / Unidad",
+      "levelId": "floor-custom-1795267840136",
+      "targetLevelId": "floor-custom-1795267840136",
+      "transitionVideo": "auto",
+      "floorNum": 2,
+      "floorLabel": "Planta baja",
+      "area": 149,
+      "beds": 3,
+      "baths": 2,
+      "kitchens": 1,
+      "price": 165000,
+      "orientation": "Vista",
+      "status": "available",
+      "showAvailability": false,
+      "defaultRoom360": "room-floor-custom-1795267840136-1",
+      "customLines": [],
+      "customButtons": [
+        {
+          "id": "cb-1795380069294",
+          "label": "Ver",
+          "actionType": "tour360",
+          "photoUrl": "./sample-assets/render-interior-1.jpg",
+          "photoMediaKey": null,
+          "nightPhotoUrl": null,
+          "nightPhotoMediaKey": null,
+          "targetRoom360Id": "room-btn-1795380069294",
+          "showOnPlan": true,
+          "pinColor": "#3dff24",
+          "pinCoords": {
+            "x": 67.13,
+            "y": 25.63
+          }
+        }
+      ],
+      "center": {
+        "x": 60.33,
+        "y": 26.62
+      },
+      "polygon": [
+        {
+          "x": 44.92,
+          "y": 23.84
+        },
+        {
+          "x": 75.73,
+          "y": 23.84
+        },
+        {
+          "x": 75.73,
+          "y": 29.39
+        },
+        {
+          "x": 44.92,
+          "y": 29.39
+        }
+      ]
+    },
+    {
+      "id": "u-poly-1795379743394",
+      "code": "Sala",
+      "buttonText": "Sala",
+      "type": "Ambiente / Unidad",
+      "levelId": "floor-custom-1795267840136",
+      "targetLevelId": "floor-custom-1795267840136",
+      "transitionVideo": "auto",
+      "floorNum": 2,
+      "floorLabel": "Planta baja",
+      "area": 12,
+      "beds": 3,
+      "baths": 2,
+      "kitchens": 1,
+      "price": 165000,
+      "orientation": "Vista",
+      "status": "available",
+      "showAvailability": false,
+      "defaultRoom360": "room-floor-custom-1795267840136-1",
+      "customLines": [],
+      "customButtons": [
+        {
+          "id": "cb-1795379973523",
+          "label": "Ver",
+          "actionType": "tour360",
+          "photoUrl": "./sample-assets/render-interior-1.jpg",
+          "photoMediaKey": null,
+          "nightPhotoUrl": null,
+          "nightPhotoMediaKey": null,
+          "targetRoom360Id": "room-btn-1795379973523",
+          "showOnPlan": true,
+          "pinColor": "#3dff24",
+          "pinCoords": {
+            "x": 63.83,
+            "y": 39.78
+          }
+        }
+      ],
+      "center": {
+        "x": 65.13,
+        "y": 47.31
+      },
+      "polygon": [
+        {
+          "x": 54.5,
+          "y": 64.9
+        },
+        {
+          "x": 56.6,
+          "y": 65.71
+        },
+        {
+          "x": 59.12,
+          "y": 66.09
+        },
+        {
+          "x": 61.49,
+          "y": 66.17
+        },
+        {
+          "x": 63.71,
+          "y": 65.97
+        },
+        {
+          "x": 65.77,
+          "y": 65.47
+        },
+        {
+          "x": 67.67,
+          "y": 64.69
+        },
+        {
+          "x": 69.43,
+          "y": 63.62
+        },
+        {
+          "x": 71.03,
+          "y": 62.26
+        },
+        {
+          "x": 72.48,
+          "y": 60.61
+        },
+        {
+          "x": 73.78,
+          "y": 58.67
+        },
+        {
+          "x": 74.92,
+          "y": 56.45
+        },
+        {
+          "x": 75.91,
+          "y": 53.93
+        },
+        {
+          "x": 76.75,
+          "y": 51.12
+        },
+        {
+          "x": 77.43,
+          "y": 48.03
+        },
+        {
+          "x": 77.03,
+          "y": 31
+        },
+        {
+          "x": 54.33,
+          "y": 31
+        }
+      ]
+    },
+    {
+      "id": "u-poly-1795380143218",
+      "code": "Cocina",
+      "buttonText": "Cocina",
+      "type": "Ambiente / Unidad",
+      "levelId": "floor-custom-1795267840136",
+      "targetLevelId": "floor-custom-1795267840136",
+      "transitionVideo": "auto",
+      "floorNum": 2,
+      "floorLabel": "Planta baja",
+      "area": 4,
+      "beds": 3,
+      "baths": 2,
+      "kitchens": 1,
+      "price": 165000,
+      "orientation": "Vista",
+      "status": "available",
+      "showAvailability": true,
+      "defaultRoom360": "room-floor-custom-1795267840136-1",
+      "customLines": [],
+      "customButtons": [
+        {
+          "id": "cb-1795380164036",
+          "label": "Ver",
+          "actionType": "tour360",
+          "photoUrl": "./sample-assets/render-interior-1.jpg",
+          "photoMediaKey": null,
+          "nightPhotoUrl": null,
+          "nightPhotoMediaKey": null,
+          "targetRoom360Id": "room-btn-1795380164036",
+          "showOnPlan": true,
+          "pinColor": "#3dff24",
+          "pinCoords": {
+            "x": 24.72,
+            "y": 36.92
+          }
+        }
+      ],
+      "center": {
+        "x": 25.87,
+        "y": 42.83
+      },
+      "polygon": [
+        {
+          "x": 20.22,
+          "y": 32.26
+        },
+        {
+          "x": 31.52,
+          "y": 32.26
+        },
+        {
+          "x": 31.52,
+          "y": 53.41
+        },
+        {
+          "x": 20.22,
+          "y": 53.41
+        }
+      ]
+    },
+    {
+      "id": "u-clone-1795386272370-k38i-0",
+      "code": "Dormitorio 1",
+      "buttonText": "Dormitorio 1",
+      "type": "Ambiente / Unidad",
+      "levelId": "floor-clone-1795386272370-vdxb",
+      "targetLevelId": "floor-clone-1795386272370-vdxb",
+      "transitionVideo": "auto",
+      "floorNum": 1,
+      "floorLabel": "2 do Nivel",
+      "area": 150,
+      "beds": 3,
+      "baths": 2,
+      "kitchens": 1,
+      "price": 165000,
+      "orientation": "Vista",
+      "status": "available",
+      "showAvailability": true,
+      "defaultRoom360": "room-floor-clone-1795386272370-vdxb-1-1795386272370-ksd",
+      "customLines": [],
+      "customButtons": [
+        {
+          "id": "cb-clone-1795386272370-qkv2-0",
+          "label": "Ver",
+          "actionType": "tour360",
+          "photoUrl": "./sample-assets/render-interior-1.jpg",
+          "photoMediaKey": null,
+          "nightPhotoUrl": null,
+          "nightPhotoMediaKey": null,
+          "targetRoom360Id": "room-floor-clone-1795386272370-vdxb-2-1795386272370-mxg",
           "showOnPlan": true,
           "pinColor": "#0011ff",
           "pinCoords": {
@@ -1378,15 +1703,15 @@
       ]
     },
     {
-      "id": "u-clone-1795315191221-qztd-1",
+      "id": "u-clone-1795386272370-ub6z-1",
       "code": "Dormitorio 2",
       "buttonText": "Dormitorio 2",
       "type": "Ambiente / Unidad",
-      "levelId": "floor-clone-1795315191220-633n",
-      "targetLevelId": "floor-clone-1795315191220-633n",
+      "levelId": "floor-clone-1795386272370-vdxb",
+      "targetLevelId": "floor-clone-1795386272370-vdxb",
       "transitionVideo": "auto",
       "floorNum": 1,
-      "floorLabel": "Nivel 2",
+      "floorLabel": "2 do Nivel",
       "area": 20,
       "beds": 3,
       "baths": 2,
@@ -1395,7 +1720,7 @@
       "orientation": "Vista",
       "status": "available",
       "showAvailability": false,
-      "defaultRoom360": "room-floor-clone-1795315191220-633n-1-1795315191220-24v",
+      "defaultRoom360": "room-floor-clone-1795386272370-vdxb-1-1795386272370-ksd",
       "customLines": [
         {
           "type": "text",
@@ -1427,15 +1752,15 @@
       ]
     },
     {
-      "id": "u-clone-1795315191221-u78n-2",
+      "id": "u-clone-1795386272370-vy7c-2",
       "code": "Dormitorio 3",
       "buttonText": "Dormitorio 3",
       "type": "Ambiente / Unidad",
-      "levelId": "floor-clone-1795315191220-633n",
-      "targetLevelId": "floor-clone-1795315191220-633n",
+      "levelId": "floor-clone-1795386272370-vdxb",
+      "targetLevelId": "floor-clone-1795386272370-vdxb",
       "transitionVideo": "auto",
       "floorNum": 1,
-      "floorLabel": "Nivel 2",
+      "floorLabel": "2 do Nivel",
       "area": 150,
       "beds": 3,
       "baths": 2,
@@ -1444,18 +1769,18 @@
       "orientation": "Vista",
       "status": "available",
       "showAvailability": false,
-      "defaultRoom360": "room-floor-clone-1795315191220-633n-1-1795315191220-24v",
+      "defaultRoom360": "room-floor-clone-1795386272370-vdxb-1-1795386272370-ksd",
       "customLines": [],
       "customButtons": [
         {
-          "id": "cb-clone-1795315191221-7s1r-0",
+          "id": "cb-clone-1795386272370-qd43-0",
           "label": "Ver",
           "actionType": "tour360",
           "photoUrl": "./sample-assets/render-interior-1.jpg",
           "photoMediaKey": null,
           "nightPhotoUrl": null,
           "nightPhotoMediaKey": null,
-          "targetRoom360Id": "room-floor-clone-1795315191220-633n-3-1795315191220-o8r",
+          "targetRoom360Id": "room-floor-clone-1795386272370-vdxb-3-1795386272370-zqd",
           "showOnPlan": true,
           "pinColor": "#0011ff",
           "pinCoords": {
@@ -1488,15 +1813,15 @@
       ]
     },
     {
-      "id": "u-clone-1795315191221-qx0m-3",
+      "id": "u-clone-1795386272370-pgy4-3",
       "code": "Baño privado",
       "buttonText": "Baño privado",
       "type": "Ambiente / Unidad",
-      "levelId": "floor-clone-1795315191220-633n",
-      "targetLevelId": "floor-clone-1795315191220-633n",
+      "levelId": "floor-clone-1795386272370-vdxb",
+      "targetLevelId": "floor-clone-1795386272370-vdxb",
       "transitionVideo": "auto",
       "floorNum": 1,
-      "floorLabel": "Nivel 2",
+      "floorLabel": "2 do Nivel",
       "area": 150,
       "beds": 3,
       "baths": 2,
@@ -1505,18 +1830,18 @@
       "orientation": "Vista",
       "status": "available",
       "showAvailability": false,
-      "defaultRoom360": "room-floor-clone-1795315191220-633n-1-1795315191220-24v",
+      "defaultRoom360": "room-floor-clone-1795386272370-vdxb-1-1795386272370-ksd",
       "customLines": [],
       "customButtons": [
         {
-          "id": "cb-clone-1795315191221-e14r-0",
+          "id": "cb-clone-1795386272370-9dkn-0",
           "label": "Ver",
           "actionType": "tour360",
           "photoUrl": "./sample-assets/render-interior-1.jpg",
           "photoMediaKey": null,
           "nightPhotoUrl": null,
           "nightPhotoMediaKey": null,
-          "targetRoom360Id": "room-floor-clone-1795315191220-633n-4-1795315191220-jr9",
+          "targetRoom360Id": "room-floor-clone-1795386272370-vdxb-4-1795386272370-duw",
           "showOnPlan": true,
           "pinColor": "#0011ff",
           "pinCoords": {
@@ -1557,15 +1882,15 @@
       ]
     },
     {
-      "id": "u-clone-1795315191221-742h-4",
+      "id": "u-clone-1795386272370-dzok-4",
       "code": "Sala/Comedor",
       "buttonText": "Sala/Comedor",
       "type": "Ambiente / Unidad",
-      "levelId": "floor-clone-1795315191220-633n",
-      "targetLevelId": "floor-clone-1795315191220-633n",
+      "levelId": "floor-clone-1795386272370-vdxb",
+      "targetLevelId": "floor-clone-1795386272370-vdxb",
       "transitionVideo": "auto",
       "floorNum": 1,
-      "floorLabel": "Nivel 2",
+      "floorLabel": "2 do Nivel",
       "area": 150,
       "beds": 3,
       "baths": 2,
@@ -1574,18 +1899,18 @@
       "orientation": "Vista",
       "status": "available",
       "showAvailability": false,
-      "defaultRoom360": "room-floor-clone-1795315191220-633n-1-1795315191220-24v",
+      "defaultRoom360": "room-floor-clone-1795386272370-vdxb-1-1795386272370-ksd",
       "customLines": [],
       "customButtons": [
         {
-          "id": "cb-clone-1795315191221-a2i5-0",
+          "id": "cb-clone-1795386272370-qhkg-0",
           "label": "Ver",
           "actionType": "tour360",
           "photoUrl": "./sample-assets/render-interior-1.jpg",
           "photoMediaKey": null,
           "nightPhotoUrl": null,
           "nightPhotoMediaKey": null,
-          "targetRoom360Id": "room-floor-clone-1795315191220-633n-5-1795315191220-pw7",
+          "targetRoom360Id": "room-floor-clone-1795386272370-vdxb-5-1795386272370-v6q",
           "showOnPlan": true,
           "pinColor": "#0011ff",
           "pinCoords": {
@@ -1638,15 +1963,15 @@
       ]
     },
     {
-      "id": "u-clone-1795315191221-afvw-5",
+      "id": "u-clone-1795386272370-zj8g-5",
       "code": "Cocina",
       "buttonText": "Cocina",
       "type": "Ambiente / Unidad",
-      "levelId": "floor-clone-1795315191220-633n",
-      "targetLevelId": "floor-clone-1795315191220-633n",
+      "levelId": "floor-clone-1795386272370-vdxb",
+      "targetLevelId": "floor-clone-1795386272370-vdxb",
       "transitionVideo": "auto",
       "floorNum": 1,
-      "floorLabel": "Nivel 2",
+      "floorLabel": "2 do Nivel",
       "area": 150,
       "beds": 3,
       "baths": 2,
@@ -1655,18 +1980,18 @@
       "orientation": "Vista",
       "status": "available",
       "showAvailability": false,
-      "defaultRoom360": "room-floor-clone-1795315191220-633n-1-1795315191220-24v",
+      "defaultRoom360": "room-floor-clone-1795386272370-vdxb-1-1795386272370-ksd",
       "customLines": [],
       "customButtons": [
         {
-          "id": "cb-clone-1795315191221-qs71-0",
+          "id": "cb-clone-1795386272370-kryf-0",
           "label": "Ver",
           "actionType": "tour360",
           "photoUrl": "./sample-assets/render-interior-1.jpg",
           "photoMediaKey": null,
           "nightPhotoUrl": null,
           "nightPhotoMediaKey": null,
-          "targetRoom360Id": "room-floor-clone-1795315191220-633n-6-1795315191220-vnj",
+          "targetRoom360Id": "room-floor-clone-1795386272370-vdxb-6-1795386272370-1bj",
           "showOnPlan": true,
           "pinColor": "#0011ff",
           "pinCoords": {
@@ -1676,7 +2001,7 @@
         }
       ],
       "center": {
-        "x": 78.9,
+        "x": 78.95,
         "y": 21.4
       },
       "polygon": [
@@ -1699,15 +2024,15 @@
       ]
     },
     {
-      "id": "u-clone-1795315191221-j0j7-6",
+      "id": "u-clone-1795386272370-85bl-6",
       "code": "Baño visitas",
       "buttonText": "Baño visitas",
       "type": "Ambiente / Unidad",
-      "levelId": "floor-clone-1795315191220-633n",
-      "targetLevelId": "floor-clone-1795315191220-633n",
+      "levelId": "floor-clone-1795386272370-vdxb",
+      "targetLevelId": "floor-clone-1795386272370-vdxb",
       "transitionVideo": "auto",
       "floorNum": 1,
-      "floorLabel": "Nivel 2",
+      "floorLabel": "2 do Nivel",
       "area": 150,
       "beds": 3,
       "baths": 2,
@@ -1716,18 +2041,18 @@
       "orientation": "Vista",
       "status": "available",
       "showAvailability": false,
-      "defaultRoom360": "room-floor-clone-1795315191220-633n-1-1795315191220-24v",
+      "defaultRoom360": "room-floor-clone-1795386272370-vdxb-1-1795386272370-ksd",
       "customLines": [],
       "customButtons": [
         {
-          "id": "cb-clone-1795315191221-preq-0",
+          "id": "cb-clone-1795386272370-go4m-0",
           "label": "Ver",
           "actionType": "tour360",
           "photoUrl": "./sample-assets/render-interior-1.jpg",
           "photoMediaKey": null,
           "nightPhotoUrl": null,
           "nightPhotoMediaKey": null,
-          "targetRoom360Id": "room-floor-clone-1795315191220-633n-8-1795315191220-t56",
+          "targetRoom360Id": "room-floor-clone-1795386272370-vdxb-8-1795386272370-qm1",
           "showOnPlan": true,
           "pinColor": "#0011ff",
           "pinCoords": {
@@ -1760,15 +2085,15 @@
       ]
     },
     {
-      "id": "u-clone-1795315191221-hy4q-7",
+      "id": "u-clone-1795386272370-gra4-7",
       "code": "Lavanderia",
       "buttonText": "Lavanderia",
       "type": "Ambiente / Unidad",
-      "levelId": "floor-clone-1795315191220-633n",
-      "targetLevelId": "floor-clone-1795315191220-633n",
+      "levelId": "floor-clone-1795386272370-vdxb",
+      "targetLevelId": "floor-clone-1795386272370-vdxb",
       "transitionVideo": "auto",
       "floorNum": 1,
-      "floorLabel": "Nivel 2",
+      "floorLabel": "2 do Nivel",
       "area": 150,
       "beds": 3,
       "baths": 2,
@@ -1777,18 +2102,18 @@
       "orientation": "Vista",
       "status": "available",
       "showAvailability": false,
-      "defaultRoom360": "room-floor-clone-1795315191220-633n-1-1795315191220-24v",
+      "defaultRoom360": "room-floor-clone-1795386272370-vdxb-1-1795386272370-ksd",
       "customLines": [],
       "customButtons": [
         {
-          "id": "cb-clone-1795315191221-tp26-0",
+          "id": "cb-clone-1795386272370-zw43-0",
           "label": "Ver",
           "actionType": "tour360",
           "photoUrl": "./sample-assets/render-interior-1.jpg",
           "photoMediaKey": null,
           "nightPhotoUrl": null,
           "nightPhotoMediaKey": null,
-          "targetRoom360Id": "room-floor-clone-1795315191220-633n-9-1795315191220-jhb",
+          "targetRoom360Id": "room-floor-clone-1795386272370-vdxb-9-1795386272370-xjf",
           "showOnPlan": true,
           "pinColor": "#0011ff",
           "pinCoords": {
@@ -1821,15 +2146,15 @@
       ]
     },
     {
-      "id": "u-clone-1795315191221-vl9d-8",
+      "id": "u-clone-1795386272370-gamu-8",
       "code": "Ambiente 12",
       "buttonText": "Ambiente 12",
       "type": "Ambiente / Unidad",
-      "levelId": "floor-clone-1795315191220-633n",
-      "targetLevelId": "floor-clone-1795315191220-633n",
+      "levelId": "floor-clone-1795386272370-vdxb",
+      "targetLevelId": "floor-clone-1795386272370-vdxb",
       "transitionVideo": "auto",
       "floorNum": 1,
-      "floorLabel": "Nivel 2",
+      "floorLabel": "2 do Nivel",
       "area": 150,
       "beds": 3,
       "baths": 2,
@@ -1838,18 +2163,18 @@
       "orientation": "Vista",
       "status": "available",
       "showAvailability": false,
-      "defaultRoom360": "room-floor-clone-1795315191220-633n-1-1795315191220-24v",
+      "defaultRoom360": "room-floor-clone-1795386272370-vdxb-1-1795386272370-ksd",
       "customLines": [],
       "customButtons": [
         {
-          "id": "cb-clone-1795315191221-lsx4-0",
+          "id": "cb-clone-1795386272370-vbyc-0",
           "label": "Ver",
           "actionType": "tour360",
           "photoUrl": "./sample-assets/render-interior-1.jpg",
           "photoMediaKey": null,
           "nightPhotoUrl": null,
           "nightPhotoMediaKey": null,
-          "targetRoom360Id": "room-floor-clone-1795315191220-633n-10-1795315191220-z24",
+          "targetRoom360Id": "room-floor-clone-1795386272370-vdxb-10-1795386272370-xkd",
           "showOnPlan": true,
           "pinColor": "#1c19f0",
           "pinCoords": {
@@ -1882,15 +2207,15 @@
       ]
     },
     {
-      "id": "u-clone-1795315191221-jaku-9",
+      "id": "u-clone-1795386272370-0ery-9",
       "code": "Ambiente 13",
       "buttonText": "Ambiente 13",
       "type": "Ambiente / Unidad",
-      "levelId": "floor-clone-1795315191220-633n",
-      "targetLevelId": "floor-clone-1795315191220-633n",
+      "levelId": "floor-clone-1795386272370-vdxb",
+      "targetLevelId": "floor-clone-1795386272370-vdxb",
       "transitionVideo": "auto",
       "floorNum": 1,
-      "floorLabel": "Nivel 2",
+      "floorLabel": "2 do Nivel",
       "area": 150,
       "beds": 3,
       "baths": 2,
@@ -1899,9 +2224,26 @@
       "orientation": "Vista",
       "status": "available",
       "showAvailability": true,
-      "defaultRoom360": "room-floor-clone-1795315191220-633n-1-1795315191220-24v",
+      "defaultRoom360": "room-floor-clone-1795386272370-vdxb-1-1795386272370-ksd",
       "customLines": [],
-      "customButtons": [],
+      "customButtons": [
+        {
+          "id": "cb-clone-1795386272371-muwh-0",
+          "label": "Ver",
+          "actionType": "tour360",
+          "photoUrl": "./sample-assets/render-interior-1.jpg",
+          "photoMediaKey": null,
+          "nightPhotoUrl": null,
+          "nightPhotoMediaKey": null,
+          "targetRoom360Id": "room-floor-clone-1795386272370-vdxb-17-1795386272370-lca",
+          "showOnPlan": true,
+          "pinColor": "#3dff24",
+          "pinCoords": {
+            "x": 34.37,
+            "y": 19.78
+          }
+        }
+      ],
       "center": {
         "x": 34.43,
         "y": 15.89
@@ -1928,73 +2270,49 @@
   ],
   "renderedViewsGallery": [
     {
-      "id": "rv-1795304242756-syp1",
-      "title": "cocina 1b",
-      "url": "./media/SALO-003/gallery-rv-1795304242756-syp1.jpg",
+      "id": "rv-1795386686552-bwvd",
+      "title": "4 Cocina b",
+      "url": "./media/SALO-003/gallery-rv-1795386686552-bwvd.jpg",
       "mediaKey": null,
       "nightUrl": null,
       "nightMediaKey": null
     },
     {
-      "id": "rv-1795304242748-qcg6",
-      "title": "cocina 1",
-      "url": "./media/SALO-003/gallery-rv-1795304242748-qcg6.jpg",
+      "id": "rv-1795386686542-bcy9",
+      "title": "4 Cocina a",
+      "url": "./media/SALO-003/gallery-rv-1795386686542-bcy9.jpg",
       "mediaKey": null,
       "nightUrl": null,
       "nightMediaKey": null
     },
     {
-      "id": "rv-1795304242737-95nf",
-      "title": "Baño",
-      "url": "./media/SALO-003/gallery-rv-1795304242737-95nf.jpg",
+      "id": "rv-1795386686536-aswb",
+      "title": "3 Baño visitas",
+      "url": "./media/SALO-003/gallery-rv-1795386686536-aswb.jpg",
       "mediaKey": null,
       "nightUrl": null,
       "nightMediaKey": null
     },
     {
-      "id": "rv-1795304242724-21de",
-      "title": "baño 6b",
-      "url": "./media/SALO-003/gallery-rv-1795304242724-21de.jpg",
+      "id": "rv-1795386686526-cjl0",
+      "title": "2 Baño dormitorio principal",
+      "url": "./media/SALO-003/gallery-rv-1795386686526-cjl0.jpg",
       "mediaKey": null,
       "nightUrl": null,
       "nightMediaKey": null
     },
     {
-      "id": "rv-1795304242716-1hfp",
-      "title": "baño 6",
-      "url": "./media/SALO-003/gallery-rv-1795304242716-1hfp.jpg",
+      "id": "rv-1795386686521-ng4f",
+      "title": "2 Baño dormitorio principal b",
+      "url": "./media/SALO-003/gallery-rv-1795386686521-ng4f.jpg",
       "mediaKey": null,
       "nightUrl": null,
       "nightMediaKey": null
     },
     {
-      "id": "rv-1795304242708-o6jn",
-      "title": "Baño 5",
-      "url": "./media/SALO-003/gallery-rv-1795304242708-o6jn.jpg",
-      "mediaKey": null,
-      "nightUrl": null,
-      "nightMediaKey": null
-    },
-    {
-      "id": "rv-1795304242699-cwbk",
-      "title": "baño 4",
-      "url": "./media/SALO-003/gallery-rv-1795304242699-cwbk.jpg",
-      "mediaKey": null,
-      "nightUrl": null,
-      "nightMediaKey": null
-    },
-    {
-      "id": "rv-1795304242690-woix",
-      "title": "baño 3",
-      "url": "./media/SALO-003/gallery-rv-1795304242690-woix.jpg",
-      "mediaKey": null,
-      "nightUrl": null,
-      "nightMediaKey": null
-    },
-    {
-      "id": "rv-1795304242683-0c75",
-      "title": "Baño 2",
-      "url": "./media/SALO-003/gallery-rv-1795304242683-0c75.jpg",
+      "id": "rv-1795386686514-5lzw",
+      "title": "1. baño privado",
+      "url": "./media/SALO-003/gallery-rv-1795386686514-5lzw.jpg",
       "mediaKey": null,
       "nightUrl": null,
       "nightMediaKey": null
@@ -2359,7 +2677,7 @@
       "name": "Planta baja · Vista 360° #1",
       "subtitle": "Recorrido 360° exclusivo de Planta baja",
       "themeColor": "#161410",
-      "customImageUrl": null,
+      "customImageUrl": "./media/SALO-003/quick-360-room-floor-custom-1795267840_1ae11fdf.jpg",
       "mediaKey": null,
       "hotspots": [],
       "customNightImageUrl": null,
@@ -2417,6 +2735,13 @@
           "targetRoomId": "room-btn-1795238096100",
           "lon": -66.22489247704571,
           "lat": -10.948454642831981
+        },
+        {
+          "arrow": "door",
+          "label": "Dormitorio privado",
+          "targetRoomId": "room-1795380851774",
+          "lon": 124.80345775191799,
+          "lat": -11.72987264938727
         }
       ],
       "customNightImageUrl": null,
@@ -2487,8 +2812,199 @@
       "nightMediaKey": null
     },
     {
-      "id": "room-floor-clone-1795315191220-633n-1-1795315191220-24v",
-      "levelId": "floor-clone-1795315191220-633n",
+      "id": "room-btn-1795379973523",
+      "levelId": "floor-custom-1795267840136",
+      "name": "Ver",
+      "subtitle": "Panorama 360° asignado desde botón",
+      "themeColor": "#161410",
+      "customImageUrl": "./media/SALO-003/custom-btn-media-1795379969791-0bt0.jpg",
+      "mediaKey": null,
+      "customNightImageUrl": null,
+      "nightMediaKey": null,
+      "hotspots": [
+        {
+          "arrow": "floor-ring",
+          "label": "Area entretenimiento",
+          "targetRoomId": "room-btn-1795380005743",
+          "lon": 164.00827387475766,
+          "lat": -13.18376734910917
+        },
+        {
+          "arrow": "floor-ring",
+          "label": "Ingreso",
+          "targetRoomId": "room-btn-1795380069294",
+          "lon": -71.72679161390776,
+          "lat": -24.036653033653845
+        }
+      ]
+    },
+    {
+      "id": "room-btn-1795380005743",
+      "levelId": "floor-custom-1795267840136",
+      "name": "Ver",
+      "subtitle": "Panorama 360° asignado desde botón",
+      "themeColor": "#161410",
+      "customImageUrl": "./media/SALO-003/custom-btn-media-1795379998417-05zu.jpg",
+      "mediaKey": null,
+      "customNightImageUrl": null,
+      "nightMediaKey": null,
+      "hotspots": [
+        {
+          "arrow": "floor-ring",
+          "label": "Sala",
+          "targetRoomId": "room-btn-1795379973523",
+          "lon": -105.50081568480228,
+          "lat": -13.899667704400882
+        },
+        {
+          "arrow": "door",
+          "label": "Cocina",
+          "targetRoomId": "room-btn-1795380164036",
+          "lon": 126.73302001851496,
+          "lat": -14.434078662954787
+        }
+      ]
+    },
+    {
+      "id": "room-btn-1795380069294",
+      "levelId": "floor-custom-1795267840136",
+      "name": "Ver",
+      "subtitle": "Panorama 360° asignado desde botón",
+      "themeColor": "#161410",
+      "customImageUrl": "./media/SALO-003/custom-btn-media-1795380062967-qxck.jpg",
+      "mediaKey": null,
+      "customNightImageUrl": null,
+      "nightMediaKey": null,
+      "hotspots": [
+        {
+          "arrow": "floor-ring",
+          "label": "Sala",
+          "targetRoomId": "room-btn-1795379973523",
+          "lon": -30.560000000000002,
+          "lat": -24.334531836296836
+        }
+      ]
+    },
+    {
+      "id": "room-btn-1795380164036",
+      "levelId": "floor-custom-1795267840136",
+      "name": "Ver",
+      "subtitle": "Panorama 360° asignado desde botón",
+      "themeColor": "#161410",
+      "customImageUrl": "./media/SALO-003/custom-btn-media-1795380162561-y0t0.jpg",
+      "mediaKey": null,
+      "customNightImageUrl": null,
+      "nightMediaKey": null,
+      "hotspots": [
+        {
+          "arrow": "door",
+          "label": "Volver",
+          "targetRoomId": "room-btn-1795380005743",
+          "lon": -18.356030958211683,
+          "lat": -9.75211335391026
+        }
+      ]
+    },
+    {
+      "id": "room-1795380851774",
+      "levelId": "floor-custom-1795232229698",
+      "name": "dorm privado cama",
+      "subtitle": "Panorama 360° HD",
+      "customImageUrl": "./media/SALO-003/pano360-room-1795380851774.jpg",
+      "mediaKey": null,
+      "hotspots": [
+        {
+          "arrow": "door",
+          "lon": 0,
+          "lat": -14,
+          "targetRoomId": "room-1795380942714",
+          "label": "Balcón privado"
+        },
+        {
+          "arrow": "door",
+          "label": "Closet",
+          "targetRoomId": "room-1795380878503",
+          "lon": 160.6225543781089,
+          "lat": -1.5633508290209053
+        },
+        {
+          "arrow": "door",
+          "label": "Baño privado",
+          "targetRoomId": "room-1795380917451",
+          "lon": 68.73259086440748,
+          "lat": -4.659455750203702
+        },
+        {
+          "arrow": "door",
+          "label": "Volver Pasillo",
+          "targetRoomId": "room-1795303197531",
+          "lon": -114.6636672196474,
+          "lat": -15.082875885673097
+        }
+      ],
+      "customNightImageUrl": null,
+      "nightMediaKey": null
+    },
+    {
+      "id": "room-1795380878503",
+      "levelId": "floor-custom-1795232229698",
+      "name": "dorm privado roperos",
+      "subtitle": "Panorama 360° HD",
+      "customImageUrl": "./media/SALO-003/pano360-room-1795380878503.jpg",
+      "mediaKey": null,
+      "hotspots": [
+        {
+          "arrow": "floor-ring",
+          "label": "Volver",
+          "targetRoomId": "room-1795380851774",
+          "lon": 174.1279603211589,
+          "lat": -20.588846100000953
+        }
+      ],
+      "customNightImageUrl": null,
+      "nightMediaKey": null
+    },
+    {
+      "id": "room-1795380917451",
+      "levelId": "floor-custom-1795232229698",
+      "name": "panoramica baño privado dorm",
+      "subtitle": "Panorama 360° HD",
+      "customImageUrl": "./media/SALO-003/pano360-room-1795380917451.jpg",
+      "mediaKey": null,
+      "hotspots": [
+        {
+          "arrow": "floor-ring",
+          "lon": 0,
+          "lat": -14,
+          "targetRoomId": "room-1795380851774",
+          "label": "Regresar"
+        }
+      ],
+      "customNightImageUrl": null,
+      "nightMediaKey": null
+    },
+    {
+      "id": "room-1795380942714",
+      "levelId": "floor-custom-1795232229698",
+      "name": "panoramica terraza dorm principal",
+      "subtitle": "Panorama 360° HD",
+      "customImageUrl": "./media/SALO-003/pano360-room-1795380942714.jpg",
+      "mediaKey": null,
+      "hotspots": [
+        {
+          "arrow": "floor-ring",
+          "lon": 0,
+          "lat": -14,
+          "targetRoomId": "room-1795380851774",
+          "label": "Regresar"
+        }
+      ],
+      "customNightImageUrl": null,
+      "nightMediaKey": null
+    },
+    {
+      "id": "room-floor-clone-1795386272370-vdxb-1-1795386272370-ksd",
+      "levelId": "floor-clone-1795386272370-vdxb",
       "name": "Piso 2° · Planta · Vista 360° #1",
       "subtitle": "Recorrido 360° exclusivo de Piso 2° · Planta",
       "themeColor": "#161410",
@@ -2498,7 +3014,7 @@
         {
           "arrow": "floor-ring",
           "label": "Pasillo",
-          "targetRoomId": "room-floor-clone-1795315191220-633n-12-1795315191220-at0",
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-12-1795386272370-4xw",
           "lon": 167.28685047540176,
           "lat": -13.272247810796621
         }
@@ -2507,8 +3023,8 @@
       "nightMediaKey": null
     },
     {
-      "id": "room-floor-clone-1795315191220-633n-2-1795315191220-3jq",
-      "levelId": "floor-clone-1795315191220-633n",
+      "id": "room-floor-clone-1795386272370-vdxb-2-1795386272370-mxg",
+      "levelId": "floor-clone-1795386272370-vdxb",
       "name": "Ver",
       "subtitle": "Panorama 360° asignado desde botón",
       "themeColor": "#161410",
@@ -2534,22 +3050,22 @@
         {
           "arrow": "door",
           "label": "Ropero privado",
-          "targetRoomId": "room-floor-clone-1795315191220-633n-14-1795315191221-x8j",
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-14-1795386272370-qsv",
           "lon": -116.62925956915578,
           "lat": -4.763460491266493
         },
         {
           "arrow": "floor-ring",
           "label": "Pasillo",
-          "targetRoomId": "room-floor-clone-1795315191220-633n-12-1795315191220-at0",
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-12-1795386272370-4xw",
           "lon": -12.60303777599854,
           "lat": -26.80763206396049
         }
       ]
     },
     {
-      "id": "room-floor-clone-1795315191220-633n-3-1795315191220-o8r",
-      "levelId": "floor-clone-1795315191220-633n",
+      "id": "room-floor-clone-1795386272370-vdxb-3-1795386272370-zqd",
+      "levelId": "floor-clone-1795386272370-vdxb",
       "name": "Ver",
       "subtitle": "Panorama 360° asignado desde botón",
       "themeColor": "#161410",
@@ -2568,8 +3084,8 @@
       ]
     },
     {
-      "id": "room-floor-clone-1795315191220-633n-4-1795315191220-jr9",
-      "levelId": "floor-clone-1795315191220-633n",
+      "id": "room-floor-clone-1795386272370-vdxb-4-1795386272370-duw",
+      "levelId": "floor-clone-1795386272370-vdxb",
       "name": "Ver",
       "subtitle": "Panorama 360° asignado desde botón",
       "themeColor": "#161410",
@@ -2580,8 +3096,8 @@
       "hotspots": []
     },
     {
-      "id": "room-floor-clone-1795315191220-633n-5-1795315191220-pw7",
-      "levelId": "floor-clone-1795315191220-633n",
+      "id": "room-floor-clone-1795386272370-vdxb-5-1795386272370-v6q",
+      "levelId": "floor-clone-1795386272370-vdxb",
       "name": "Ver",
       "subtitle": "Panorama 360° asignado desde botón",
       "themeColor": "#161410",
@@ -2593,36 +3109,36 @@
         {
           "arrow": "door",
           "label": "Lavanderia",
-          "targetRoomId": "room-floor-clone-1795315191220-633n-9-1795315191220-jhb",
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-9-1795386272370-xjf",
           "lon": -92.07797448582258,
           "lat": -5.645530660707338
         },
         {
           "arrow": "up-left",
           "label": "Baño",
-          "targetRoomId": "room-floor-clone-1795315191220-633n-7-1795315191220-eh5",
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-7-1795386272370-cu4",
           "lon": -100.1937212411549,
           "lat": -12.574789164274186
         },
         {
           "arrow": "door",
           "label": "Cocina",
-          "targetRoomId": "room-floor-clone-1795315191220-633n-6-1795315191220-vnj",
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-6-1795386272370-1bj",
           "lon": -77.08570741514757,
           "lat": -8.022331749370014
         },
         {
           "arrow": "floor-ring",
           "label": "Pasillo",
-          "targetRoomId": "room-floor-clone-1795315191220-633n-12-1795315191220-at0",
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-12-1795386272370-4xw",
           "lon": 167.37525425746813,
           "lat": -13.85004071729637
         }
       ]
     },
     {
-      "id": "room-floor-clone-1795315191220-633n-6-1795315191220-vnj",
-      "levelId": "floor-clone-1795315191220-633n",
+      "id": "room-floor-clone-1795386272370-vdxb-6-1795386272370-1bj",
+      "levelId": "floor-clone-1795386272370-vdxb",
       "name": "Ver",
       "subtitle": "Panorama 360° asignado desde botón",
       "themeColor": "#161410",
@@ -2634,22 +3150,22 @@
         {
           "arrow": "floor-ring",
           "label": "Sala",
-          "targetRoomId": "room-floor-clone-1795315191220-633n-1-1795315191220-24v",
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-1-1795386272370-ksd",
           "lon": -153.94486221545566,
           "lat": -25.913346196839292
         },
         {
           "arrow": "floor-ring",
           "label": "Sala/Comedor",
-          "targetRoomId": "room-floor-clone-1795315191220-633n-5-1795315191220-pw7",
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-5-1795386272370-v6q",
           "lon": 23.978975823968476,
           "lat": -11.981978884380156
         }
       ]
     },
     {
-      "id": "room-floor-clone-1795315191220-633n-7-1795315191220-eh5",
-      "levelId": "floor-clone-1795315191220-633n",
+      "id": "room-floor-clone-1795386272370-vdxb-7-1795386272370-cu4",
+      "levelId": "floor-clone-1795386272370-vdxb",
       "name": "Ver",
       "subtitle": "Panorama 360° asignado desde botón",
       "themeColor": "#161410",
@@ -2661,15 +3177,15 @@
         {
           "arrow": "floor-ring",
           "label": "Sala/comedor",
-          "targetRoomId": "room-floor-clone-1795315191220-633n-5-1795315191220-pw7",
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-5-1795386272370-v6q",
           "lon": 116.24516761374845,
           "lat": -17.058890779746196
         }
       ]
     },
     {
-      "id": "room-floor-clone-1795315191220-633n-8-1795315191220-t56",
-      "levelId": "floor-clone-1795315191220-633n",
+      "id": "room-floor-clone-1795386272370-vdxb-8-1795386272370-qm1",
+      "levelId": "floor-clone-1795386272370-vdxb",
       "name": "Ver",
       "subtitle": "Panorama 360° asignado desde botón",
       "themeColor": "#161410",
@@ -2680,8 +3196,8 @@
       "hotspots": []
     },
     {
-      "id": "room-floor-clone-1795315191220-633n-9-1795315191220-jhb",
-      "levelId": "floor-clone-1795315191220-633n",
+      "id": "room-floor-clone-1795386272370-vdxb-9-1795386272370-xjf",
+      "levelId": "floor-clone-1795386272370-vdxb",
       "name": "Ver",
       "subtitle": "Panorama 360° asignado desde botón",
       "themeColor": "#161410",
@@ -2693,29 +3209,29 @@
         {
           "arrow": "floor-ring",
           "label": "Sala",
-          "targetRoomId": "room-floor-clone-1795315191220-633n-1-1795315191220-24v",
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-1-1795386272370-ksd",
           "lon": -136.77283186018022,
           "lat": -20.96399309764793
         },
         {
           "arrow": "floor-ring",
           "label": "Sala",
-          "targetRoomId": "room-floor-clone-1795315191220-633n-5-1795315191220-pw7",
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-5-1795386272370-v6q",
           "lon": 43.66062130198261,
           "lat": -22.566108772994085
         },
         {
           "arrow": "floor-ring",
           "label": "Cocina",
-          "targetRoomId": "room-floor-clone-1795315191220-633n-6-1795315191220-vnj",
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-6-1795386272370-1bj",
           "lon": 23.67594676568345,
           "lat": -16.271532757361776
         }
       ]
     },
     {
-      "id": "room-floor-clone-1795315191220-633n-10-1795315191220-z24",
-      "levelId": "floor-clone-1795315191220-633n",
+      "id": "room-floor-clone-1795386272370-vdxb-10-1795386272370-xkd",
+      "levelId": "floor-clone-1795386272370-vdxb",
       "name": "Ver",
       "subtitle": "Panorama 360° asignado desde botón",
       "themeColor": "#161410",
@@ -2726,8 +3242,8 @@
       "hotspots": []
     },
     {
-      "id": "room-floor-clone-1795315191220-633n-11-1795315191220-iw2",
-      "levelId": "floor-clone-1795315191220-633n",
+      "id": "room-floor-clone-1795386272370-vdxb-11-1795386272370-uxk",
+      "levelId": "floor-clone-1795386272370-vdxb",
       "name": "Ver",
       "subtitle": "Panorama 360° asignado desde botón",
       "themeColor": "#161410",
@@ -2738,8 +3254,8 @@
       "hotspots": []
     },
     {
-      "id": "room-floor-clone-1795315191220-633n-12-1795315191220-at0",
-      "levelId": "floor-clone-1795315191220-633n",
+      "id": "room-floor-clone-1795386272370-vdxb-12-1795386272370-4xw",
+      "levelId": "floor-clone-1795386272370-vdxb",
       "name": "hall departamento",
       "subtitle": "Panorama 360° HD",
       "customImageUrl": "./media/SALO-003/pano360-room-1795303197531.jpg",
@@ -2749,30 +3265,37 @@
           "arrow": "door",
           "lon": 0,
           "lat": -14,
-          "targetRoomId": "room-floor-clone-1795315191220-633n-13-1795315191221-lcx",
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-13-1795386272370-dmd",
           "label": "dorm privado cama"
         },
         {
           "arrow": "door",
           "label": "Dormitorio",
-          "targetRoomId": "room-floor-clone-1795315191220-633n-2-1795315191220-3jq",
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-2-1795386272370-mxg",
           "lon": 81.08359304517101,
           "lat": -10.757983854670414
         },
         {
           "arrow": "floor-ring",
           "label": "Sala/comedor",
-          "targetRoomId": "room-floor-clone-1795315191220-633n-5-1795315191220-pw7",
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-5-1795386272370-v6q",
           "lon": -66.22489247704571,
           "lat": -10.948454642831981
+        },
+        {
+          "arrow": "door",
+          "label": "Dormitorio privado",
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-16-1795386272370-9ea",
+          "lon": 124.80345775191799,
+          "lat": -11.72987264938727
         }
       ],
       "customNightImageUrl": null,
       "nightMediaKey": null
     },
     {
-      "id": "room-floor-clone-1795315191220-633n-13-1795315191221-lcx",
-      "levelId": "floor-clone-1795315191220-633n",
+      "id": "room-floor-clone-1795386272370-vdxb-13-1795386272370-dmd",
+      "levelId": "floor-clone-1795386272370-vdxb",
       "name": "dorm privado cama",
       "subtitle": "Panorama 360° HD",
       "customImageUrl": "./media/SALO-003/quick-360-room-1795303529231-day-1795303551267.jpg",
@@ -2781,7 +3304,7 @@
         {
           "arrow": "floor-ring",
           "label": "Pasillo",
-          "targetRoomId": "room-floor-clone-1795315191220-633n-12-1795315191220-at0",
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-12-1795386272370-4xw",
           "lon": 27.136416959556907,
           "lat": -26.195997291074146
         }
@@ -2790,8 +3313,8 @@
       "nightMediaKey": null
     },
     {
-      "id": "room-floor-clone-1795315191220-633n-14-1795315191221-x8j",
-      "levelId": "floor-clone-1795315191220-633n",
+      "id": "room-floor-clone-1795386272370-vdxb-14-1795386272370-qsv",
+      "levelId": "floor-clone-1795386272370-vdxb",
       "name": "closet dorm 3",
       "subtitle": "Panorama 360° HD",
       "customImageUrl": "./media/SALO-003/pano360-room-1795303743612.jpg",
@@ -2801,13 +3324,13 @@
           "arrow": "door",
           "lon": 0,
           "lat": -14,
-          "targetRoomId": "room-floor-clone-1795315191220-633n-15-1795315191221-zdf",
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-15-1795386272370-spd",
           "label": "Baño"
         },
         {
           "arrow": "floor-ring",
           "label": "Volver dormitorio",
-          "targetRoomId": "room-floor-clone-1795315191220-633n-2-1795315191220-3jq",
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-2-1795386272370-mxg",
           "lon": -125.97248650146351,
           "lat": 1.779434037119003
         }
@@ -2816,8 +3339,8 @@
       "nightMediaKey": null
     },
     {
-      "id": "room-floor-clone-1795315191220-633n-15-1795315191221-zdf",
-      "levelId": "floor-clone-1795315191220-633n",
+      "id": "room-floor-clone-1795386272370-vdxb-15-1795386272370-spd",
+      "levelId": "floor-clone-1795386272370-vdxb",
       "name": "baño dorm 3",
       "subtitle": "Panorama 360° HD",
       "customImageUrl": "./media/SALO-003/pano360-room-1795303776370.jpg",
@@ -2827,7 +3350,104 @@
           "arrow": "floor-ring",
           "lon": 0,
           "lat": -14,
-          "targetRoomId": "room-floor-clone-1795315191220-633n-14-1795315191221-x8j",
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-14-1795386272370-qsv",
+          "label": "Regresar"
+        }
+      ],
+      "customNightImageUrl": null,
+      "nightMediaKey": null
+    },
+    {
+      "id": "room-floor-clone-1795386272370-vdxb-16-1795386272370-9ea",
+      "levelId": "floor-clone-1795386272370-vdxb",
+      "name": "dorm privado cama",
+      "subtitle": "Panorama 360° HD",
+      "customImageUrl": "./media/SALO-003/pano360-room-1795380851774.jpg",
+      "mediaKey": null,
+      "hotspots": [
+        {
+          "arrow": "door",
+          "lon": 0,
+          "lat": -14,
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-19-1795386272370-ykf",
+          "label": "Balcón privado"
+        },
+        {
+          "arrow": "door",
+          "label": "Closet",
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-17-1795386272370-lca",
+          "lon": 160.6225543781089,
+          "lat": -1.5633508290209053
+        },
+        {
+          "arrow": "door",
+          "label": "Baño privado",
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-18-1795386272370-p1q",
+          "lon": 68.73259086440748,
+          "lat": -4.659455750203702
+        },
+        {
+          "arrow": "door",
+          "label": "Volver Pasillo",
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-12-1795386272370-4xw",
+          "lon": -114.6636672196474,
+          "lat": -15.082875885673097
+        }
+      ],
+      "customNightImageUrl": null,
+      "nightMediaKey": null
+    },
+    {
+      "id": "room-floor-clone-1795386272370-vdxb-17-1795386272370-lca",
+      "levelId": "floor-clone-1795386272370-vdxb",
+      "name": "dorm privado roperos",
+      "subtitle": "Panorama 360° HD",
+      "customImageUrl": "./media/SALO-003/pano360-room-1795380878503.jpg",
+      "mediaKey": null,
+      "hotspots": [
+        {
+          "arrow": "floor-ring",
+          "label": "Volver",
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-16-1795386272370-9ea",
+          "lon": 174.1279603211589,
+          "lat": -20.588846100000953
+        }
+      ],
+      "customNightImageUrl": null,
+      "nightMediaKey": null
+    },
+    {
+      "id": "room-floor-clone-1795386272370-vdxb-18-1795386272370-p1q",
+      "levelId": "floor-clone-1795386272370-vdxb",
+      "name": "panoramica baño privado dorm",
+      "subtitle": "Panorama 360° HD",
+      "customImageUrl": "./media/SALO-003/pano360-room-1795380917451.jpg",
+      "mediaKey": null,
+      "hotspots": [
+        {
+          "arrow": "floor-ring",
+          "lon": 0,
+          "lat": -14,
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-16-1795386272370-9ea",
+          "label": "Regresar"
+        }
+      ],
+      "customNightImageUrl": null,
+      "nightMediaKey": null
+    },
+    {
+      "id": "room-floor-clone-1795386272370-vdxb-19-1795386272370-ykf",
+      "levelId": "floor-clone-1795386272370-vdxb",
+      "name": "panoramica terraza dorm principal",
+      "subtitle": "Panorama 360° HD",
+      "customImageUrl": "./media/SALO-003/pano360-room-1795380942714.jpg",
+      "mediaKey": null,
+      "hotspots": [
+        {
+          "arrow": "floor-ring",
+          "lon": 0,
+          "lat": -14,
+          "targetRoomId": "room-floor-clone-1795386272370-vdxb-16-1795386272370-9ea",
           "label": "Regresar"
         }
       ],
@@ -2852,15 +3472,15 @@
         "items": [
           {
             "id": "f-liv-1",
-            "name": "Obsidian Gold · Mármol Sahara Noir",
-            "url": "./sample-assets/render-interior-1.jpg",
+            "name": "SALA A",
+            "url": "./media/SALO-003/finish-tab-living-f-liv-1-1795387797429.png",
             "mediaKey": null,
             "palette": "obsidian_gold"
           },
           {
             "id": "f-liv-2",
-            "name": "Roble Natural & Cuarzo Calacatta",
-            "url": "./sample-assets/render-amenities.jpg",
+            "name": "SALA b",
+            "url": "./media/SALO-003/finish-tab-living-f-liv-2-1795387801791.png",
             "mediaKey": null,
             "palette": "nordic"
           },
@@ -2870,72 +3490,6 @@
             "url": "./sample-assets/render-nocturno.jpg",
             "mediaKey": null,
             "palette": "minimal"
-          }
-        ]
-      },
-      {
-        "id": "tab-kitchen",
-        "name": "🍳 Cocina",
-        "leftId": "f-kit-1",
-        "rightId": "f-kit-2",
-        "items": [
-          {
-            "id": "f-kit-1",
-            "name": "Isla Mármol Negro & Latón",
-            "url": null,
-            "mediaKey": null,
-            "palette": "obsidian_gold"
-          },
-          {
-            "id": "f-kit-2",
-            "name": "Cuarzo Blanco & Madera Clara",
-            "url": null,
-            "mediaKey": null,
-            "palette": "nordic"
-          }
-        ]
-      },
-      {
-        "id": "tab-bath",
-        "name": "🛁 Baños",
-        "leftId": "f-bth-1",
-        "rightId": "f-bth-2",
-        "items": [
-          {
-            "id": "f-bth-1",
-            "name": "Piedra Sinterizada & Grifería Dorada",
-            "url": null,
-            "mediaKey": null,
-            "palette": "obsidian_gold"
-          },
-          {
-            "id": "f-bth-2",
-            "name": "Travertino Mate & Negro Mate",
-            "url": null,
-            "mediaKey": null,
-            "palette": "minimal"
-          }
-        ]
-      },
-      {
-        "id": "tab-bedroom",
-        "name": "🛏️ Dormitorios",
-        "leftId": "f-bed-1",
-        "rightId": "f-bed-2",
-        "items": [
-          {
-            "id": "f-bed-1",
-            "name": "Nogal Americano & Lino Arena",
-            "url": null,
-            "mediaKey": null,
-            "palette": "nordic"
-          },
-          {
-            "id": "f-bed-2",
-            "name": "Suite Obsidiana & Iluminación LED",
-            "url": null,
-            "mediaKey": null,
-            "palette": "obsidian_gold"
           }
         ]
       }
