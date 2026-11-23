@@ -5070,7 +5070,7 @@ body.drawing-polygon[data-poly-tool="delete"] #scene-media-box {
 
   .editor-img-quickbar.tour360-quickbar {
     top: 35px !important;
-    left: 204px !important;
+    left: 218px !important;
     transform: none !important;
     padding: 2px 6px !important;
     gap: 4px !important;
@@ -5173,6 +5173,7 @@ body.drawing-polygon[data-poly-tool="delete"] #scene-media-box {
     left: 6px !important;
     max-height: 176px !important;
     overflow-y: auto;
+    transition: none !important;
   }
 
   .tour360-floors-panel {
@@ -5183,6 +5184,15 @@ body.drawing-polygon[data-poly-tool="delete"] #scene-media-box {
     right: 6px !important;
     max-height: 176px !important;
     overflow-y: auto;
+    transition: none !important;
+  }
+
+  .tour360-hud-panel.minimized,
+  .tour360-floors-panel.minimized {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    transform: none !important;
   }
 
   #view-tour360 .tour360-pro-controls {
@@ -5397,26 +5407,32 @@ body.drawing-polygon[data-poly-tool="delete"] #scene-media-box {
    ========================================================================== */
 .tour360-gyro-hint-btn {
   position: absolute;
-  bottom: 58px;
+  bottom: 74px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 35;
-  padding: 6px 14px;
+  padding: 10px 22px;
   border-radius: var(--r-pill);
-  border: 1px solid rgba(212, 175, 55, 0.48);
-  background: rgba(8, 8, 12, 0.82);
-  backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(245, 215, 127, 0.85);
+  background: rgba(8, 8, 12, 0.90);
+  backdrop-filter: blur(14px);
   color: var(--gold-bright);
   font-family: inherit;
-  font-size: clamp(10px, 2.4vw, 12px);
-  font-weight: 600;
+  font-size: clamp(14px, 1.8vw, 17px);
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  line-height: 1.25;
   white-space: nowrap;
   max-width: 92vw;
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: pointer;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.85);
   transition: all 0.2s ease;
+}
+
+.tour360-gyro-hint-btn.hidden {
+  display: none;
 }
 
 .tour360-gyro-hint-btn:hover {
@@ -5426,9 +5442,11 @@ body.drawing-polygon[data-poly-tool="delete"] #scene-media-box {
 
 @media (max-height: 520px) {
   .tour360-gyro-hint-btn {
-    bottom: 38px;
-    padding: 3px 10px;
-    font-size: 9.5px;
+    bottom: 40px;
+    padding: 4px 14px;
+    font-size: 11.5px;
+    font-weight: 700;
+    line-height: 1.2;
   }
 }
 

@@ -49,7 +49,8 @@ function normalizeSampleAssetPathsDeep(node) {
 }
 
 function getProjectStorageKey(code) {
-  return `${PROJECT_KEY_PREFIX}${String(code || 'SALO-001').toUpperCase().replace(/[^A-Z0-9_-]/g, '')}`;
+  const clean = String(code || '').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+  return clean ? `${PROJECT_KEY_PREFIX}${clean}` : '';
 }
 
 /* ==========================================================================
@@ -142,26 +143,13 @@ function showToast(msg) {
 const defaultPortalState = {
   activeScreen: 'portal',
   activePortalTab: 'projects',
-  activeProjectCode: 'SALO-001',
+  activeProjectCode: null,
   auth: {
     mode: 'public',
     currentUser: 'admin',
     editors: [{ username: 'admin', pin: '1234', role: 'Propietario' }]
   },
-  projects: [
-    {
-      code: 'SALO-001',
-      accessCode: '',
-      accessCodeHash: null,
-      requiresCode: false,
-      buildingName: 'Torre Pocito 3D',
-      subtitle: 'Santa Cruz · Showroom Interactivo 3D · Panorámica · Plantas',
-      coverUrl: './sample-assets/exterior-tower.webp',
-      coverMediaKey: null,
-      published: true,
-      createdAt: '2026-11-18'
-    }
-  ],
+  projects: [],
   examplePhotos: [
     { id: 'ex-1', title: 'Torre Residencial Moderna', url: './sample-assets/exterior-tower.webp', mediaKey: null },
     { id: 'ex-2', title: 'Masterplan Urbano 3 Torres', url: './sample-assets/masterplan-render.jpg', mediaKey: null },
@@ -202,15 +190,19 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+const DEFAULT_VISIBLE_FIELDS = {
+  availability: true, name: true, area: true, rooms: true, baths: true, kitchen: true, price: true, pinButton: true
+};
+
 const defaultState = {
   project: {
-    code: 'SALO-001',
+    code: '',
     accessCode: '',
     accessCodeHash: null,
     requiresCode: false,
     shortName: 'SALO SHOWROOM',
-    buildingName: 'Torre Pocito 3D',
-    fullTitle: 'SALO SHOWROOM · Torre Pocito 3D',
+    buildingName: 'Proyecto SALO',
+    fullTitle: 'SALO SHOWROOM · Proyecto SALO',
     subtitle: 'Showroom Interactivo 3D · Panorámica · Plantas',
     logoUrl: null,
     logoMediaKey: null,
@@ -268,9 +260,8 @@ const defaultState = {
   editingFloorId: null,
   editingHotspotIndex: null,
   draftPolygonPoints: [],
-  visibleFields: {
-    availability: true, name: true, area: true, rooms: true, baths: true, kitchen: true, price: true, pinButton: true
-  },
+  visibleFields: { ...DEFAULT_VISIBLE_FIELDS },
+  visibleFieldsByLevel: {},
   imageAdjustments: {
     facade: { fit: 'cover', scale: 100, x: 0, y: 0 },
     masterplan: { fit: 'cover', scale: 100, x: 0, y: 0 },
@@ -507,7 +498,7 @@ function loadPortalState() {
           portalState.auth.editors = structuredClone(defaultPortalState.auth.editors);
         }
       }
-      if (Array.isArray(saved.projects) && saved.projects.length > 0) {
+      if (Array.isArray(saved.projects)) {
         portalState.projects = normalizeSampleAssetPathsDeep(saved.projects).map((p) => {
           const ac = normalizeAccessCode(p.accessCode || '');
           return {
@@ -520,7 +511,11 @@ function loadPortalState() {
       }
       if (Array.isArray(saved.examplePhotos) && saved.examplePhotos.length > 0) portalState.examplePhotos = normalizeSampleAssetPathsDeep(saved.examplePhotos);
       if (Array.isArray(saved.news)) portalState.news = saved.news;
-      if (saved.activeProjectCode) portalState.activeProjectCode = saved.activeProjectCode;
+      if (saved.activeProjectCode && portalState.projects.some((p) => String(p.code || '').toUpperCase() === String(saved.activeProjectCode).toUpperCase())) {
+        portalState.activeProjectCode = saved.activeProjectCode;
+      } else {
+        portalState.activeProjectCode = portalState.projects[0]?.code || null;
+      }
     }
   } catch (_) {}
 
@@ -566,7 +561,7 @@ function applyLoadedProjectData(rawSaved, code, meta) {
   if (!rawSaved) return;
   const saved = normalizeSampleAssetPathsDeep(rawSaved);
   if (saved.project) state.project = { ...state.project, ...saved.project };
-  if (!state.project.buildingName) state.project.buildingName = meta?.buildingName || 'Torre Pocito 3D';
+  if (!state.project.buildingName) state.project.buildingName = meta?.buildingName || 'Proyecto SALO';
   state.project.code = code;
   state.project.shortName = 'SALO SHOWROOM';
   if (!['pos-above-exterior', 'pos-bottom-right'].includes(state.project.logoPosition)) {
@@ -580,6 +575,11 @@ function applyLoadedProjectData(rawSaved, code, meta) {
   if (Array.isArray(saved.levels) && saved.levels.length > 0) state.levels = saved.levels;
   if (Array.isArray(saved.units) && saved.units.length > 0) state.units = saved.units;
   if (saved.visibleFields) state.visibleFields = { ...state.visibleFields, ...saved.visibleFields };
+  if (saved.visibleFieldsByLevel && typeof saved.visibleFieldsByLevel === 'object') {
+    state.visibleFieldsByLevel = structuredClone(saved.visibleFieldsByLevel);
+  } else {
+    state.visibleFieldsByLevel = {};
+  }
   if (saved.imageAdjustments) state.imageAdjustments = { ...state.imageAdjustments, ...saved.imageAdjustments };
   if (saved.transitions && Array.isArray(saved.transitions.slots)) state.transitions = saved.transitions;
   if (Array.isArray(saved.renderedViewsGallery) && saved.renderedViewsGallery.length > 0) state.renderedViewsGallery = saved.renderedViewsGallery;
@@ -592,14 +592,16 @@ function applyLoadedProjectData(rawSaved, code, meta) {
 }
 
 function getRawProjectStateForPublish(projectCode) {
-  const code = String(projectCode || 'SALO-001').toUpperCase();
+  const code = String(projectCode || '').trim().toUpperCase();
+  if (!code) return null;
   if ((state.project?.code || '').toUpperCase() === code && portalState.activeScreen === 'showroom') {
     savePersistedState();
   }
   const meta = portalState.projects.find((p) => p.code.toUpperCase() === code);
   const fresh = createFreshProjectState(meta || { code, buildingName: 'Proyecto SALO' });
   try {
-    const raw = localStorage.getItem(getProjectStorageKey(code));
+    const key = getProjectStorageKey(code);
+    const raw = key ? localStorage.getItem(key) : null;
     if (!raw) return fresh;
     const saved = JSON.parse(raw);
     return { ...fresh, ...saved, project: { ...fresh.project, ...(saved.project || {}), code } };
@@ -609,13 +611,20 @@ function getRawProjectStateForPublish(projectCode) {
 }
 
 function loadPersistedState(projectCode = null) {
-  const code = (projectCode || portalState.activeProjectCode || 'SALO-001').toUpperCase();
+  const code = String(projectCode || portalState.activeProjectCode || portalState.projects[0]?.code || '').trim().toUpperCase();
+  if (!code) {
+    portalState.activeProjectCode = null;
+    state = createFreshProjectState({ code: '', buildingName: 'SALO Showroom' });
+    state.auth = portalState.auth;
+    return;
+  }
   portalState.activeProjectCode = code;
   const meta = portalState.projects.find((p) => p.code.toUpperCase() === code) || portalState.projects[0];
-  state = createFreshProjectState(meta || { code, buildingName: 'Torre Pocito 3D' });
+  state = createFreshProjectState(meta || { code, buildingName: 'Proyecto SALO' });
 
   try {
-    const raw = localStorage.getItem(getProjectStorageKey(code));
+    const key = getProjectStorageKey(code);
+    const raw = key ? localStorage.getItem(key) : null;
     if (raw) applyLoadedProjectData(JSON.parse(raw), code, meta);
   } catch (_) {}
 
@@ -625,7 +634,11 @@ function loadPersistedState(projectCode = null) {
 function savePersistedState() {
   if (isPublishedRuntime()) return;
   try {
-    const code = (state.project.code || portalState.activeProjectCode || 'SALO-001').toUpperCase();
+    const code = String(state.project.code || portalState.activeProjectCode || '').trim().toUpperCase();
+    if (!code) {
+      savePortalState();
+      return;
+    }
     // Keep portal metadata in sync with current project edits
     const meta = portalState.projects.find((p) => p.code.toUpperCase() === code);
     if (meta) {
@@ -701,6 +714,7 @@ function savePersistedState() {
       levels: cleanLevels,
       units: cleanUnits,
       visibleFields: state.visibleFields,
+      visibleFieldsByLevel: state.visibleFieldsByLevel || {},
       imageAdjustments: state.imageAdjustments,
       transitions: cleanTransitions,
       renderedViewsGallery: cleanGallery,
@@ -950,6 +964,11 @@ function renderPortalProjects() {
   if (countBadge) countBadge.textContent = `${filtered.length} ${filtered.length === 1 ? 'Proyecto' : 'Proyectos'}`;
   grid.innerHTML = '';
 
+  if (portalState.projects.length === 0) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--ink-silver);border:1px dashed var(--gold-border);border-radius:14px;">${editorMode ? 'Aún no hay proyectos creados. Usa "➕ Crear Nuevo Proyecto" para comenzar.' : 'Aún no hay proyectos disponibles en este catálogo.'}</div>`;
+    return;
+  }
+
   if (filtered.length === 0) {
     grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--ink-silver);border:1px dashed var(--gold-border);border-radius:14px;">No se encontraron proyectos con "${escapeHtml(query)}".</div>`;
     return;
@@ -986,7 +1005,7 @@ function renderPortalProjects() {
           </button>
           ${editorMode ? `<button class="action-btn" data-toggle-pub="${safeCode}" title="${isPublished ? 'Pasar a Borrador (no sale en la web pública)' : 'Marcar listo para publicar'}" style="padding:8px 9px;font-size:10.5px;">${isPublished ? '🟢' : '📝'}</button>` : ''}
           <button class="action-btn" data-copy-proj="${safeCode}" title="Copiar enlace del proyecto" style="padding:8px 10px;">🔗</button>
-          ${(editorMode && portalState.projects.length > 1) ? `<button class="action-btn" data-del-proj="${safeCode}" title="Eliminar proyecto" style="padding:8px 10px;color:#f87171;border-color:rgba(239,68,68,0.4);">🗑️</button>` : ''}
+          ${editorMode ? `<button class="action-btn" data-del-proj="${safeCode}" title="Eliminar proyecto" style="padding:8px 10px;color:#f87171;border-color:rgba(239,68,68,0.4);">🗑️</button>` : ''}
         </div>
       </div>
     `;
@@ -1370,6 +1389,7 @@ async function openProjectByCode(rawCode, forceRole = null) {
   }
 
   navHistory.length = 0;
+  tour360.gyroUserDisabled = false;
   if (isPublishedRuntime()) {
     portalState.auth.mode = 'public';
     state = createFreshProjectState(match);
@@ -1425,10 +1445,10 @@ let newProjectCoverDraft = { url: null, mediaKey: null };
 
 function nextInternalProjectCode() {
   let n = portalState.projects.length + 1;
-  let candidate = `SALO-${String(n).padStart(3, '0')}`;
+  let candidate = `PRJ-${String(n).padStart(3, '0')}`;
   while (portalState.projects.some((p) => String(p.code || '').toUpperCase() === candidate)) {
     n += 1;
-    candidate = `SALO-${String(n).padStart(3, '0')}`;
+    candidate = `PRJ-${String(n).padStart(3, '0')}`;
   }
   return candidate;
 }
@@ -1489,9 +1509,16 @@ async function createNewProjectFromModal() {
 }
 
 function deleteProjectFromPortal(code) {
-  if (!isEditor() || portalState.projects.length <= 1) return;
-  portalState.projects = portalState.projects.filter((p) => p.code.toUpperCase() !== String(code).toUpperCase());
-  try { localStorage.removeItem(getProjectStorageKey(code)); } catch (_) {}
+  if (!isEditor()) return;
+  const target = String(code || '').toUpperCase();
+  portalState.projects = portalState.projects.filter((p) => p.code.toUpperCase() !== target);
+  if (String(portalState.activeProjectCode || '').toUpperCase() === target) {
+    portalState.activeProjectCode = portalState.projects[0]?.code || null;
+  }
+  try {
+    const key = getProjectStorageKey(code);
+    if (key) localStorage.removeItem(key);
+  } catch (_) {}
   savePortalState();
   renderPortalProjects();
   showToast(`Proyecto ${code} eliminado`);
@@ -1554,6 +1581,7 @@ function goBackHistory() {
     switchView(prev.view || 'masterplan', false, true);
     renderLevelsSidebar();
     drawMasterplanRender();
+    applyFieldVisibilityToDrawer();
     renderMasterplanOverlays();
     if (prev.view === 'tour360' && prev.room360Id) loadRoom360(prev.room360Id);
     updateBackButtonUI();
@@ -1567,6 +1595,7 @@ function goBackHistory() {
     syncPlanModeButtons();
     renderLevelsSidebar();
     drawMasterplanRender();
+    applyFieldVisibilityToDrawer();
     renderMasterplanOverlays();
   }
   updateBackButtonUI();
@@ -1654,7 +1683,7 @@ function syncModel3DTabVisibilityUI() {
 }
 
 function syncProjectBrandingUI() {
-  const buildingName = state.project.buildingName || 'Torre Pocito 3D';
+  const buildingName = state.project.buildingName || 'Proyecto SALO';
   state.project.shortName = 'SALO SHOWROOM';
   state.project.fullTitle = `SALO SHOWROOM · ${buildingName}`;
   const tabNameEl = document.getElementById('project-tab-name');
@@ -1670,7 +1699,7 @@ function syncProjectBrandingUI() {
   if (bldgSubEl) bldgSubEl.textContent = buildingName;
   if (titleEl) titleEl.textContent = `SALO SHOWROOM · ${buildingName}`;
   if (subEl) subEl.textContent = state.project.subtitle || 'Showroom Interactivo 3D · Panorámica · Plantas';
-  if (codeEl) codeEl.textContent = `Código: ${state.project.code || 'SALO-001'}`;
+  if (codeEl) codeEl.textContent = `Código: ${state.project.code || '—'}`;
   if (menuTitle) menuTitle.textContent = buildingName;
   if (introTitle) introTitle.textContent = buildingName;
   if (introSub) introSub.textContent = 'SALO SHOWROOM · Cálculo y Diseño';
@@ -1742,6 +1771,7 @@ function applyRoleUI() {
   renderMasterplanOverlays();
   syncHotspots360DOM();
   renderTour360FloorsPanel();
+  syncFieldVisibilityCheckboxes(state.activeLevelId);
 }
 
 function openAuthModal() {
@@ -1755,7 +1785,7 @@ function openAuthModal() {
     loginSec.style.display = 'none';
     manageSec.style.display = 'flex';
     document.getElementById('auth-active-user').textContent = portalState.auth.currentUser || 'admin';
-    document.getElementById('public-url-preview').textContent = `${window.location.origin}${window.location.pathname}?project=${encodeURIComponent(state.project.code || 'SALO-001')}&mode=public`;
+    document.getElementById('public-url-preview').textContent = `${window.location.origin}${window.location.pathname}?project=${encodeURIComponent(state.project.code || '')}&mode=public`;
     renderAuthorizedEditorsList();
   } else {
     loginSec.style.display = 'flex';
@@ -1834,7 +1864,10 @@ function setupPanelMinimize(panelId, minBtnId, restoreBtnId, mode = 'minimized')
     if (mode === 'drawer') panel.classList.add('open');
     else panel.classList.remove('minimized');
     restoreBtn.classList.remove('visible');
-    if (panelId === 'unit-drawer') renderMasterplanOverlays();
+    if (panelId === 'unit-drawer') {
+      applyFieldVisibilityToDrawer();
+      renderMasterplanOverlays();
+    }
   });
 }
 
@@ -2345,6 +2378,7 @@ function renderExteriorViewsManagerList() {
       state.activeLevelId = 'facade';
       state.exteriorAngleIndex = idx;
       drawMasterplanRender();
+      applyFieldVisibilityToDrawer();
       renderMasterplanOverlays();
       document.getElementById('modal-exterior-manager').classList.remove('open');
     });
@@ -3811,7 +3845,7 @@ function renderMasterplanOverlays() {
       });
     }
 
-    if (state.visibleFields.pinButton !== false && showAvail) {
+    if (getVisibleFieldsForLevel(state.activeLevelId).pinButton !== false && showAvail) {
       const pin = document.createElement('button');
       pin.className = `unit-pin ${isSelected ? 'selected' : ''}`;
       pin.style.left = `${unit.center.x}%`;
@@ -4045,6 +4079,7 @@ async function navigateToLevelWithTransition(targetLevelId, explicitOverride = '
     else {
       document.getElementById('unit-drawer')?.classList.remove('open');
       document.getElementById('restore-unit-drawer')?.classList.add('visible');
+      applyFieldVisibilityToDrawer();
       renderMasterplanOverlays();
     }
     updateBackButtonUI();
@@ -4151,6 +4186,9 @@ function promptAndCloneFloor(sourceLevelId) {
   state.imageAdjustments[newLevelId] = structuredClone(
     state.imageAdjustments[sourceLevelId] || { fit: 'contain', scale: 100, x: 0, y: 0 }
   );
+  if (state.visibleFieldsByLevel && state.visibleFieldsByLevel[sourceLevelId]) {
+    state.visibleFieldsByLevel[newLevelId] = structuredClone(state.visibleFieldsByLevel[sourceLevelId]);
+  }
 
   // Clone 360° rooms belonging to sourceLevelId and build oldRoomId -> newRoomId map
   const roomMap = new Map();
@@ -4243,6 +4281,7 @@ function deleteFloorById(levelId) {
   state.units = state.units.filter((u) => u.levelId !== levelId);
   state.rooms360 = state.rooms360.filter((r) => r.levelId !== levelId);
   state.transitions.slots = (state.transitions.slots || []).filter((s) => s.fromLevelId !== levelId && s.toLevelId !== levelId);
+  if (state.visibleFieldsByLevel) delete state.visibleFieldsByLevel[levelId];
   if (state.activeLevelId === levelId) {
     state.activeLevelId = 'facade';
     state.is2DPlanMode = false;
@@ -4251,6 +4290,7 @@ function deleteFloorById(levelId) {
   savePersistedState();
   renderLevelsSidebar();
   drawMasterplanRender();
+  applyFieldVisibilityToDrawer();
   renderMasterplanOverlays();
   renderExistingFloorsManageList();
   renderTour360FloorsPanel();
@@ -4818,6 +4858,7 @@ function renderStudioFloorsTab() {
       renderLevelsSidebar();
       switchView('masterplan', false, false);
       drawMasterplanRender();
+      applyFieldVisibilityToDrawer();
       renderMasterplanOverlays();
       const fp = document.getElementById('floor-elevator-panel');
       if (fp) fp.classList.remove('minimized', 'collapsed');
@@ -5050,7 +5091,10 @@ async function openFloorTour360(levelId = null, preferredRoomId = null, allowTra
 function selectUnit(unitId, ensureOpen = false) {
   state.selectedUnitId = unitId;
   const unit = state.units.find((u) => u.id === unitId);
-  if (!unit) return;
+  if (!unit) {
+    applyFieldVisibilityToDrawer(null);
+    return;
+  }
 
   if (ensureOpen) {
     document.getElementById('unit-drawer')?.classList.add('open');
@@ -5132,9 +5176,26 @@ function selectUnit(unitId, ensureOpen = false) {
   renderMasterplanOverlays();
 }
 
+function getVisibleFieldsForLevel(levelId = state.activeLevelId || 'facade') {
+  const key = levelId || 'facade';
+  const base = { ...DEFAULT_VISIBLE_FIELDS, ...(state.visibleFields || {}) };
+  const perLevel = state.visibleFieldsByLevel && state.visibleFieldsByLevel[key];
+  return perLevel ? { ...base, ...perLevel } : base;
+}
+
+function syncFieldVisibilityCheckboxes(levelId = state.activeLevelId || 'facade') {
+  const vf = getVisibleFieldsForLevel(levelId);
+  document.querySelectorAll('[data-toggle-field]').forEach((cb) => {
+    const fieldKey = cb.dataset.toggleField;
+    cb.checked = vf[fieldKey] !== false;
+  });
+}
+
 function applyFieldVisibilityToDrawer(activeUnit = null) {
   const unit = activeUnit || state.units.find((u) => u.id === state.selectedUnitId);
-  const vf = state.visibleFields;
+  const levelId = state.activeLevelId || unit?.levelId || 'facade';
+  const vf = getVisibleFieldsForLevel(levelId);
+  syncFieldVisibilityCheckboxes(levelId);
   const showUnitAvail = vf.availability && (!unit || unit.showAvailability !== false);
   document.getElementById('drawer-availability-banner').style.display = showUnitAvail ? 'flex' : 'none';
   document.getElementById('field-wrap-name').style.display = vf.name ? 'block' : 'none';
@@ -5536,6 +5597,7 @@ let tour360 = {
   autoRotate: false,
   hotspotElements: [],
   gyroEnabled: false,
+  gyroUserDisabled: false,
   gyroAutoAttempted: false,
   gyroListenerBound: false,
   gyroBaselineAlpha: null,
@@ -5552,6 +5614,14 @@ let tour360 = {
   gyroLastMoveAt: 0,
   loadSeq: 0
 };
+
+function showTour360GyroHint() {
+  document.getElementById('btn-360-gyro-hint')?.classList.remove('hidden');
+}
+
+function hideTour360GyroHint() {
+  document.getElementById('btn-360-gyro-hint')?.classList.add('hidden');
+}
 
 function handleTour360DeviceOrientation(e) {
   if (!tour360.gyroEnabled || state.activeView !== 'tour360') return;
@@ -5616,6 +5686,7 @@ function handleTour360DeviceOrientation(e) {
     tour360.lat = Math.max(-85, Math.min(85, nextLat));
     if (Math.abs(dAlpha) > 0.4 || Math.abs(adjPitch) > 0.4) {
       tour360.gyroLastMoveAt = Date.now();
+      hideTour360GyroHint();
     }
   }
 }
@@ -5636,7 +5707,7 @@ async function toggleTour360Gyroscope(forceState = null, fromUserTap = false) {
           return false;
         }
       } catch (_) {
-        if (fromUserTap) showToast('Toca "Mueva el teléfono" para autorizar el sensor');
+        if (fromUserTap) showToast('Toca "mueva el celular" para autorizar el sensor');
         return false;
       }
     }
@@ -5648,6 +5719,7 @@ async function toggleTour360Gyroscope(forceState = null, fromUserTap = false) {
     tour360.gyroBaselineBeta = null;
     tour360.gyroBaselineGamma = null;
     tour360.gyroEnabled = true;
+    if (fromUserTap) tour360.gyroUserDisabled = false;
     btn?.classList.add('active');
     if (fromUserTap) showToast('📱 Sensor giroscópico activado');
     return true;
@@ -5656,6 +5728,7 @@ async function toggleTour360Gyroscope(forceState = null, fromUserTap = false) {
   tour360.gyroBaselineAlpha = null;
   tour360.gyroBaselineBeta = null;
   tour360.gyroBaselineGamma = null;
+  if (fromUserTap) tour360.gyroUserDisabled = true;
   btn?.classList.remove('active');
   if (fromUserTap) showToast('Sensor giroscópico desactivado');
   return false;
@@ -5816,6 +5889,7 @@ function initTour360Viewer() {
     tour360.lastPointerY = clientY;
     tour360.lon = tour360.lon - dx * 0.16;
     tour360.lat = Math.max(-85, Math.min(85, tour360.lat + dy * 0.16));
+    hideTour360GyroHint();
   };
 
   const endTour360Drag = () => {
@@ -5923,9 +5997,6 @@ function loadRoom360(roomId, opts = {}) {
   const reqSeq = ++tour360.loadSeq;
   const prevRoomId = state.activeRoom360Id;
   if (!opts.preserveView) {
-    if (tour360.gyroEnabled) {
-      toggleTour360Gyroscope(false, false);
-    }
     resetTour360CameraToCenter();
   }
   state.activeRoom360Id = roomId;
@@ -6025,6 +6096,7 @@ function loadRoom360(roomId, opts = {}) {
   renderNumbered360Bar();
   syncHotspots360DOM();
   renderTour360FloorsPanel();
+  syncFieldVisibilityCheckboxes(state.activeLevelId);
 }
 
 function renderNumbered360Bar() {
@@ -7792,6 +7864,7 @@ async function switchView(viewName, allowTransition = false, skipHistory = false
   if (!skipHistory && state.activeView !== viewName) pushNavHistory();
 
   const doSwitch = () => {
+    const prevView = state.activeView;
     state.activeView = viewName;
     setNavDockExpanded(false);
     document.querySelectorAll('.nav-btn[data-view]').forEach((btn) => btn.classList.toggle('active', btn.dataset.view === viewName));
@@ -7809,8 +7882,8 @@ async function switchView(viewName, allowTransition = false, skipHistory = false
     if (strip) strip.style.visibility = (viewName === 'masterplan' && isEditor()) ? 'visible' : 'hidden';
 
     if (viewName === 'tour360') {
-      if (tour360.gyroEnabled) {
-        toggleTour360Gyroscope(false, false);
+      if (prevView !== 'tour360') {
+        showTour360GyroHint();
       }
       if (tour360.renderer) {
         resetTour360CameraToCenter();
@@ -7818,6 +7891,9 @@ async function switchView(viewName, allowTransition = false, skipHistory = false
         tour360.camera.aspect = c.clientWidth / c.clientHeight;
         tour360.camera.updateProjectionMatrix();
         tour360.renderer.setSize(c.clientWidth, c.clientHeight);
+      }
+      if (!tour360.gyroUserDisabled) {
+        toggleTour360Gyroscope(true, false);
       }
       renderNumbered360Bar();
       renderTour360FloorsPanel();
@@ -8062,6 +8138,7 @@ function bindEvents() {
     switchView('masterplan', false, false);
     renderLevelsSidebar();
     drawMasterplanRender();
+    applyFieldVisibilityToDrawer();
     renderMasterplanOverlays();
   });
 
@@ -8235,7 +8312,7 @@ function bindEvents() {
   document.getElementById('drawer-menu-whatsapp').addEventListener('click', openWhatsAppGeneral);
 
   document.getElementById('btn-top-share').addEventListener('click', () => {
-    const shareUrl = `${window.location.origin}${window.location.pathname}?project=${encodeURIComponent(state.project.code || 'SALO-001')}&mode=public`;
+    const shareUrl = `${window.location.origin}${window.location.pathname}?project=${encodeURIComponent(state.project.code || '')}&mode=public`;
     navigator.clipboard?.writeText(shareUrl).catch(() => {});
     showToast(`🔗 Enlace público (${state.project.code}) copiado`);
   });
@@ -8588,7 +8665,7 @@ function bindEvents() {
     if (!isEditor()) return;
     const meta = portalState.projects.find((p) => p.code.toUpperCase() === (state.project.code || '').toUpperCase());
     document.getElementById('proj-input-building').value = state.project.buildingName || '';
-    document.getElementById('proj-input-code-ro').value = state.project.code || 'SALO-001';
+    document.getElementById('proj-input-code-ro').value = state.project.code || '';
     const accInp = document.getElementById('proj-input-access-code');
     if (accInp) accInp.value = meta?.accessCode ?? state.project.accessCode ?? '';
     document.getElementById('proj-input-sub').value = state.project.subtitle || '';
@@ -8721,7 +8798,7 @@ function bindEvents() {
     showToast('Cambiado a Vista Público General');
   });
   document.getElementById('btn-copy-public-link').addEventListener('click', () => {
-    const pubUrl = `${window.location.origin}${window.location.pathname}?project=${encodeURIComponent(state.project.code || 'SALO-001')}&mode=public`;
+    const pubUrl = `${window.location.origin}${window.location.pathname}?project=${encodeURIComponent(state.project.code || '')}&mode=public`;
     navigator.clipboard?.writeText(pubUrl).catch(() => {});
     showToast(`Enlace público copiado`);
   });
@@ -9222,11 +9299,21 @@ function bindEvents() {
   });
   document.getElementById('btn-toggle-info-config').addEventListener('click', () => { if (isEditor()) document.getElementById('info-config-panel').classList.toggle('open'); });
   document.querySelectorAll('[data-toggle-field]').forEach((cb) => {
-    cb.checked = state.visibleFields[cb.dataset.toggleField] !== false;
+    cb.checked = getVisibleFieldsForLevel(state.activeLevelId)[cb.dataset.toggleField] !== false;
     cb.addEventListener('change', () => {
       if (!isEditor()) return;
-      state.visibleFields[cb.dataset.toggleField] = cb.checked; savePersistedState();
-      applyFieldVisibilityToDrawer(); renderMasterplanOverlays();
+      const levelId = state.activeLevelId || 'facade';
+      const fieldKey = cb.dataset.toggleField;
+      if (!state.visibleFieldsByLevel || typeof state.visibleFieldsByLevel !== 'object') {
+        state.visibleFieldsByLevel = {};
+      }
+      if (!state.visibleFieldsByLevel[levelId]) {
+        state.visibleFieldsByLevel[levelId] = getVisibleFieldsForLevel(levelId);
+      }
+      state.visibleFieldsByLevel[levelId][fieldKey] = cb.checked;
+      savePersistedState();
+      applyFieldVisibilityToDrawer();
+      renderMasterplanOverlays();
     });
   });
   document.getElementById('btn-edit-current-polygon').addEventListener('click', () => {
@@ -10145,14 +10232,16 @@ function bindEvents() {
   // Export / Import / Reset
   const doResetDemo = async () => {
     if (!isEditor()) return;
-    const code = state.project.code || portalState.activeProjectCode || 'SALO-001';
+    const code = state.project.code || portalState.activeProjectCode || '';
+    if (!code) return;
     const meta = portalState.projects.find((p) => p.code.toUpperCase() === code.toUpperCase()) || {
       code,
-      buildingName: state.project.buildingName || 'Torre Imperial SALO',
+      buildingName: state.project.buildingName || 'Proyecto SALO',
       subtitle: state.project.subtitle || 'Showroom Interactivo 3D · Panorámica · Plantas',
       whatsappPhone: state.project.whatsappPhone || '59173080076'
     };
-    localStorage.removeItem(getProjectStorageKey(code));
+    const key = getProjectStorageKey(code);
+    if (key) localStorage.removeItem(key);
     navHistory.length = 0;
     state = createFreshProjectState(meta);
     savePersistedState();
@@ -10167,7 +10256,8 @@ function bindEvents() {
     const payload = {
       project: state.project, intro: state.intro, unitsConfig: state.unitsConfig, model3dConfig: state.model3dConfig, avance: state.avance,
       exteriorAngles: state.exteriorAngles, levels: state.levels, units: state.units, rooms360: state.rooms360,
-      visibleFields: state.visibleFields, imageAdjustments: state.imageAdjustments, location: state.location,
+      visibleFields: state.visibleFields,
+      visibleFieldsByLevel: state.visibleFieldsByLevel || {}, imageAdjustments: state.imageAdjustments, location: state.location,
       finishes: state.finishes, transitions: state.transitions,
       cameras3D: state.cameras3D, floors3D: state.floors3D
     };
@@ -10194,6 +10284,11 @@ function bindEvents() {
         if (Array.isArray(data.units)) state.units = data.units;
         if (Array.isArray(data.rooms360)) state.rooms360 = data.rooms360;
         if (data.visibleFields) state.visibleFields = data.visibleFields;
+        if (data.visibleFieldsByLevel && typeof data.visibleFieldsByLevel === 'object') {
+          state.visibleFieldsByLevel = data.visibleFieldsByLevel;
+        } else {
+          state.visibleFieldsByLevel = {};
+        }
         if (data.imageAdjustments) state.imageAdjustments = data.imageAdjustments;
         if (data.location) state.location = data.location;
         if (data.finishes) state.finishes = data.finishes;
@@ -10235,6 +10330,8 @@ function bindEvents() {
         renderLocationPoiList();
         renderUnitsCatalog();
         renderPortalProjects();
+        applyFieldVisibilityToDrawer();
+        renderMasterplanOverlays();
         showToast('Proyecto importado');
       } catch (_) {}
     };
@@ -10356,23 +10453,14 @@ window.addEventListener('DOMContentLoaded', async () => {
     try {
       const pubPortal = await fetchPublishedPortal('./');
       portalState.projects = Array.isArray(pubPortal.projects) ? [...pubPortal.projects] : [];
-      if (!portalState.projects.some((p) => String(p?.code || '').toUpperCase() === 'SALO-001')) {
-        portalState.projects.unshift({
-          code: 'SALO-001',
-          buildingName: 'Torre Imperial SALO',
-          subtitle: 'Showroom Interactivo 3D · Panorámica · Plantas',
-          whatsappPhone: '59173080076',
-          coverUrl: './sample-assets/exterior-tower.webp',
-          requiresCode: false,
-          published: true
-        });
-      }
       portalState.examplePhotos = pubPortal.examplePhotos || [];
       portalState.news = Array.isArray(pubPortal.news) ? pubPortal.news : [];
       portalState.publishVersion = pubPortal.publishVersion || '';
       portalState.visitsScriptUrl = pubPortal.visitsScriptUrl || '';
-      if (portalState.projects[0]?.code) portalState.activeProjectCode = portalState.projects[0].code;
+      portalState.activeProjectCode = portalState.projects[0]?.code || null;
     } catch (err) {
+      portalState.projects = [];
+      portalState.activeProjectCode = null;
       showToast('No se pudieron cargar los proyectos publicados');
     }
   } else {
@@ -10382,9 +10470,17 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (urlMode === 'public') portalState.auth.mode = 'public';
   }
 
-  const targetCode = urlProjectCode || portalState.activeProjectCode;
-  if (!publishedMode) loadPersistedState(targetCode);
-  else state = createFreshProjectState(portalState.projects.find((p) => p.code.toUpperCase() === targetCode) || portalState.projects[0] || { code: 'SALO-001', buildingName: 'SALO Showroom' });
+  const targetCode = urlProjectCode || portalState.activeProjectCode || '';
+  if (!publishedMode) {
+    if (targetCode) loadPersistedState(targetCode);
+    else {
+      state = createFreshProjectState({ code: '', buildingName: 'SALO Showroom' });
+      state.auth = portalState.auth;
+    }
+  } else {
+    const matchedPub = (targetCode && portalState.projects.find((p) => String(p.code || '').toUpperCase() === targetCode)) || portalState.projects[0] || null;
+    state = createFreshProjectState(matchedPub || { code: '', buildingName: 'SALO Showroom' });
+  }
 
   syncProjectBrandingUI();
   syncAvanceUI();

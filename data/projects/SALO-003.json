@@ -68,6 +68,18 @@
     "price": true,
     "pinButton": true
   },
+  "visibleFieldsByLevel": {
+    "floor-custom-1795232229698": {
+      "availability": true,
+      "name": true,
+      "area": true,
+      "rooms": false,
+      "baths": false,
+      "kitchen": false,
+      "price": false,
+      "pinButton": true
+    }
+  },
   "imageAdjustments": {
     "facade": {
       "fit": "cover",
