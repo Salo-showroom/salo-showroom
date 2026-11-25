@@ -1,6 +1,6 @@
 {
-  "publishVersion": "1795621170748",
-  "publishedAt": "2026-11-25T15:39:30.748Z",
+  "publishVersion": "1795623577901",
+  "publishedAt": "2026-11-25T16:19:37.901Z",
   "visitsScriptUrl": "https://script.google.com/macros/s/AKfycbz4XDuDUinem9hZzjQrFKxP2dZjrP1VekhQ3lmwHcDwnKuUOkYtPLiWNrWshdSMT6t9/exec",
   "projects": [
     {
@@ -24,6 +24,17 @@
       "accessCodeHash": "7fd974f272cb92ca26e91fc12e68a667dc92b2144a481e7616df256180ab3f65",
       "coverUrl": "./media/PRJ-002/proj-cover-1795614951635.jpg",
       "createdAt": "2026-11-25"
+    },
+    {
+      "code": "SALO-003",
+      "buildingName": "Vivienda Sopocachi",
+      "subtitle": "Showroom Interactivo 3D",
+      "whatsappPhone": "59173080076",
+      "published": true,
+      "requiresCode": false,
+      "accessCodeHash": null,
+      "coverUrl": "https://drive.google.com/uc?export=view&id=1B_3GRWtfzjsoeStRGhXFRWMB1l3q4pPQ",
+      "createdAt": "2026-11-21"
     }
   ],
   "examplePhotos": [
