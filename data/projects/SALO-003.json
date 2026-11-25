@@ -110,13 +110,13 @@
       "pinButton": true
     },
     "facade": {
-      "availability": false,
+      "availability": true,
       "name": true,
-      "area": false,
-      "rooms": false,
-      "baths": false,
-      "kitchen": false,
-      "price": false,
+      "area": true,
+      "rooms": true,
+      "baths": true,
+      "kitchen": true,
+      "price": true,
       "pinButton": true
     }
   },
@@ -6096,7 +6096,7 @@
   "location": {
     "lat": -17.783327,
     "lng": -63.18214,
-    "zoom": 13,
+    "zoom": 14,
     "placeName": "Equipetrol · Santa Cruz",
     "pois": [
       {

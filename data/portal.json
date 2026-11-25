@@ -1,8 +1,19 @@
 {
-  "publishVersion": "1795410389416",
-  "publishedAt": "2026-11-23T05:06:29.416Z",
+  "publishVersion": "1795615436691",
+  "publishedAt": "2026-11-25T14:03:56.691Z",
   "visitsScriptUrl": "https://script.google.com/macros/s/AKfycbz4XDuDUinem9hZzjQrFKxP2dZjrP1VekhQ3lmwHcDwnKuUOkYtPLiWNrWshdSMT6t9/exec",
   "projects": [
+    {
+      "code": "PRJ-002",
+      "buildingName": "Proyecto Familia Layme",
+      "subtitle": "Showroom Interactivo 3D · Panorámica · Plantas",
+      "whatsappPhone": "59173080076",
+      "published": true,
+      "requiresCode": true,
+      "accessCodeHash": "7fd974f272cb92ca26e91fc12e68a667dc92b2144a481e7616df256180ab3f65",
+      "coverUrl": "./media/PRJ-002/proj-cover-1795614951635.jpg",
+      "createdAt": "2026-11-25"
+    },
     {
       "code": "SALO-003",
       "buildingName": "Vivienda Sopocachi",
@@ -19,25 +30,25 @@
     {
       "id": "ex-1795026742140-pg8e",
       "type": "photo",
-      "title": "00 fachada noche",
+      "title": "Proyecto Tarija Sra Melania",
       "url": "https://noisy-bread-2236.salazarlopezalcidesmario.workers.dev/Salo-showroom/salo-showroom/releases/download/portal-media/portal-example-ex-1795026742140-pg8e.png"
     },
     {
       "id": "ex-1795026722720-39iy",
       "type": "photo",
-      "title": "Casa Moderna con Montañas Nevadas",
+      "title": "Proyecto Familia Torrez",
       "url": "./media/PORTAL/portal-example-ex-1795026722720-39iy.png"
     },
     {
       "id": "ex-1795026699857-ksoe",
       "type": "photo",
-      "title": "Fachada editada 2",
+      "title": "Proyecto colaboracion Zona Sopocachi",
       "url": "./media/PORTAL/portal-example-ex-1795026699857-ksoe.png"
     },
     {
       "id": "ex-1795026677355-uagw",
       "type": "photo",
-      "title": "propuesta fachada vivienda",
+      "title": "Proyecto vivienda Senkata",
       "url": "./media/PORTAL/portal-example-ex-1795026677355-uagw.jpg"
     }
   ],

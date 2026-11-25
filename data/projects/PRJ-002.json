@@ -1,0 +1,1192 @@
+{
+  "project": {
+    "code": "PRJ-002",
+    "requiresCode": true,
+    "shortName": "SALO SHOWROOM",
+    "buildingName": "Proyecto Familia Layme",
+    "fullTitle": "SALO SHOWROOM · Proyecto Familia Layme",
+    "subtitle": "Showroom Interactivo 3D · Panorámica · Plantas",
+    "logoUrl": null,
+    "logoMediaKey": null,
+    "showLogo": false,
+    "logoSizePx": 48,
+    "logoOpacity": 100,
+    "logoPosition": "pos-above-exterior",
+    "whatsappPhone": "59173080076",
+    "whatsappCustomUrl": "",
+    "whatsappMessage": "Hola, deseo recibir información sobre el proyecto."
+  },
+  "intro": {
+    "enabled": false,
+    "defaultVideo": "./sample-assets/transition-fly.mp4",
+    "mediaKey": null,
+    "customName": null
+  },
+  "unitsConfig": {
+    "showTab": true,
+    "displayMode": "departments"
+  },
+  "model3dConfig": {
+    "showTab": true
+  },
+  "avance": {
+    "percent": 68,
+    "delivery": "Diciembre 2026",
+    "stage": "Terminaciones & Fachada"
+  },
+  "activeView": "masterplan",
+  "isNightMode": false,
+  "is2DPlanMode": false,
+  "showAvailability": true,
+  "exteriorAngleIndex": 0,
+  "exteriorAngles": [
+    {
+      "id": "angle-0",
+      "angleDeg": 0,
+      "label": "Fachada Principal",
+      "photo": "./media/PRJ-002/proj-cover-1795614951635.jpg",
+      "nightPhoto": null,
+      "mediaKey": null,
+      "nightMediaKey": null
+    },
+    {
+      "id": "angle-90",
+      "angleDeg": 90,
+      "label": "Vista Complejo",
+      "photo": "./sample-assets/masterplan-render.jpg",
+      "nightPhoto": "./sample-assets/render-nocturno.jpg",
+      "mediaKey": null,
+      "nightMediaKey": null
+    },
+    {
+      "id": "angle-180",
+      "angleDeg": 180,
+      "label": "Amenities & Sky Deck",
+      "photo": "./sample-assets/render-amenities.jpg",
+      "nightPhoto": "./sample-assets/render-nocturno.jpg",
+      "mediaKey": null,
+      "nightMediaKey": null
+    },
+    {
+      "id": "angle-270",
+      "angleDeg": 270,
+      "label": "Perspectiva Nocturna",
+      "photo": "./sample-assets/render-nocturno.jpg",
+      "nightPhoto": "./sample-assets/render-nocturno.jpg",
+      "mediaKey": null,
+      "nightMediaKey": null
+    }
+  ],
+  "activeLevelId": "facade",
+  "activeTour360LevelId": null,
+  "selectedUnitId": "u-ext-p9",
+  "zoom": 1,
+  "pan": {
+    "x": 0,
+    "y": 0
+  },
+  "visibleFields": {
+    "availability": true,
+    "name": true,
+    "area": true,
+    "rooms": true,
+    "baths": true,
+    "kitchen": true,
+    "price": true,
+    "pinButton": true
+  },
+  "visibleFieldsByLevel": {},
+  "imageAdjustments": {
+    "facade": {
+      "fit": "cover",
+      "scale": 50,
+      "x": -2,
+      "y": 5
+    },
+    "masterplan": {
+      "fit": "cover",
+      "scale": 100,
+      "x": 0,
+      "y": 0
+    },
+    "floor-9": {
+      "fit": "contain",
+      "scale": 100,
+      "x": 0,
+      "y": 0
+    },
+    "floor-20": {
+      "fit": "contain",
+      "scale": 100,
+      "x": 0,
+      "y": 0
+    },
+    "floor-35": {
+      "fit": "contain",
+      "scale": 100,
+      "x": 0,
+      "y": 0
+    },
+    "floor-azotea": {
+      "fit": "contain",
+      "scale": 100,
+      "x": 0,
+      "y": 0
+    }
+  },
+  "transitions": {
+    "globalEnabled": true,
+    "slots": [
+      {
+        "id": "ext_to_floor9",
+        "fromLevelId": "facade",
+        "toLevelId": "floor-9",
+        "label": "Exterior Principal → Piso 9° · Render 3D",
+        "enabled": true,
+        "transitionType": "video",
+        "defaultVideo": "./sample-assets/transition-floors.mp4",
+        "mediaKey": null,
+        "customName": null,
+        "img1Url": null,
+        "img1Key": null,
+        "img2Url": null,
+        "img2Key": null
+      },
+      {
+        "id": "ext_to_floor20",
+        "fromLevelId": "facade",
+        "toLevelId": "floor-20",
+        "label": "Exterior Principal → Piso 20° · Render 3D",
+        "enabled": true,
+        "transitionType": "video",
+        "defaultVideo": "./sample-assets/transition-planta3d.mp4",
+        "mediaKey": null,
+        "customName": null,
+        "img1Url": null,
+        "img1Key": null,
+        "img2Url": null,
+        "img2Key": null
+      },
+      {
+        "id": "ext_to_floor35",
+        "fromLevelId": "facade",
+        "toLevelId": "floor-35",
+        "label": "Exterior Principal → Piso 35° · Penthouse",
+        "enabled": true,
+        "transitionType": "video",
+        "defaultVideo": "./sample-assets/transition-fly.mp4",
+        "mediaKey": null,
+        "customName": null,
+        "img1Url": null,
+        "img1Key": null,
+        "img2Url": null,
+        "img2Key": null
+      },
+      {
+        "id": "ext_to_azotea",
+        "fromLevelId": "facade",
+        "toLevelId": "floor-azotea",
+        "label": "Exterior Principal → Piso 36° · Azotea",
+        "enabled": true,
+        "transitionType": "video",
+        "defaultVideo": "./sample-assets/transition-fly.mp4",
+        "mediaKey": null,
+        "customName": null,
+        "img1Url": null,
+        "img1Key": null,
+        "img2Url": null,
+        "img2Key": null
+      },
+      {
+        "id": "floor_to_floor",
+        "fromLevelId": "any_floor",
+        "toLevelId": "any_floor",
+        "label": "Cambio entre Pisos (General)",
+        "enabled": false,
+        "transitionType": "video",
+        "defaultVideo": "./sample-assets/transition-floors.mp4",
+        "mediaKey": null,
+        "customName": null,
+        "img1Url": null,
+        "img1Key": null,
+        "img2Url": null,
+        "img2Key": null
+      },
+      {
+        "id": "to_tour360",
+        "fromLevelId": "any",
+        "toLevelId": "tour360",
+        "label": "Ingreso a Recorrido 360°",
+        "enabled": false,
+        "transitionType": "video",
+        "defaultVideo": "./sample-assets/transition-planta3d.mp4",
+        "mediaKey": null,
+        "customName": null,
+        "img1Url": null,
+        "img1Key": null,
+        "img2Url": null,
+        "img2Key": null
+      },
+      {
+        "id": "to_model3d",
+        "fromLevelId": "any",
+        "toLevelId": "model3d",
+        "label": "Ingreso a Maqueta 3D",
+        "enabled": false,
+        "transitionType": "video",
+        "defaultVideo": "./sample-assets/transition-fly.mp4",
+        "mediaKey": null,
+        "customName": null,
+        "img1Url": null,
+        "img1Key": null,
+        "img2Url": null,
+        "img2Key": null
+      }
+    ]
+  },
+  "cameras3D": [
+    {
+      "id": "cam-aerial",
+      "name": "Vista Torre",
+      "floorNum": 0,
+      "camPos": [
+        19,
+        15,
+        21
+      ],
+      "lookAt": [
+        0,
+        5.5,
+        0
+      ]
+    },
+    {
+      "id": "cam-living",
+      "name": "Living PB",
+      "floorNum": 1,
+      "camPos": [
+        -3.2,
+        2.2,
+        2.2
+      ],
+      "lookAt": [
+        -3.2,
+        1.2,
+        -2.5
+      ]
+    },
+    {
+      "id": "cam-kitchen",
+      "name": "Cocina",
+      "floorNum": 1,
+      "camPos": [
+        2.8,
+        2.2,
+        2.2
+      ],
+      "lookAt": [
+        2.4,
+        1.2,
+        -2
+      ]
+    },
+    {
+      "id": "cam-floor2",
+      "name": "Piso 2°",
+      "floorNum": 2,
+      "camPos": [
+        10,
+        9.8,
+        11
+      ],
+      "lookAt": [
+        0,
+        3.4,
+        -1
+      ]
+    },
+    {
+      "id": "cam-floor3",
+      "name": "Piso 3°",
+      "floorNum": 3,
+      "camPos": [
+        10,
+        13,
+        11
+      ],
+      "lookAt": [
+        0,
+        6.8,
+        -1
+      ]
+    },
+    {
+      "id": "cam-penthouse",
+      "name": "Penthouse",
+      "floorNum": 4,
+      "camPos": [
+        10,
+        16.5,
+        11
+      ],
+      "lookAt": [
+        0,
+        10.2,
+        -1
+      ]
+    }
+  ],
+  "floors3D": [
+    {
+      "id": "f3d-0",
+      "num": 0,
+      "name": "Edificio Completo",
+      "badge": "Todos",
+      "heightCut": 16.5,
+      "camPos": [
+        19,
+        15,
+        21
+      ],
+      "lookAt": [
+        0,
+        5.5,
+        0
+      ]
+    },
+    {
+      "id": "f3d-4",
+      "num": 4,
+      "name": "Piso 4° · Penthouse",
+      "badge": "Nivel 4",
+      "heightCut": 13.8,
+      "camPos": [
+        10,
+        16.5,
+        11
+      ],
+      "lookAt": [
+        0,
+        10.2,
+        -1
+      ]
+    },
+    {
+      "id": "f3d-3",
+      "num": 3,
+      "name": "Piso 3° · Suites",
+      "badge": "Nivel 3",
+      "heightCut": 10.1,
+      "camPos": [
+        10,
+        13,
+        11
+      ],
+      "lookAt": [
+        0,
+        6.8,
+        -1
+      ]
+    },
+    {
+      "id": "f3d-2",
+      "num": 2,
+      "name": "Piso 2° · Tipo",
+      "badge": "Nivel 2",
+      "heightCut": 6.7,
+      "camPos": [
+        10,
+        9.8,
+        11
+      ],
+      "lookAt": [
+        0,
+        3.4,
+        -1
+      ]
+    },
+    {
+      "id": "f3d-1",
+      "num": 1,
+      "name": "Piso 1° · Planta Baja",
+      "badge": "Nivel 1",
+      "heightCut": 3.3,
+      "camPos": [
+        11,
+        7.2,
+        13
+      ],
+      "lookAt": [
+        0,
+        0.8,
+        0
+      ]
+    }
+  ],
+  "levels": [
+    {
+      "id": "facade",
+      "name": "Exterior Principal",
+      "badge": "Exterior",
+      "floorNum": 0,
+      "dayPhoto": "./media/PRJ-002/proj-cover-1795614951635.jpg",
+      "nightPhoto": null,
+      "plan2DPhoto": "./sample-assets/masterplan-render.jpg",
+      "dayMediaKey": null,
+      "nightMediaKey": null,
+      "hasTour360": true,
+      "transitionType": "none",
+      "transitionVideo": null,
+      "transitionMediaKey": null,
+      "transImg1": null,
+      "transImg1Key": null,
+      "transImg2": null,
+      "transImg2Key": null,
+      "plan2DMediaKey": null
+    },
+    {
+      "id": "masterplan",
+      "name": "Masterplan",
+      "badge": "3 Torres",
+      "floorNum": 0,
+      "dayPhoto": "./sample-assets/masterplan-render.jpg",
+      "nightPhoto": "./sample-assets/render-nocturno.jpg",
+      "plan2DPhoto": "./sample-assets/masterplan-render.jpg",
+      "dayMediaKey": null,
+      "nightMediaKey": null,
+      "hasTour360": true,
+      "transitionType": "video",
+      "transitionVideo": null,
+      "transitionMediaKey": null,
+      "transImg1": null,
+      "transImg1Key": null,
+      "transImg2": null,
+      "transImg2Key": null,
+      "plan2DMediaKey": null
+    },
+    {
+      "id": "floor-azotea",
+      "name": "Piso 36° · Azotea",
+      "badge": "Planta",
+      "floorNum": 4,
+      "dayPhoto": "./sample-assets/floor-azotea-3d.jpg",
+      "nightPhoto": "./sample-assets/floor-azotea-3d.jpg",
+      "plan2DPhoto": "./sample-assets/floor-piso20-plan.webp",
+      "dayMediaKey": null,
+      "nightMediaKey": null,
+      "hasTour360": true,
+      "transitionType": "video",
+      "transitionVideo": null,
+      "transitionMediaKey": null,
+      "transImg1": null,
+      "transImg1Key": null,
+      "transImg2": null,
+      "transImg2Key": null,
+      "plan2DMediaKey": null
+    },
+    {
+      "id": "floor-35",
+      "name": "Piso 35° · Penthouse",
+      "badge": "Planta",
+      "floorNum": 3,
+      "dayPhoto": "./sample-assets/floor-piso35-3d.jpg",
+      "nightPhoto": "./sample-assets/floor-piso35-3d.jpg",
+      "plan2DPhoto": "./sample-assets/floor-piso20-plan.webp",
+      "dayMediaKey": null,
+      "nightMediaKey": null,
+      "hasTour360": true,
+      "transitionType": "video",
+      "transitionVideo": null,
+      "transitionMediaKey": null,
+      "transImg1": null,
+      "transImg1Key": null,
+      "transImg2": null,
+      "transImg2Key": null,
+      "plan2DMediaKey": null
+    },
+    {
+      "id": "floor-20",
+      "name": "Piso 20° · Render 3D",
+      "badge": "Planta",
+      "floorNum": 2,
+      "dayPhoto": "./sample-assets/floor-piso20-3d.jpg",
+      "nightPhoto": "./sample-assets/floor-piso20-3d.jpg",
+      "plan2DPhoto": "./sample-assets/floor-piso20-plan.webp",
+      "dayMediaKey": null,
+      "nightMediaKey": null,
+      "hasTour360": true,
+      "transitionType": "video",
+      "transitionVideo": null,
+      "transitionMediaKey": null,
+      "transImg1": null,
+      "transImg1Key": null,
+      "transImg2": null,
+      "transImg2Key": null,
+      "plan2DMediaKey": null
+    },
+    {
+      "id": "floor-9",
+      "name": "Piso 9° · Render 3D",
+      "badge": "Planta",
+      "floorNum": 1,
+      "dayPhoto": "./sample-assets/floor-piso9-3d.jpg",
+      "nightPhoto": "./sample-assets/floor-piso9-3d.jpg",
+      "plan2DPhoto": "./sample-assets/floor-piso9-plan.webp",
+      "dayMediaKey": null,
+      "nightMediaKey": null,
+      "hasTour360": true,
+      "transitionType": "video",
+      "transitionVideo": null,
+      "transitionMediaKey": null,
+      "transImg1": null,
+      "transImg1Key": null,
+      "transImg2": null,
+      "transImg2Key": null,
+      "plan2DMediaKey": null
+    }
+  ],
+  "units": [
+    {
+      "id": "u-ext-p9",
+      "code": "Residencia Piso 9°",
+      "buttonText": "Piso 9° · 150 m²",
+      "type": "Piso Completo",
+      "levelId": "facade",
+      "targetLevelId": "floor-9",
+      "transitionVideo": "auto",
+      "floorNum": 1,
+      "floorLabel": "Torre Principal · Piso 9°",
+      "area": 150,
+      "beds": 3,
+      "baths": 2,
+      "kitchens": 1,
+      "price": 168000,
+      "orientation": "Norte · Panorámica",
+      "status": "available",
+      "showAvailability": true,
+      "defaultRoom360": "living",
+      "customLines": [
+        {
+          "type": "metric",
+          "label": "Living Comedor",
+          "number": "42",
+          "unit": "m²"
+        },
+        {
+          "type": "metric",
+          "label": "Balcón Terraza",
+          "number": "18",
+          "unit": "m²"
+        }
+      ],
+      "customButtons": [],
+      "center": {
+        "x": 48,
+        "y": 63
+      },
+      "polygon": [
+        {
+          "x": 31,
+          "y": 58
+        },
+        {
+          "x": 65,
+          "y": 58
+        },
+        {
+          "x": 65,
+          "y": 68
+        },
+        {
+          "x": 31,
+          "y": 68
+        }
+      ]
+    },
+    {
+      "id": "u-ext-p20",
+      "code": "Residencia Piso 20°",
+      "buttonText": "Piso 20° · 165 m²",
+      "type": "Piso Tipo",
+      "levelId": "facade",
+      "targetLevelId": "floor-20",
+      "transitionVideo": "auto",
+      "floorNum": 2,
+      "floorLabel": "Torre Principal · Piso 20°",
+      "area": 165,
+      "beds": 3,
+      "baths": 3,
+      "kitchens": 1,
+      "price": 192000,
+      "orientation": "Nor-Este",
+      "status": "reserved",
+      "showAvailability": true,
+      "defaultRoom360": "kitchen",
+      "customLines": [],
+      "customButtons": [],
+      "center": {
+        "x": 48,
+        "y": 45
+      },
+      "polygon": [
+        {
+          "x": 31,
+          "y": 40
+        },
+        {
+          "x": 65,
+          "y": 40
+        },
+        {
+          "x": 65,
+          "y": 50
+        },
+        {
+          "x": 31,
+          "y": 50
+        }
+      ]
+    },
+    {
+      "id": "u-ext-p35",
+      "code": "Penthouse Piso 35° Sky",
+      "buttonText": "Piso 35° · Penthouse",
+      "type": "Penthouse Sky",
+      "levelId": "facade",
+      "targetLevelId": "floor-35",
+      "transitionVideo": "auto",
+      "floorNum": 4,
+      "floorLabel": "Torre Principal · Piso 35°",
+      "area": 280,
+      "beds": 4,
+      "baths": 4,
+      "kitchens": 2,
+      "price": 340000,
+      "orientation": "360° Horizon",
+      "status": "available",
+      "showAvailability": true,
+      "defaultRoom360": "pool",
+      "customLines": [],
+      "customButtons": [],
+      "center": {
+        "x": 48,
+        "y": 25
+      },
+      "polygon": [
+        {
+          "x": 31,
+          "y": 20
+        },
+        {
+          "x": 65,
+          "y": 20
+        },
+        {
+          "x": 65,
+          "y": 30
+        },
+        {
+          "x": 31,
+          "y": 30
+        }
+      ]
+    },
+    {
+      "id": "u-901",
+      "code": "Departamento 9-01 (Esquinero)",
+      "buttonText": "Dpto 9-01 · 150 m²",
+      "type": "Departamento 3D",
+      "levelId": "floor-9",
+      "targetLevelId": "floor-9",
+      "transitionVideo": "auto",
+      "floorNum": 1,
+      "floorLabel": "Piso 9° · Ala Norte",
+      "area": 150,
+      "beds": 3,
+      "baths": 2,
+      "kitchens": 1,
+      "price": 168000,
+      "orientation": "Norte · Sol Mañana",
+      "status": "available",
+      "showAvailability": true,
+      "defaultRoom360": "living",
+      "customLines": [
+        {
+          "type": "metric",
+          "label": "Suite Principal",
+          "number": "28",
+          "unit": "m²"
+        },
+        {
+          "type": "text",
+          "label": "Doble orientación con vista panorámica y parrilla privada."
+        }
+      ],
+      "customButtons": [
+        {
+          "id": "cb-demo-1",
+          "label": "Ver Render Interior Living",
+          "actionType": "photo",
+          "photoUrl": "./sample-assets/render-interior-1.jpg",
+          "photoMediaKey": null,
+          "targetRoom360Id": null,
+          "nightPhotoUrl": null,
+          "nightPhotoMediaKey": null
+        }
+      ],
+      "center": {
+        "x": 35,
+        "y": 34
+      },
+      "polygon": [
+        {
+          "x": 22,
+          "y": 22
+        },
+        {
+          "x": 48,
+          "y": 22
+        },
+        {
+          "x": 48,
+          "y": 46
+        },
+        {
+          "x": 22,
+          "y": 46
+        }
+      ]
+    },
+    {
+      "id": "u-902",
+      "code": "Departamento 9-02 (Central)",
+      "buttonText": "Dpto 9-02 · 125 m²",
+      "type": "Departamento 2D",
+      "levelId": "floor-9",
+      "targetLevelId": "floor-9",
+      "transitionVideo": "auto",
+      "floorNum": 1,
+      "floorLabel": "Piso 9° · Ala Este",
+      "area": 125,
+      "beds": 2,
+      "baths": 2,
+      "kitchens": 1,
+      "price": 142000,
+      "orientation": "Este · Boulevard",
+      "status": "reserved",
+      "showAvailability": true,
+      "defaultRoom360": "kitchen",
+      "customLines": [],
+      "customButtons": [],
+      "center": {
+        "x": 65,
+        "y": 34
+      },
+      "polygon": [
+        {
+          "x": 52,
+          "y": 22
+        },
+        {
+          "x": 78,
+          "y": 22
+        },
+        {
+          "x": 78,
+          "y": 46
+        },
+        {
+          "x": 52,
+          "y": 46
+        }
+      ]
+    },
+    {
+      "id": "u-903",
+      "code": "Departamento 9-03 (Sur)",
+      "buttonText": "Dpto 9-03 · Vendido",
+      "type": "Departamento 2D",
+      "levelId": "floor-9",
+      "targetLevelId": "floor-9",
+      "transitionVideo": "auto",
+      "floorNum": 1,
+      "floorLabel": "Piso 9° · Ala Sur",
+      "area": 118,
+      "beds": 2,
+      "baths": 2,
+      "kitchens": 1,
+      "price": 135000,
+      "orientation": "Sur",
+      "status": "sold",
+      "showAvailability": true,
+      "defaultRoom360": "master",
+      "customLines": [],
+      "customButtons": [],
+      "center": {
+        "x": 50,
+        "y": 68
+      },
+      "polygon": [
+        {
+          "x": 30,
+          "y": 54
+        },
+        {
+          "x": 70,
+          "y": 54
+        },
+        {
+          "x": 70,
+          "y": 78
+        },
+        {
+          "x": 30,
+          "y": 78
+        }
+      ]
+    }
+  ],
+  "renderedViewsGallery": [
+    {
+      "id": "rv-1",
+      "title": "Rooftop & Piscina Climatizada",
+      "url": "./sample-assets/render-amenities.jpg",
+      "mediaKey": null,
+      "nightUrl": null,
+      "nightMediaKey": null
+    },
+    {
+      "id": "rv-2",
+      "title": "Planta 3D Amoblada Piso 9°",
+      "url": "./sample-assets/floor-piso9-3d.jpg",
+      "mediaKey": null,
+      "nightUrl": null,
+      "nightMediaKey": null
+    },
+    {
+      "id": "rv-3",
+      "title": "Interior Living & Comedor Integrado",
+      "url": "./sample-assets/render-interior-1.jpg",
+      "mediaKey": null,
+      "nightUrl": null,
+      "nightMediaKey": null
+    },
+    {
+      "id": "rv-4",
+      "title": "Fachada Nocturna Iluminada",
+      "url": "./sample-assets/render-nocturno.jpg",
+      "mediaKey": null,
+      "nightUrl": null,
+      "nightMediaKey": null
+    },
+    {
+      "id": "rv-5",
+      "title": "Planta 3D Piso 35° Penthouse",
+      "url": "./sample-assets/floor-piso35-3d.jpg",
+      "mediaKey": null,
+      "nightUrl": null,
+      "nightMediaKey": null
+    },
+    {
+      "id": "rv-6",
+      "title": "Azotea & Sky Deck Piso 36°",
+      "url": "./sample-assets/floor-azotea-3d.jpg",
+      "mediaKey": null,
+      "nightUrl": null,
+      "nightMediaKey": null
+    }
+  ],
+  "rooms360": [
+    {
+      "id": "living",
+      "levelId": "floor-9",
+      "name": "Grand Living Obsidiana & Oro",
+      "subtitle": "Doble altura · Ventanal Panorámico",
+      "themeColor": "#161410",
+      "customImageUrl": null,
+      "mediaKey": null,
+      "hotspots": [
+        {
+          "arrow": "floor-ring",
+          "lon": 35,
+          "lat": -14,
+          "targetRoomId": "kitchen",
+          "label": "Cocina Isla Gourmet"
+        },
+        {
+          "arrow": "floor-ring",
+          "lon": -55,
+          "lat": -12,
+          "targetRoomId": "master",
+          "label": "Master Suite"
+        },
+        {
+          "arrow": "floor-ring",
+          "lon": 145,
+          "lat": -15,
+          "targetRoomId": "terrace",
+          "label": "Galería & Terraza"
+        }
+      ],
+      "customNightImageUrl": null,
+      "nightMediaKey": null
+    },
+    {
+      "id": "kitchen",
+      "levelId": "floor-9",
+      "name": "Cocina Isla Sahara Noir",
+      "subtitle": "Cuarzo & Latón Cepillado",
+      "themeColor": "#1a1712",
+      "customImageUrl": null,
+      "mediaKey": null,
+      "hotspots": [
+        {
+          "arrow": "floor-ring",
+          "lon": -140,
+          "lat": -14,
+          "targetRoomId": "living",
+          "label": "Volver al Living"
+        },
+        {
+          "arrow": "floor-ring",
+          "lon": 65,
+          "lat": -14,
+          "targetRoomId": "terrace",
+          "label": "Salir a Terraza"
+        }
+      ],
+      "customNightImageUrl": null,
+      "nightMediaKey": null
+    },
+    {
+      "id": "master",
+      "levelId": "floor-20",
+      "name": "Dormitorio Master Suite",
+      "subtitle": "Vestidor Walk-in & Balcón",
+      "themeColor": "#1c1614",
+      "customImageUrl": null,
+      "mediaKey": null,
+      "hotspots": [
+        {
+          "arrow": "floor-ring",
+          "lon": 120,
+          "lat": -14,
+          "targetRoomId": "living",
+          "label": "Volver al Living"
+        },
+        {
+          "arrow": "floor-ring",
+          "lon": -20,
+          "lat": -12,
+          "targetRoomId": "pool",
+          "label": "Ir al Sky Pool"
+        }
+      ],
+      "customNightImageUrl": null,
+      "nightMediaKey": null
+    },
+    {
+      "id": "terrace",
+      "levelId": "floor-9",
+      "name": "Galería & Wine Lounge",
+      "subtitle": "Deck Cumarú & Parrillero",
+      "themeColor": "#151814",
+      "customImageUrl": null,
+      "mediaKey": null,
+      "hotspots": [
+        {
+          "arrow": "floor-ring",
+          "lon": -35,
+          "lat": -14,
+          "targetRoomId": "living",
+          "label": "Entrar al Living"
+        },
+        {
+          "arrow": "floor-ring",
+          "lon": 25,
+          "lat": -12,
+          "targetRoomId": "pool",
+          "label": "Avanzar a Piscina"
+        }
+      ],
+      "customNightImageUrl": null,
+      "nightMediaKey": null
+    },
+    {
+      "id": "pool",
+      "levelId": "floor-35",
+      "name": "Sky Pool & Rooftop",
+      "subtitle": "Vista 360° de la Ciudad",
+      "themeColor": "#0e1920",
+      "customImageUrl": null,
+      "mediaKey": null,
+      "hotspots": [
+        {
+          "arrow": "floor-ring",
+          "lon": 180,
+          "lat": -12,
+          "targetRoomId": "terrace",
+          "label": "Volver a Galería"
+        },
+        {
+          "arrow": "floor-ring",
+          "lon": 145,
+          "lat": -12,
+          "targetRoomId": "master",
+          "label": "Master Suite"
+        }
+      ],
+      "customNightImageUrl": null,
+      "nightMediaKey": null
+    }
+  ],
+  "activeRoom360Id": "living",
+  "isPlacingHotspot360": false,
+  "pendingHotspotCoords": {
+    "lon": 0,
+    "lat": 0
+  },
+  "finishes": {
+    "activeTabId": "tab-living",
+    "tabs": [
+      {
+        "id": "tab-living",
+        "name": "🛋️ Living & Comedor",
+        "leftId": "f-liv-1",
+        "rightId": "f-liv-2",
+        "items": [
+          {
+            "id": "f-liv-1",
+            "name": "Obsidian Gold · Mármol Sahara Noir",
+            "url": "./sample-assets/render-interior-1.jpg",
+            "mediaKey": null,
+            "palette": "obsidian_gold"
+          },
+          {
+            "id": "f-liv-2",
+            "name": "Roble Natural & Cuarzo Calacatta",
+            "url": "./sample-assets/render-amenities.jpg",
+            "mediaKey": null,
+            "palette": "nordic"
+          },
+          {
+            "id": "f-liv-3",
+            "name": "Porcelanato Gris & Hormigón",
+            "url": "./sample-assets/render-nocturno.jpg",
+            "mediaKey": null,
+            "palette": "minimal"
+          }
+        ]
+      },
+      {
+        "id": "tab-kitchen",
+        "name": "🍳 Cocina",
+        "leftId": "f-kit-1",
+        "rightId": "f-kit-2",
+        "items": [
+          {
+            "id": "f-kit-1",
+            "name": "Isla Mármol Negro & Latón",
+            "url": null,
+            "mediaKey": null,
+            "palette": "obsidian_gold"
+          },
+          {
+            "id": "f-kit-2",
+            "name": "Cuarzo Blanco & Madera Clara",
+            "url": null,
+            "mediaKey": null,
+            "palette": "nordic"
+          }
+        ]
+      },
+      {
+        "id": "tab-bath",
+        "name": "🛁 Baños",
+        "leftId": "f-bth-1",
+        "rightId": "f-bth-2",
+        "items": [
+          {
+            "id": "f-bth-1",
+            "name": "Piedra Sinterizada & Grifería Dorada",
+            "url": null,
+            "mediaKey": null,
+            "palette": "obsidian_gold"
+          },
+          {
+            "id": "f-bth-2",
+            "name": "Travertino Mate & Negro Mate",
+            "url": null,
+            "mediaKey": null,
+            "palette": "minimal"
+          }
+        ]
+      },
+      {
+        "id": "tab-bedroom",
+        "name": "🛏️ Dormitorios",
+        "leftId": "f-bed-1",
+        "rightId": "f-bed-2",
+        "items": [
+          {
+            "id": "f-bed-1",
+            "name": "Nogal Americano & Lino Arena",
+            "url": null,
+            "mediaKey": null,
+            "palette": "nordic"
+          },
+          {
+            "id": "f-bed-2",
+            "name": "Suite Obsidiana & Iluminación LED",
+            "url": null,
+            "mediaKey": null,
+            "palette": "obsidian_gold"
+          }
+        ]
+      }
+    ]
+  },
+  "location": {
+    "lat": -17.783327,
+    "lng": -63.18214,
+    "zoom": 13,
+    "placeName": "Equipetrol · Santa Cruz",
+    "pois": [
+      {
+        "id": "poi-1",
+        "name": "Ventura Mall",
+        "icon": "🛍️",
+        "color": "#d4af37",
+        "note": "3 min · 850 m",
+        "lat": -17.7544,
+        "lng": -63.1996
+      },
+      {
+        "id": "poi-2",
+        "name": "Parque Urbano Central",
+        "icon": "🌳",
+        "color": "#22c55e",
+        "note": "5 min · 1.4 km",
+        "lat": -17.7918,
+        "lng": -63.173
+      },
+      {
+        "id": "poi-3",
+        "name": "Clínica Foianini",
+        "icon": "🏥",
+        "color": "#38bdf8",
+        "note": "4 min · 1.1 km",
+        "lat": -17.7785,
+        "lng": -63.1892
+      }
+    ]
+  },
+  "customModel3D": {
+    "name": null,
+    "ext": null,
+    "url": null,
+    "mtlUrl": null,
+    "mediaKey": null,
+    "mtlMediaKey": null
+  }
+}
