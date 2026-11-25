@@ -1,8 +1,19 @@
 {
-  "publishVersion": "1795615436691",
-  "publishedAt": "2026-11-25T14:03:56.691Z",
+  "publishVersion": "1795621170748",
+  "publishedAt": "2026-11-25T15:39:30.748Z",
   "visitsScriptUrl": "https://script.google.com/macros/s/AKfycbz4XDuDUinem9hZzjQrFKxP2dZjrP1VekhQ3lmwHcDwnKuUOkYtPLiWNrWshdSMT6t9/exec",
   "projects": [
+    {
+      "code": "PRJ-003",
+      "buildingName": "Torre Onix",
+      "subtitle": "Showroom Interactivo 3D · Panorámica · Plantas",
+      "whatsappPhone": "59173080076",
+      "published": true,
+      "requiresCode": true,
+      "accessCodeHash": "41f31a9cc30bd33aa79ac4d18beb05da41361f06f79e505f54b652e2f725f39f",
+      "coverUrl": "./media/PRJ-003/proj-cover-1795620114400.jpg",
+      "createdAt": "2026-11-25"
+    },
     {
       "code": "PRJ-002",
       "buildingName": "Proyecto Familia Layme",
@@ -13,20 +24,27 @@
       "accessCodeHash": "7fd974f272cb92ca26e91fc12e68a667dc92b2144a481e7616df256180ab3f65",
       "coverUrl": "./media/PRJ-002/proj-cover-1795614951635.jpg",
       "createdAt": "2026-11-25"
-    },
-    {
-      "code": "SALO-003",
-      "buildingName": "Vivienda Sopocachi",
-      "subtitle": "Showroom Interactivo 3D",
-      "whatsappPhone": "59173080076",
-      "published": true,
-      "requiresCode": false,
-      "accessCodeHash": null,
-      "coverUrl": "https://noisy-bread-2236.salazarlopezalcidesmario.workers.dev/Salo-showroom/salo-showroom/releases/download/media-SALO-003/quick-mp-facade-day-1795223615321.jpg",
-      "createdAt": "2026-11-21"
     }
   ],
   "examplePhotos": [
+    {
+      "id": "ex-1795621058755-7mkf",
+      "type": "photo",
+      "title": "Vivienda Fmlia Mendoza",
+      "url": "./media/PORTAL/portal-example-ex-1795621058755-7mkf.jpg"
+    },
+    {
+      "id": "ex-1795620093490-teix",
+      "type": "photo",
+      "title": "Torre Onix",
+      "url": "./media/PORTAL/portal-example-ex-1795620093490-teix.jpg"
+    },
+    {
+      "id": "ex-1795619010360-nf5m",
+      "type": "photo",
+      "title": "Condiminio Bronce",
+      "url": "./media/PORTAL/portal-example-ex-1795619010360-nf5m.jpg"
+    },
     {
       "id": "ex-1795026742140-pg8e",
       "type": "photo",
