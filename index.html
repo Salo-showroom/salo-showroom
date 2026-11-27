@@ -459,6 +459,7 @@
     <div class="editor-quick-strip" id="editor-quick-strip" data-editor-only>
       <button class="glass-pill-btn" id="btn-open-exterior-manager" title="Cambiar vista principal, añadir fotos exteriores y video de intro">🖼️ Vistas / Intro</button>
       <button class="glass-pill-btn" id="btn-draw-polygon" title="Trazar y guardar polígonos">✏️ Polígono</button>
+      <button class="glass-pill-btn" id="btn-add-direct-plan-point" title="Colocar un punto directo sobre el Plano en Planta hacia una Imagen o PDF">📍 Punto en Plano</button>
       <button class="glass-pill-btn" id="btn-open-floor-creator" title="Crear o eliminar pisos / niveles">🏗️ Pisos</button>
       <button class="glass-pill-btn" id="btn-adjust-image" title="Acomodar imagen activa">🎛️ Encuadre</button>
       <button class="glass-pill-btn" id="btn-quick-transitions" title="Gestor de Transiciones (Solo Editor)">🎬 Transiciones</button>
@@ -639,6 +640,23 @@
           <div class="zoom-transform-layer" id="zoom-layer">
             <div class="scene-media-frame" id="scene-frame">
               <div class="scene-media-box" id="scene-media-box">
+                <div class="masterplan-empty-placeholder" id="masterplan-empty-placeholder" style="display:none;">
+                  <div class="mep-card">
+                    <div class="mep-icon">🧱</div>
+                    <h3 id="mep-title">Proyecto de Estructuras en Blanco</h3>
+                    <p id="mep-sub">Sube la imagen principal (sin armadura) y la segunda imagen (con armadura) usando los controles de editor.</p>
+                    <div class="mep-actions" data-editor-only>
+                      <label class="action-btn gold-cta" style="cursor:pointer;grid-column:auto;">
+                        📸 Subir Imagen Base (Sin Armadura)
+                        <input type="file" id="input-empty-upload-base" accept="image/*" style="display:none;" />
+                      </label>
+                      <label class="action-btn" style="cursor:pointer;">
+                        🔩 Subir Imagen con Armadura
+                        <input type="file" id="input-empty-upload-rebar" accept="image/*" style="display:none;" />
+                      </label>
+                    </div>
+                  </div>
+                </div>
                 <img id="masterplan-custom-img" class="scene-render-img" src="./sample-assets/exterior-tower.webp" alt="Vista del proyecto" draggable="false" />
                 <img id="masterplan-crossfade-img" class="scene-render-img crossfade-overlay-img" src="" alt="" draggable="false" />
                 <svg class="scene-svg-overlay" id="polygon-svg" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
@@ -713,7 +731,7 @@
             <button type="button" class="action-btn gold-cta" id="btn-drawer-quick-buttons" style="flex:1;grid-column:auto;padding:5px 7px;font-size:10px;">🧩 Botones y Datos</button>
           </div>
 
-          <!-- 3. Grilla KPI Estándar (Opcional) -->
+          <!-- 3. Grilla KPI Estándar (Showroom Arquitectura) -->
           <div class="unit-kpi-grid" id="drawer-kpi-grid">
             <div class="kpi-box" id="field-wrap-area"><strong id="drawer-area">150 m²</strong><span>Área</span></div>
             <div class="kpi-box" id="field-wrap-rooms"><strong id="drawer-beds">3 Ctos</strong><span>Cuartos</span></div>
@@ -725,16 +743,26 @@
             </div>
           </div>
 
+          <!-- 3B. Grilla KPI Estructuras (Armaduras y Elementos Estructurales) -->
+          <div class="unit-kpi-grid struct-only-grid" id="drawer-struct-kpi-grid">
+            <div class="kpi-box" id="field-wrap-columns"><strong id="drawer-columns">0</strong><span>Columnas</span></div>
+            <div class="kpi-box" id="field-wrap-beams"><strong id="drawer-beams">0</strong><span>Vigas</span></div>
+            <div class="kpi-box" id="field-wrap-slabs2way"><strong id="drawer-slabs2way">0</strong><span>Losas 2 Dir.</span></div>
+            <div class="kpi-box" id="field-wrap-solidslabs"><strong id="drawer-solidslabs">0</strong><span>Losas Macizas</span></div>
+            <div class="kpi-box" id="field-wrap-droppanels"><strong id="drawer-droppanels">0</strong><span>Losas Ábacos</span></div>
+            <div class="kpi-box" id="field-wrap-struct-area"><strong id="drawer-struct-area">0 m²</strong><span>Área</span></div>
+          </div>
+
           <!-- 4. LÍNEAS PERSONALIZABLES ILIMITADAS (Texto + Número + Unidad o Descripción Libre) -->
           <div class="custom-lines-container" id="drawer-custom-lines"></div>
 
-          <!-- 5. BOTONES PERSONALIZABLES ILIMITADOS (Foto Render Normal o Vista 360°) -->
+          <!-- 5. BOTONES PERSONALIZABLES ILIMITADOS (Foto Render Normal, PDF o Vista 360°) -->
           <div class="custom-buttons-container" id="drawer-custom-buttons"></div>
 
           <!-- 6. Panel Desplegable de Configuración (Solo Editor) -->
           <div class="info-config-panel" id="info-config-panel" data-editor-only>
             <strong style="color:var(--gold-bright);font-size:10.5px;">⚙️ Campos visibles en este nivel:</strong>
-            <div class="checkbox-grid">
+            <div class="checkbox-grid" id="config-fields-showroom">
               <label><input type="checkbox" data-toggle-field="availability" checked /> Disponibilidad</label>
               <label><input type="checkbox" data-toggle-field="name" checked /> Título</label>
               <label><input type="checkbox" data-toggle-field="area" checked /> Área (m²)</label>
@@ -742,6 +770,16 @@
               <label><input type="checkbox" data-toggle-field="baths" checked /> Baños</label>
               <label><input type="checkbox" data-toggle-field="kitchen" checked /> Cocina</label>
               <label><input type="checkbox" data-toggle-field="price" checked /> Precio</label>
+              <label><input type="checkbox" data-toggle-field="pinButton" checked /> Botón Mapa</label>
+            </div>
+            <div class="checkbox-grid struct-only-grid" id="config-fields-structures">
+              <label><input type="checkbox" data-toggle-field="name" checked /> Título</label>
+              <label><input type="checkbox" data-toggle-field="columns" checked /> Columnas</label>
+              <label><input type="checkbox" data-toggle-field="beams" checked /> Vigas</label>
+              <label><input type="checkbox" data-toggle-field="slabs2Way" checked /> Losas 2 Dir.</label>
+              <label><input type="checkbox" data-toggle-field="solidSlabs" checked /> Losas Macizas</label>
+              <label><input type="checkbox" data-toggle-field="dropPanelSlabs" checked /> Losas Ábacos</label>
+              <label><input type="checkbox" data-toggle-field="area" checked /> Área (m²)</label>
               <label><input type="checkbox" data-toggle-field="pinButton" checked /> Botón Mapa</label>
             </div>
             <div style="display:flex;gap:5px;margin-top:3px;flex-wrap:wrap;">
@@ -1504,30 +1542,48 @@
           <div class="field-col"><label for="poly-input-btn-text">Texto del Botón sobre el Polígono:</label><input type="text" id="poly-input-btn-text" value="Dpto 9-01 · 150 m²" /></div>
         </div>
 
-        <!-- Mostrar u Ocultar Disponibilidad (Verde / Naranja / Rojo) -->
-        <div style="background:rgba(255,255,255,0.03);border:1px solid var(--gold-border);border-radius:9px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-          <label class="toggle-switch">
-            <input type="checkbox" id="poly-input-show-avail" checked />
-            <span style="color:var(--gold-bright);">Mostrar Disponibilidad (Botones Verde / Naranja / Rojo)</span>
-          </label>
-          <select id="poly-input-status" style="background:rgba(255,255,255,0.08);border:1px solid var(--gold-border);color:#fff;padding:5px 9px;border-radius:7px;font-size:11px;">
-            <option value="available">🟢 Disponible (Verde)</option>
-            <option value="reserved">🟠 Reservado (Naranja)</option>
-            <option value="sold">🔴 Vendido (Rojo)</option>
-          </select>
+        <div id="poly-fields-showroom" style="display:flex;flex-direction:column;gap:8px;">
+          <!-- Mostrar u Ocultar Disponibilidad (Verde / Naranja / Rojo) -->
+          <div style="background:rgba(255,255,255,0.03);border:1px solid var(--gold-border);border-radius:9px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+            <label class="toggle-switch">
+              <input type="checkbox" id="poly-input-show-avail" checked />
+              <span style="color:var(--gold-bright);">Mostrar Disponibilidad (Botones Verde / Naranja / Rojo)</span>
+            </label>
+            <select id="poly-input-status" style="background:rgba(255,255,255,0.08);border:1px solid var(--gold-border);color:#fff;padding:5px 9px;border-radius:7px;font-size:11px;">
+              <option value="available">🟢 Disponible (Verde)</option>
+              <option value="reserved">🟠 Reservado (Naranja)</option>
+              <option value="sold">🔴 Vendido (Rojo)</option>
+            </select>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="field-col"><label for="poly-input-area">Área Base (m²):</label><input type="number" id="poly-input-area" value="150" /></div>
+            <div class="field-col"><label for="poly-input-price">Precio Base (USD):</label><input type="number" id="poly-input-price" value="168000" step="1000" /></div>
+          </div>
+          <div class="form-grid-2">
+            <div class="field-col"><label for="poly-input-beds">Cuartos:</label><input type="number" id="poly-input-beds" value="3" /></div>
+            <div class="field-col"><label for="poly-input-baths">Baños / Cocinas:</label>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                <input type="number" id="poly-input-baths" value="2" title="Baños" />
+                <input type="number" id="poly-input-kitchens" value="1" title="Cocinas" />
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="form-grid-2">
-          <div class="field-col"><label for="poly-input-area">Área Base (m²):</label><input type="number" id="poly-input-area" value="150" /></div>
-          <div class="field-col"><label for="poly-input-price">Precio Base (USD):</label><input type="number" id="poly-input-price" value="168000" step="1000" /></div>
-        </div>
-        <div class="form-grid-2">
-          <div class="field-col"><label for="poly-input-beds">Cuartos:</label><input type="number" id="poly-input-beds" value="3" /></div>
-          <div class="field-col"><label for="poly-input-baths">Baños / Cocinas:</label>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-              <input type="number" id="poly-input-baths" value="2" title="Baños" />
-              <input type="number" id="poly-input-kitchens" value="1" title="Cocinas" />
-            </div>
+        <div id="poly-fields-structures" style="display:none;flex-direction:column;gap:8px;background:rgba(212,175,55,0.05);border:1px solid var(--gold-border);border-radius:10px;padding:10px;">
+          <strong style="font-size:11.5px;color:var(--gold-bright);">🔩 Elementos y Armaduras Estructurales</strong>
+          <div class="form-grid-2">
+            <div class="field-col"><label for="poly-input-columns">Cantidad de Columnas:</label><input type="number" id="poly-input-columns" value="0" min="0" /></div>
+            <div class="field-col"><label for="poly-input-beams">Cantidad de Vigas:</label><input type="number" id="poly-input-beams" value="0" min="0" /></div>
+          </div>
+          <div class="form-grid-2">
+            <div class="field-col"><label for="poly-input-slabs2way">Losas en 2 Direcciones:</label><input type="number" id="poly-input-slabs2way" value="0" min="0" /></div>
+            <div class="field-col"><label for="poly-input-solidslabs">Losas Macizas:</label><input type="number" id="poly-input-solidslabs" value="0" min="0" /></div>
+          </div>
+          <div class="form-grid-2">
+            <div class="field-col"><label for="poly-input-droppanels">Losas con Ábacos:</label><input type="number" id="poly-input-droppanels" value="0" min="0" /></div>
+            <div class="field-col"><label for="poly-input-struct-area">Área Estructural (m²):</label><input type="number" id="poly-input-struct-area" value="0" min="0" /></div>
           </div>
         </div>
 
@@ -1586,7 +1642,8 @@
             <div class="field-col">
               <label for="new-btn-action-type">Al hacer clic abre:</label>
               <select id="new-btn-action-type">
-                <option value="photo">🖼️ Foto Render Normal (Subir Foto)</option>
+                <option value="photo">🖼️ Foto Render / Imagen (Subir Imagen)</option>
+                <option value="pdf">📄 Plano / Detalle PDF (Subir PDF)</option>
                 <option value="tour360">🌐 Vista 360° (Subir o Elegir 360°)</option>
               </select>
             </div>
@@ -1594,8 +1651,8 @@
 
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
             <label class="action-btn" style="cursor:pointer;flex:1;">
-              ⬆️ <span id="new-btn-file-lbl">Subir Foto / Panorama 360° asignado</span>
-              <input type="file" id="new-btn-upload-file" accept="image/*" style="display:none;" />
+              ⬆️ <span id="new-btn-file-lbl">Subir Foto / PDF / Panorama 360° asignado</span>
+              <input type="file" id="new-btn-upload-file" accept="image/*,.pdf,application/pdf" style="display:none;" />
             </label>
             <label class="action-btn" id="new-btn-night-upload-wrap" style="cursor:pointer;flex:1;">
               🌙 <span id="new-btn-night-file-lbl">Subir Nocturna (Opcional)</span>
@@ -1992,15 +2049,88 @@
     </div>
   </div>
 
+  <!-- VISOR FULLSCREEN DE PDF PARA PUNTOS EN PLANO EN PLANTA -->
+  <div class="photo-lightbox-backdrop" id="modal-pdf-viewer">
+    <button class="global-back-btn visible" id="btn-close-pdf-viewer" style="top:18px;left:18px;">
+      ← Volver Atrás
+    </button>
+    <a class="global-back-btn visible" id="btn-pdf-viewer-download" href="#" target="_blank" rel="noopener" style="top:18px;right:18px;left:auto;text-decoration:none;">
+      ⬇️ Abrir / Descargar PDF
+    </a>
+    <div style="width:min(92vw,1080px);height:min(78vh,820px);background:#111218;border:1px solid var(--gold-border);border-radius:14px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,0.85);">
+      <iframe id="pdf-viewer-frame" src="" title="Visor PDF" style="width:100%;height:100%;border:0;background:#1a1b22;"></iframe>
+    </div>
+    <div style="margin-top:12px;background:rgba(8,8,12,0.88);border:1px solid var(--gold-border);padding:6px 16px;border-radius:99px;">
+      <strong id="pdf-viewer-caption" style="color:var(--gold-bright);font-size:13px;">Documento PDF</strong>
+    </div>
+  </div>
+
+  <!-- MODAL: CREAR PUNTO DIRECTO SOBRE PLANO EN PLANTA (IMAGEN O PDF) -->
+  <div class="modal-backdrop" id="modal-direct-plan-point">
+    <div class="luxury-modal" style="max-width:470px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <span class="dropdown-role-badge">PUNTO DIRECTO EN PLANO EN PLANTA</span>
+          <h3 style="font-family:var(--font-display);color:var(--gold-bright);font-size:15.5px;margin-top:4px;">📍 Añadir Punto a Imagen o PDF</h3>
+        </div>
+        <button class="icon-btn" id="btn-close-dpp-modal">✕</button>
+      </div>
+      <div class="field-col">
+        <label for="dpp-input-label">Nombre / Etiqueta del Punto:</label>
+        <input type="text" id="dpp-input-label" placeholder="Ej: Detalle Columna C1 / Plano Losa Piso 2" />
+      </div>
+      <div class="form-grid-2">
+        <div class="field-col">
+          <label for="dpp-input-type">Archivo que abrirá al tocar:</label>
+          <select id="dpp-input-type">
+            <option value="photo">🖼️ Imagen / Detalle (JPG, PNG, WEBP)</option>
+            <option value="pdf">📄 Plano / Memoria en PDF</option>
+          </select>
+        </div>
+        <div class="field-col">
+          <label for="dpp-input-color">Color del Punto:</label>
+          <input type="color" id="dpp-input-color" value="#38bdf8" style="height:36px;width:100%;border-radius:8px;border:1px solid var(--gold-border);background:transparent;cursor:pointer;" />
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px;">
+        <label class="action-btn gold-cta" style="cursor:pointer;grid-column:auto;">
+          ⬆️ <span id="dpp-file-lbl">Subir Imagen o PDF</span>
+          <input type="file" id="dpp-upload-file" accept="image/*,.pdf,application/pdf" style="display:none;" />
+        </label>
+        <label class="action-btn" id="dpp-rebar-wrap" style="cursor:pointer;">
+          🔩 <span id="dpp-rebar-lbl">Opcional: 2da Imagen (Con Armadura)</span>
+          <input type="file" id="dpp-upload-rebar-file" accept="image/*" style="display:none;" />
+        </label>
+      </div>
+      <div id="dpp-coords-lbl" style="font-size:10.5px;color:var(--ink-silver);">Coordenadas en plano: 50%, 50%</div>
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="action-btn gold-cta" id="btn-save-dpp-modal" style="flex:1;grid-column:auto;">💾 Guardar Punto en Plano</button>
+        <button type="button" class="action-btn" id="btn-cancel-dpp-modal">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: CREAR NUEVO PROYECTO (DESDE PORTAL SALO · SOLO EDITOR) -->
   <div class="modal-backdrop" id="modal-new-project">
-    <div class="luxury-modal" style="max-width:490px;">
+    <div class="luxury-modal" style="max-width:510px;">
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <div>
           <span class="dropdown-role-badge">SALO SHOWROOM · NUEVO PROYECTO</span>
-          <h3 style="font-family:var(--font-display);color:var(--gold-bright);font-size:16px;margin-top:4px;">🏗️ Crear Nuevo Proyecto</h3>
+          <h3 id="np-modal-heading" style="font-family:var(--font-display);color:var(--gold-bright);font-size:16px;margin-top:4px;">🏗️ Crear Nuevo Proyecto</h3>
         </div>
         <button class="icon-btn" id="btn-close-new-project">✕</button>
+      </div>
+      <!-- Pestañas: Proyecto Normal vs Proyecto de Estructuras -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;background:rgba(255,255,255,0.03);padding:4px;border-radius:10px;border:1px solid var(--gold-border);">
+        <button type="button" class="glass-pill-btn active" id="btn-np-tab-showroom" data-np-type="showroom" style="justify-content:center;height:32px;font-size:11px;">
+          🏗️ Proyecto Showroom
+        </button>
+        <button type="button" class="glass-pill-btn" id="btn-np-tab-structures" data-np-type="structures" style="justify-content:center;height:32px;font-size:11px;">
+          🧱 Crear Proyecto de Estructuras
+        </button>
+      </div>
+      <div id="np-structures-note" style="display:none;background:rgba(56,189,248,0.09);border:1px solid rgba(56,189,248,0.38);border-radius:9px;padding:8px 10px;font-size:11px;color:#bae6fd;line-height:1.45;">
+        🔩 <strong>Proyecto de Estructuras en Blanco:</strong> se crea sin renders ni elementos precargados. Incluye opciones de columnas, vigas, losas (2 direcciones, macizas, ábacos), alternador <b>Mostrar / Ocultar Armadura</b> y puntos directos sobre Plano en Planta a Imagen o PDF.
       </div>
       <div class="field-col">
         <label for="np-input-building">Nombre del Edificio / Proyecto:</label>
@@ -2088,7 +2218,7 @@
       <!-- TAB 1: PUBLICAR -->
       <div id="cloud-panel-publish" style="display:flex;flex-direction:column;gap:10px;">
         <div style="background:rgba(212,175,55,0.06);border:1px solid var(--gold-border);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;">
-          <strong style="font-size:11.5px;color:var(--gold-bright);">🏛️ Elige qué proyectos publicar y cuáles dejar en Borrador (solo en tu PC):</strong>
+          <strong style="font-size:11.5px;color:var(--gold-bright);">🏛️ Elige qué proyectos subir o actualizar ahora (los ya publicados no marcados se mantienen intactos en la web):</strong>
           <div id="cloud-projects-checklist" style="display:flex;flex-direction:column;gap:5px;max-height:170px;overflow-y:auto;"></div>
         </div>
 
@@ -2307,9 +2437,14 @@
       </div>
       <button type="button" class="icon-btn" id="btn-pap-close" style="width:24px;height:24px;">✕</button>
     </div>
-    <button type="button" class="action-btn gold-cta" id="btn-pap-view" style="grid-column:auto;width:100%;padding:8px 14px;font-size:12px;">
-      👁️ Ver
-    </button>
+    <div style="display:flex;gap:6px;width:100%;">
+      <button type="button" class="action-btn gold-cta" id="btn-pap-view" style="grid-column:auto;flex:1;padding:8px 14px;font-size:12px;">
+        👁️ Ver
+      </button>
+      <button type="button" class="action-btn" id="btn-pap-del-direct" data-editor-only style="display:none;padding:8px 10px;font-size:11.5px;color:#f87171;border-color:rgba(239,68,68,0.4);" title="Eliminar punto en plano">
+        🗑️
+      </button>
+    </div>
   </div>
 
   <!-- TUTORIAL INTERACTIVO CON MANO GUÍA (EXTERIOR + MINI TUTORIAL PLANTA) -->

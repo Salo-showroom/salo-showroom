@@ -134,6 +134,7 @@ export function sanitizePortalForPublish(portalState, assetUrlMap = new Map(), v
     .filter((p) => p && p.published !== false)
     .map((p) => ({
       code: String(p.code || '').toUpperCase(),
+      projectType: p.projectType === 'structures' ? 'structures' : 'showroom',
       buildingName: p.buildingName || 'Proyecto SALO',
       subtitle: p.subtitle || '',
       whatsappPhone: p.whatsappPhone || '59173080076',
@@ -213,10 +214,15 @@ export function sanitizeProjectForPublish(projectState, assetUrlMap = new Map())
     clone.intro.mediaKey = null;
   }
 
+  const isStruct = clone.project?.projectType === 'structures';
+  const fallbackExtImg = isStruct ? '' : './sample-assets/exterior-tower.webp';
+  const fallbackFloorImg = isStruct ? '' : './sample-assets/floor-piso9-3d.jpg';
+  const fallbackPlan2DImg = isStruct ? null : './sample-assets/floor-piso9-plan.webp';
+
   if (Array.isArray(clone.exteriorAngles)) {
     clone.exteriorAngles = clone.exteriorAngles.map((a) => ({
       ...a,
-      photo: resolveMediaField(a.photo, a.mediaKey, assetUrlMap, './sample-assets/exterior-tower.webp'),
+      photo: resolveMediaField(a.photo, a.mediaKey, assetUrlMap, fallbackExtImg),
       nightPhoto: resolveMediaField(a.nightPhoto, a.nightMediaKey, assetUrlMap, null),
       mediaKey: null,
       nightMediaKey: null
@@ -226,9 +232,9 @@ export function sanitizeProjectForPublish(projectState, assetUrlMap = new Map())
   if (Array.isArray(clone.levels)) {
     clone.levels = clone.levels.map((l) => ({
       ...l,
-      dayPhoto: resolveMediaField(l.dayPhoto, l.dayMediaKey, assetUrlMap, './sample-assets/floor-piso9-3d.jpg'),
+      dayPhoto: resolveMediaField(l.dayPhoto, l.dayMediaKey, assetUrlMap, fallbackFloorImg),
       nightPhoto: resolveMediaField(l.nightPhoto, l.nightMediaKey, assetUrlMap, null),
-      plan2DPhoto: resolveMediaField(l.plan2DPhoto, l.plan2DMediaKey, assetUrlMap, './sample-assets/floor-piso9-plan.webp'),
+      plan2DPhoto: resolveMediaField(l.plan2DPhoto, l.plan2DMediaKey, assetUrlMap, fallbackPlan2DImg),
       transitionVideo: resolveMediaField(l.transitionVideo, l.transitionMediaKey, assetUrlMap, null),
       transImg1: resolveMediaField(l.transImg1, l.transImg1Key, assetUrlMap, null),
       transImg2: resolveMediaField(l.transImg2, l.transImg2Key, assetUrlMap, null),
@@ -246,11 +252,23 @@ export function sanitizeProjectForPublish(projectState, assetUrlMap = new Map())
       ...u,
       customButtons: (u.customButtons || []).map((cb) => ({
         ...cb,
-        photoUrl: resolveMediaField(cb.photoUrl, cb.photoMediaKey, assetUrlMap, './sample-assets/render-interior-1.jpg'),
+        photoUrl: resolveMediaField(cb.photoUrl, cb.photoMediaKey, assetUrlMap, cb.actionType === 'pdf' ? null : './sample-assets/render-interior-1.jpg'),
         nightPhotoUrl: resolveMediaField(cb.nightPhotoUrl, cb.nightPhotoMediaKey, assetUrlMap, null),
+        pdfUrl: resolveMediaField(cb.pdfUrl, cb.pdfMediaKey, assetUrlMap, null),
         photoMediaKey: null,
-        nightPhotoMediaKey: null
+        nightPhotoMediaKey: null,
+        pdfMediaKey: null
       }))
+    }));
+  }
+
+  if (Array.isArray(clone.planPoints)) {
+    clone.planPoints = clone.planPoints.map((pt) => ({
+      ...pt,
+      fileUrl: resolveMediaField(pt.fileUrl, pt.fileMediaKey, assetUrlMap, null),
+      rebarUrl: resolveMediaField(pt.rebarUrl, pt.rebarMediaKey, assetUrlMap, null),
+      fileMediaKey: null,
+      rebarMediaKey: null
     }));
   }
 
@@ -336,7 +354,12 @@ export function collectProjectMediaKeys(projectState) {
     (u.customButtons || []).forEach((cb) => {
       add(cb.photoMediaKey, `btn-${cb.id}`);
       add(cb.nightPhotoMediaKey, `btn-${cb.id}-night`);
+      add(cb.pdfMediaKey, `btn-${cb.id}.pdf`);
     });
+  });
+  (projectState.planPoints || []).forEach((pt) => {
+    add(pt.fileMediaKey, pt.actionType === 'pdf' ? `planpt-${pt.id}.pdf` : `planpt-${pt.id}`);
+    add(pt.rebarMediaKey, `planpt-${pt.id}-rebar`);
   });
   (projectState.renderedViewsGallery || []).forEach((g) => {
     add(g.mediaKey, `gallery-${g.id}`);
@@ -371,6 +394,7 @@ export function guessExtFromBlob(blob, fallbackHint = '') {
   if (mime.includes('jpeg') || mime.includes('jpg')) return '.jpg';
   if (mime.includes('png')) return '.png';
   if (mime.includes('webp')) return '.webp';
+  if (mime.includes('pdf')) return '.pdf';
   if (mime.includes('mp4')) return '.mp4';
   if (mime.includes('webm')) return '.webm';
   if (mime.includes('gltf-binary')) return '.glb';
@@ -622,18 +646,19 @@ export async function publishShowroomOrchestrator({
   getMediaBlob,
   onProgress,
   onLog,
+  removeRemoteCodes = [],
   mockApiBase = '',
   mockUploadsBase = ''
 }) {
   const publishedProjects = (portalState.projects || []).filter((p) => p && p.published !== false);
-  const draftProjects = (portalState.projects || []).filter((p) => p && p.published === false);
+  const removeSet = new Set((removeRemoteCodes || []).map((c) => String(c || '').toUpperCase()).filter(Boolean));
   const activeDrive = getActiveDriveProfile(cfg);
   const warnings = [];
   const log = (msg) => { if (onLog) onLog(msg); };
   const prog = (pct, status) => { if (onProgress) onProgress(pct, status); };
 
-  if (publishedProjects.length === 0) {
-    throw new Error('No hay proyectos marcados como Listos para Publicar (todos están en Borrador).');
+  if (publishedProjects.length === 0 && removeSet.size === 0) {
+    throw new Error('Marca al menos un proyecto para subir o actualizar en la web.');
   }
   if (!cfg.ghOwner || !cfg.ghRepo || !cfg.ghToken) {
     throw new Error('Configura tu Usuario, Repositorio y Token de GitHub en la pestaña "Cuentas y Drive".');
@@ -647,8 +672,33 @@ export async function publishShowroomOrchestrator({
     throw new Error('No se pudo conectar con el servidor local de publicación (server.mjs en 127.0.0.1:4173). Asegúrate de tener abierto Iniciar_Editor_SALO.bat y vuelve a intentar.');
   }
 
-  prog(5, 'Recopilando proyectos publicados y archivos…');
-  log(`Proyectos a publicar: ${publishedProjects.map((p) => p.code).join(', ')} (${draftProjects.length} en borrador).`);
+  prog(5, 'Consultando proyectos ya publicados en la web (modo incremental)…');
+  let remotePortal = null;
+  try {
+    const rpResp = await fetch('./api/cloud/fetch-remote-portal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        owner: cfg.ghOwner,
+        repo: cfg.ghRepo,
+        branch: cfg.ghBranch || 'main',
+        token: cfg.ghToken,
+        ...(mockApiBase ? { ghApiBase: mockApiBase } : {})
+      })
+    });
+    const rpJson = await rpResp.json().catch(() => ({}));
+    if (rpResp.ok && rpJson.ok && rpJson.portal) {
+      remotePortal = rpJson.portal;
+      const keptCount = (remotePortal.projects || []).filter(
+        (rp) => rp?.code && !publishedProjects.some((p) => p.code.toUpperCase() === rp.code.toUpperCase()) && !removeSet.has(rp.code.toUpperCase())
+      ).length;
+      if (keptCount > 0) {
+        log(`♻️ Modo incremental: se conservarán intactos ${keptCount} proyecto(s) ya publicados sin volver a subirlos.`);
+      }
+    }
+  } catch (_) {}
+
+  log(`Proyectos a subir/actualizar en este envío: ${publishedProjects.map((p) => p.code).join(', ') || 'ninguno'}${removeSet.size > 0 ? ` · Retirar: ${[...removeSet].join(', ')}` : ''}.`);
 
   // Collect all unique media items across Portal & Published projects
   const assetUrlMap = new Map(); // mediaKey -> public URL
@@ -774,10 +824,19 @@ export async function publishShowroomOrchestrator({
     }
   }
 
-  // Generate sanitized JSONs (strictly NO auth PINs, NO secrets, NO draft projects!)
-  prog(88, 'Generando archivos JSON públicos y eliminando borradores del repositorio…');
+  // Generate sanitized JSONs (incremental merge: keep already-published remote projects untouched unless explicitly removed)
+  prog(88, 'Fusionando proyectos con la web publicada (sin borrar proyectos previos)…');
   const visitsScriptUrl = activeDrive?.scriptUrl || '';
   const sanitizedPortal = sanitizePortalForPublish(portalState, assetUrlMap, visitsScriptUrl);
+
+  if (remotePortal && Array.isArray(remotePortal.projects)) {
+    const incomingCodes = new Set(sanitizedPortal.projects.map((p) => String(p.code || '').toUpperCase()));
+    const preservedRemoteProjects = remotePortal.projects.filter((rp) => {
+      const code = String(rp?.code || '').toUpperCase();
+      return code && !incomingCodes.has(code) && !removeSet.has(code);
+    });
+    sanitizedPortal.projects = [...sanitizedPortal.projects, ...preservedRemoteProjects];
+  }
 
   const extraFiles = [
     ...smallPagesFiles,
@@ -788,15 +847,15 @@ export async function publishShowroomOrchestrator({
     extraFiles.push({ path: `data/projects/${proj.code}.json`, content: JSON.stringify(cleanProj, null, 2) });
   }
 
-  // Remove draft project JSONs & releases from public site if previously published
-  const deletePaths = draftProjects.map((d) => `data/projects/${d.code}.json`);
-  for (const d of draftProjects) {
+  // Only remove project JSONs & releases explicitly requested for removal from the web
+  const deletePaths = [...removeSet].map((code) => `data/projects/${code}.json`);
+  for (const code of removeSet) {
     await fetch('./api/cloud/delete-release', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         owner: cfg.ghOwner, repo: cfg.ghRepo, token: cfg.ghToken,
-        tag: `media-${d.code}`,
+        tag: `media-${code}`,
         ...(mockApiBase ? { ghApiBase: mockApiBase } : {})
       })
     }).catch(() => {});

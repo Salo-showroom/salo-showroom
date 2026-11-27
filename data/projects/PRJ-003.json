@@ -1,6 +1,7 @@
 {
   "project": {
     "code": "PRJ-003",
+    "projectType": "showroom",
     "requiresCode": true,
     "shortName": "SALO SHOWROOM",
     "buildingName": "Torre Onix",
@@ -25,6 +26,9 @@
   "unitsConfig": {
     "showTab": true,
     "displayMode": "departments"
+  },
+  "finishesConfig": {
+    "showTab": true
   },
   "model3dConfig": {
     "showTab": true
@@ -85,6 +89,8 @@
     "x": 0,
     "y": 0
   },
+  "isPlacingDirectPlanPoint": false,
+  "planPoints": [],
   "visibleFields": {
     "availability": true,
     "name": true,

@@ -191,12 +191,14 @@ function escapeHtml(str) {
 }
 
 const DEFAULT_VISIBLE_FIELDS = {
-  availability: true, name: true, area: true, rooms: true, baths: true, kitchen: true, price: true, pinButton: true
+  availability: true, name: true, area: true, rooms: true, baths: true, kitchen: true, price: true, pinButton: true,
+  columns: true, beams: true, slabs2Way: true, solidSlabs: true, dropPanelSlabs: true
 };
 
 const defaultState = {
   project: {
     code: '',
+    projectType: 'showroom',
     accessCode: '',
     accessCodeHash: null,
     requiresCode: false,
@@ -223,6 +225,9 @@ const defaultState = {
   unitsConfig: {
     showTab: true,
     displayMode: 'departments'
+  },
+  finishesConfig: {
+    showTab: true
   },
   model3dConfig: {
     showTab: true
@@ -255,6 +260,8 @@ const defaultState = {
   pan: { x: 0, y: 0 },
   isDrawingPolygon: false,
   isPlacingPlanPoint: false,
+  isPlacingDirectPlanPoint: false,
+  planPoints: [],
   editingPolygonUnitId: null,
   editingShapeUnitId: null,
   editingFloorId: null,
@@ -455,17 +462,72 @@ function isEditor() {
   return !isPublishedRuntime() && portalState.auth?.mode === 'editor';
 }
 
+function isStructuresProject() {
+  return state.project?.projectType === 'structures';
+}
+
 function createFreshProjectState(meta) {
+  const isStruct = meta?.projectType === 'structures';
   const s = structuredClone(defaultState);
   s.project.code = meta.code;
+  s.project.projectType = isStruct ? 'structures' : 'showroom';
   s.project.accessCode = meta.accessCode || '';
   s.project.accessCodeHash = meta.accessCodeHash || null;
   s.project.requiresCode = Boolean(meta.requiresCode);
   s.project.shortName = 'SALO SHOWROOM';
-  s.project.buildingName = meta.buildingName || 'Nuevo Edificio';
+  s.project.buildingName = meta.buildingName || (isStruct ? 'Proyecto de Estructuras' : 'Nuevo Edificio');
   s.project.fullTitle = `SALO SHOWROOM · ${s.project.buildingName}`;
-  s.project.subtitle = meta.subtitle || 'Showroom Interactivo 3D · Panorámica · Plantas';
+  s.project.subtitle = meta.subtitle || (isStruct ? 'Proyecto de Estructuras · Planos y Armaduras' : 'Showroom Interactivo 3D · Panorámica · Plantas');
   s.project.whatsappPhone = meta.whatsappPhone || '59173080076';
+
+  if (isStruct) {
+    s.unitsConfig = { showTab: false, displayMode: 'levels' };
+    s.finishesConfig = { showTab: false };
+    s.model3dConfig = { showTab: true };
+    s.intro = { enabled: false, defaultVideo: null, mediaKey: null, customName: null };
+    s.exteriorAngles = [{
+      id: 'angle-0',
+      angleDeg: 0,
+      label: 'Vista Estructural Principal',
+      photo: meta.coverUrl || '',
+      nightPhoto: null,
+      mediaKey: meta.coverMediaKey || null,
+      nightMediaKey: null
+    }];
+    s.levels = [{
+      id: 'facade',
+      name: 'Vista Estructural',
+      badge: 'General',
+      floorNum: 0,
+      dayPhoto: meta.coverUrl || '',
+      nightPhoto: null,
+      plan2DPhoto: null,
+      dayMediaKey: meta.coverMediaKey || null,
+      nightMediaKey: null,
+      plan2DMediaKey: null,
+      hasTour360: true,
+      transitionType: 'none',
+      transitionVideo: null,
+      transitionMediaKey: null,
+      transImg1: null,
+      transImg1Key: null,
+      transImg2: null,
+      transImg2Key: null
+    }];
+    s.units = [];
+    s.planPoints = [];
+    s.renderedViewsGallery = [];
+    s.rooms360 = [];
+    s.finishes = { activeTabId: null, tabs: [] };
+    s.transitions = { globalEnabled: false, slots: [] };
+    s.location = { lat: -17.783327, lng: -63.182140, zoom: 15, placeName: '', pois: [] };
+    s.imageAdjustments = { facade: { fit: 'contain', scale: 100, x: 0, y: 0 } };
+    s.selectedUnitId = null;
+    s.activeRoom360Id = null;
+    s.auth = portalState.auth;
+    return s;
+  }
+
   if (meta.coverUrl) {
     s.exteriorAngles[0].photo = meta.coverUrl;
     s.exteriorAngles[0].mediaKey = meta.coverMediaKey || null;
@@ -569,11 +631,15 @@ function applyLoadedProjectData(rawSaved, code, meta) {
   }
   if (saved.intro) state.intro = { ...state.intro, ...saved.intro };
   if (saved.unitsConfig) state.unitsConfig = { ...state.unitsConfig, ...saved.unitsConfig };
+  if (saved.finishesConfig) state.finishesConfig = { ...state.finishesConfig, ...saved.finishesConfig };
   if (saved.model3dConfig) state.model3dConfig = { ...state.model3dConfig, ...saved.model3dConfig };
   if (saved.avance) state.avance = { ...state.avance, ...saved.avance };
+  const isStruct = (state.project?.projectType || meta?.projectType) === 'structures';
+  if (isStruct) state.project.projectType = 'structures';
   if (Array.isArray(saved.exteriorAngles) && saved.exteriorAngles.length > 0) state.exteriorAngles = saved.exteriorAngles;
   if (Array.isArray(saved.levels) && saved.levels.length > 0) state.levels = saved.levels;
-  if (Array.isArray(saved.units) && saved.units.length > 0) state.units = saved.units;
+  if (Array.isArray(saved.units) && (saved.units.length > 0 || isStruct)) state.units = saved.units;
+  state.planPoints = Array.isArray(saved.planPoints) ? saved.planPoints : [];
   if (saved.visibleFields) state.visibleFields = { ...state.visibleFields, ...saved.visibleFields };
   if (saved.visibleFieldsByLevel && typeof saved.visibleFieldsByLevel === 'object') {
     state.visibleFieldsByLevel = structuredClone(saved.visibleFieldsByLevel);
@@ -582,9 +648,9 @@ function applyLoadedProjectData(rawSaved, code, meta) {
   }
   if (saved.imageAdjustments) state.imageAdjustments = { ...state.imageAdjustments, ...saved.imageAdjustments };
   if (saved.transitions && Array.isArray(saved.transitions.slots)) state.transitions = saved.transitions;
-  if (Array.isArray(saved.renderedViewsGallery) && saved.renderedViewsGallery.length > 0) state.renderedViewsGallery = saved.renderedViewsGallery;
-  if (Array.isArray(saved.rooms360) && saved.rooms360.length > 0) state.rooms360 = saved.rooms360;
-  if (saved.finishes && Array.isArray(saved.finishes.tabs) && saved.finishes.tabs.length > 0) state.finishes = saved.finishes;
+  if (Array.isArray(saved.renderedViewsGallery) && (saved.renderedViewsGallery.length > 0 || isStruct)) state.renderedViewsGallery = saved.renderedViewsGallery;
+  if (Array.isArray(saved.rooms360) && (saved.rooms360.length > 0 || isStruct)) state.rooms360 = saved.rooms360;
+  if (saved.finishes && Array.isArray(saved.finishes.tabs) && (saved.finishes.tabs.length > 0 || isStruct)) state.finishes = saved.finishes;
   if (saved.location) state.location = { ...state.location, ...saved.location };
   if (saved.customModel3D) state.customModel3D = { ...state.customModel3D, ...saved.customModel3D };
   if (Array.isArray(saved.cameras3D) && saved.cameras3D.length > 0) state.cameras3D = saved.cameras3D;
@@ -657,16 +723,17 @@ function savePersistedState() {
       shortName: 'SALO SHOWROOM',
       logoUrl: (state.project.logoUrl && state.project.logoUrl.startsWith('blob:')) ? null : state.project.logoUrl
     };
+    const isStruct = isStructuresProject();
     const cleanAngles = state.exteriorAngles.map((a) => ({
       ...a,
-      photo: (a.photo && a.photo.startsWith('blob:')) ? './sample-assets/exterior-tower.webp' : a.photo,
+      photo: (a.photo && a.photo.startsWith('blob:')) ? (isStruct ? '' : './sample-assets/exterior-tower.webp') : a.photo,
       nightPhoto: (a.nightPhoto && a.nightPhoto.startsWith('blob:')) ? null : (a.nightPhoto ?? null)
     }));
     const cleanLevels = state.levels.map((l) => ({
       ...l,
-      dayPhoto: (l.dayPhoto && l.dayPhoto.startsWith('blob:')) ? './sample-assets/floor-piso9-3d.jpg' : l.dayPhoto,
+      dayPhoto: (l.dayPhoto && l.dayPhoto.startsWith('blob:')) ? (isStruct ? '' : './sample-assets/floor-piso9-3d.jpg') : l.dayPhoto,
       nightPhoto: (l.nightPhoto && l.nightPhoto.startsWith('blob:')) ? null : (l.nightPhoto ?? null),
-      plan2DPhoto: (l.plan2DPhoto && l.plan2DPhoto.startsWith('blob:')) ? './sample-assets/floor-piso9-plan.webp' : l.plan2DPhoto,
+      plan2DPhoto: (l.plan2DPhoto && l.plan2DPhoto.startsWith('blob:')) ? (isStruct ? null : './sample-assets/floor-piso9-plan.webp') : l.plan2DPhoto,
       transImg1: (l.transImg1 && l.transImg1.startsWith('blob:')) ? null : l.transImg1,
       transImg2: (l.transImg2 && l.transImg2.startsWith('blob:')) ? null : l.transImg2
     }));
@@ -675,8 +742,14 @@ function savePersistedState() {
       customButtons: (u.customButtons || []).map((cb) => ({
         ...cb,
         photoUrl: (cb.photoUrl && cb.photoUrl.startsWith('blob:')) ? null : cb.photoUrl,
-        nightPhotoUrl: (cb.nightPhotoUrl && cb.nightPhotoUrl.startsWith('blob:')) ? null : (cb.nightPhotoUrl ?? null)
+        nightPhotoUrl: (cb.nightPhotoUrl && cb.nightPhotoUrl.startsWith('blob:')) ? null : (cb.nightPhotoUrl ?? null),
+        pdfUrl: (cb.pdfUrl && cb.pdfUrl.startsWith('blob:')) ? null : (cb.pdfUrl ?? null)
       }))
+    }));
+    const cleanPlanPoints = (state.planPoints || []).map((pt) => ({
+      ...pt,
+      fileUrl: (pt.fileUrl && pt.fileUrl.startsWith('blob:')) ? null : (pt.fileUrl ?? null),
+      rebarUrl: (pt.rebarUrl && pt.rebarUrl.startsWith('blob:')) ? null : (pt.rebarUrl ?? null)
     }));
     const cleanTransitions = {
       globalEnabled: state.transitions.globalEnabled,
@@ -708,11 +781,13 @@ function savePersistedState() {
       project: cleanProject,
       intro: state.intro,
       unitsConfig: state.unitsConfig,
+      finishesConfig: state.finishesConfig,
       model3dConfig: state.model3dConfig,
       avance: state.avance,
       exteriorAngles: cleanAngles,
       levels: cleanLevels,
       units: cleanUnits,
+      planPoints: cleanPlanPoints,
       visibleFields: state.visibleFields,
       visibleFieldsByLevel: state.visibleFieldsByLevel || {},
       imageAdjustments: state.imageAdjustments,
@@ -776,7 +851,12 @@ async function hydrateMediaFromIndexedDB() {
     for (const cb of (u.customButtons || [])) {
       if (cb.photoMediaKey) { const url = await getMediaUrl(cb.photoMediaKey); if (url) cb.photoUrl = url; }
       if (cb.nightPhotoMediaKey) { const nu = await getMediaUrl(cb.nightPhotoMediaKey); if (nu) cb.nightPhotoUrl = nu; }
+      if (cb.pdfMediaKey) { const pu = await getMediaUrl(cb.pdfMediaKey); if (pu) cb.pdfUrl = pu; }
     }
+  }
+  for (const pt of (state.planPoints || [])) {
+    if (pt.fileMediaKey) { const u = await getMediaUrl(pt.fileMediaKey); if (u) pt.fileUrl = u; }
+    if (pt.rebarMediaKey) { const ru = await getMediaUrl(pt.rebarMediaKey); if (ru) pt.rebarUrl = ru; }
   }
   for (const rv of state.renderedViewsGallery) {
     if (rv.mediaKey) { const u = await getMediaUrl(rv.mediaKey); if (u) rv.url = u; }
@@ -980,22 +1060,26 @@ function renderPortalProjects() {
     const pillText = editorMode
       ? (isLocked ? `🔑 ${proj.accessCode || 'Protegido'} (${proj.code})` : `🔓 Demo abierto (${proj.code})`)
       : (isLocked ? '🔒 Con código' : '🔓 Demo abierto');
+    const isStructProj = proj.projectType === 'structures';
     const safeCode = escapeHtml(proj.code);
     const safeName = escapeHtml(proj.buildingName);
-    const safeSub = escapeHtml(proj.subtitle || 'Showroom Interactivo 3D · Panorámica · Plantas');
+    const safeSub = escapeHtml(proj.subtitle || (isStructProj ? 'Proyecto de Estructuras · Planos y Armaduras' : 'Showroom Interactivo 3D · Panorámica · Plantas'));
+    const hasCover = Boolean(proj.coverUrl);
     const safeCover = escapeHtml(proj.coverUrl || './sample-assets/exterior-tower.webp');
 
     const card = document.createElement('article');
     card.className = 'portal-project-card';
     card.innerHTML = `
       <div class="portal-project-cover">
-        <img src="${safeCover}" alt="${safeName}" />
+        ${(isStructProj && !hasCover)
+          ? `<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#0d1320,#111827);color:var(--gold-bright);"><span style="font-size:30px;">🧱</span><span style="font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;">Proyecto de Estructuras</span></div>`
+          : `<img src="${safeCover}" alt="${safeName}" />`}
         <span class="portal-project-code-pill">${escapeHtml(pillText)}</span>
         ${editorMode ? `<span class="portal-pub-badge ${isPublished ? 'pub' : 'draft'}">${isPublished ? '🟢 PUBLICADO' : '📝 BORRADOR (PC)'}</span>` : ''}
       </div>
       <div class="portal-project-body">
         <div>
-          <span style="font-size:9.5px;color:var(--gold-bright);letter-spacing:1.2px;font-weight:700;">SALO SHOWROOM</span>
+          <span style="font-size:9.5px;color:var(--gold-bright);letter-spacing:1.2px;font-weight:700;">${isStructProj ? 'SALO ESTRUCTURAS' : 'SALO SHOWROOM'}</span>
           <h4 style="font-family:var(--font-display);font-size:17px;color:var(--ink-white);margin-top:2px;">${safeName}</h4>
           <p style="font-size:11px;color:var(--ink-silver);margin-top:3px;">${safeSub}</p>
         </div>
@@ -1442,6 +1526,26 @@ async function openProjectByCode(rawCode, forceRole = null) {
 }
 
 let newProjectCoverDraft = { url: null, mediaKey: null };
+let newProjectTypeDraft = 'showroom';
+
+function setNewProjectTypeTab(type = 'showroom') {
+  newProjectTypeDraft = type === 'structures' ? 'structures' : 'showroom';
+  const isStruct = newProjectTypeDraft === 'structures';
+  document.getElementById('btn-np-tab-showroom')?.classList.toggle('active', !isStruct);
+  document.getElementById('btn-np-tab-structures')?.classList.toggle('active', isStruct);
+  const note = document.getElementById('np-structures-note');
+  if (note) note.style.display = isStruct ? 'block' : 'none';
+  const heading = document.getElementById('np-modal-heading');
+  if (heading) heading.textContent = isStruct ? '🧱 Crear Proyecto de Estructuras' : '🏗️ Crear Nuevo Proyecto';
+  const subInp = document.getElementById('np-input-subtitle');
+  if (subInp) {
+    subInp.value = isStruct ? 'Proyecto de Estructuras · Planos y Armaduras' : 'Showroom Interactivo 3D · Panorámica · Plantas';
+  }
+  const coverLbl = document.getElementById('np-cover-lbl');
+  if (coverLbl && !newProjectCoverDraft.url) {
+    coverLbl.textContent = isStruct ? 'Portada: En blanco o sube tu imagen estructural' : 'Portada: Render predeterminado o sube tu foto';
+  }
+}
 
 function nextInternalProjectCode() {
   let n = portalState.projects.length + 1;
@@ -1453,22 +1557,22 @@ function nextInternalProjectCode() {
   return candidate;
 }
 
-function openNewProjectModal() {
+function openNewProjectModal(initialType = 'showroom') {
   if (!isEditor()) { showToast('Inicia sesión como Editor para crear proyectos'); return; }
   newProjectCoverDraft = { url: null, mediaKey: null };
   document.getElementById('np-input-building').value = '';
   document.getElementById('np-input-code').value = '';
-  document.getElementById('np-input-subtitle').value = 'Showroom Interactivo 3D · Panorámica · Plantas';
   document.getElementById('np-input-wa').value = '59173080076';
   const pubCb = document.getElementById('np-input-published');
   if (pubCb) pubCb.checked = false;
-  document.getElementById('np-cover-lbl').textContent = 'Portada: Render predeterminado o sube tu foto';
+  setNewProjectTypeTab(initialType);
   document.getElementById('modal-new-project')?.classList.add('open');
 }
 
 async function createNewProjectFromModal() {
   if (!isEditor()) return;
-  const buildingName = document.getElementById('np-input-building').value.trim() || `Edificio SALO ${portalState.projects.length + 1}`;
+  const isStruct = newProjectTypeDraft === 'structures';
+  const buildingName = document.getElementById('np-input-building').value.trim() || (isStruct ? `Estructura SALO ${portalState.projects.length + 1}` : `Edificio SALO ${portalState.projects.length + 1}`);
   const accessCode = normalizeAccessCode(document.getElementById('np-input-code').value);
   const accessCodeHash = await hashAccessCode(accessCode);
 
@@ -1479,13 +1583,14 @@ async function createNewProjectFromModal() {
   }
 
   const code = nextInternalProjectCode();
-  const subtitle = document.getElementById('np-input-subtitle').value.trim() || 'Showroom Interactivo 3D · Panorámica · Plantas';
+  const subtitle = document.getElementById('np-input-subtitle').value.trim() || (isStruct ? 'Proyecto de Estructuras · Planos y Armaduras' : 'Showroom Interactivo 3D · Panorámica · Plantas');
   const whatsappPhone = document.getElementById('np-input-wa').value.trim() || '59173080076';
   const published = !!document.getElementById('np-input-published')?.checked;
   const requiresCode = Boolean(accessCodeHash);
 
   const newMeta = {
     code,
+    projectType: isStruct ? 'structures' : 'showroom',
     accessCode,
     accessCodeHash,
     requiresCode,
@@ -1493,18 +1598,21 @@ async function createNewProjectFromModal() {
     subtitle,
     whatsappPhone,
     published,
-    coverUrl: newProjectCoverDraft.url || './sample-assets/exterior-tower.webp',
+    coverUrl: newProjectCoverDraft.url || (isStruct ? '' : './sample-assets/exterior-tower.webp'),
     coverMediaKey: newProjectCoverDraft.mediaKey || null,
     createdAt: new Date().toISOString().slice(0, 10)
   };
   portalState.projects.unshift(newMeta);
+  portalState.activeProjectCode = code;
   const fresh = createFreshProjectState(newMeta);
   state = fresh;
   savePersistedState();
   savePortalState();
   renderPortalProjects();
   document.getElementById('modal-new-project')?.classList.remove('open');
-  showToast(requiresCode ? `Proyecto "${buildingName}" creado (código privado activo)` : `Proyecto "${buildingName}" creado (demo abierto)`);
+  showToast(isStruct
+    ? `Proyecto de Estructuras "${buildingName}" creado en blanco`
+    : (requiresCode ? `Proyecto "${buildingName}" creado (código privado activo)` : `Proyecto "${buildingName}" creado (demo abierto)`));
   await openProjectByCode(code, 'editor');
 }
 
@@ -1710,6 +1818,42 @@ function syncProjectBrandingUI() {
   syncProjectLogoUI();
   syncUnitsTabVisibilityUI();
   syncModel3DTabVisibilityUI();
+  applyProjectTypeUI();
+}
+
+function applyProjectTypeUI() {
+  const isStruct = isStructuresProject();
+  document.body.dataset.projectType = isStruct ? 'structures' : 'showroom';
+
+  // Option A: In Structures projects, hide architectural-only Finishes & Units($) tabs by default
+  const navFin = document.getElementById('nav-finishes');
+  const drawerFin = document.querySelector('[data-drawer-nav="finishes"]');
+  const unitFinBtn = document.getElementById('btn-drawer-go-finishes');
+  const showFinishes = !isStruct && (state.finishesConfig?.showTab !== false);
+  if (navFin) navFin.style.display = showFinishes ? '' : 'none';
+  if (drawerFin) drawerFin.style.display = showFinishes ? '' : 'none';
+  if (unitFinBtn) unitFinBtn.style.display = showFinishes ? '' : 'none';
+
+  const navMp = document.getElementById('nav-masterplan');
+  if (navMp) navMp.textContent = isStruct ? 'Planos / Estructuras' : 'Exterior y Plantas';
+
+  const nightUploadLbl = document.getElementById('btn-upload-floor-night');
+  if (nightUploadLbl) {
+    const inp = nightUploadLbl.querySelector('input');
+    nightUploadLbl.childNodes[0].textContent = isStruct ? '🔩 Añadir Imagen con Armadura ' : '🌙 Añadir Vista Nocturna Nivel ';
+    if (inp && !nightUploadLbl.contains(inp)) nightUploadLbl.appendChild(inp);
+  }
+
+  const goFloorBtn = document.getElementById('btn-drawer-transition-to-floor');
+  if (goFloorBtn) goFloorBtn.textContent = isStruct ? '📐 Ir a Plano en Planta' : '🎬 Ir a Vista en Planta';
+
+  const drawerEyebrow = document.getElementById('drawer-eyebrow');
+  if (drawerEyebrow) drawerEyebrow.textContent = isStruct ? 'Elemento / Sector Estructural' : 'Departamento / Ambiente';
+
+  const goExtBtn = document.getElementById('btn-go-exterior-direct');
+  if (goExtBtn) goExtBtn.textContent = isStruct ? '🧱 Ir a Vista General' : '🏛️ Ir a Edificio Exterior';
+
+  syncDayNightButtonsUI();
 }
 
 function syncAvanceUI() {
@@ -1989,9 +2133,26 @@ function drawMasterplanRender(animateCrossfade = false) {
     if (angleBadge) angleBadge.textContent = activeLevel.name || activeLevel.badge || 'Planta';
   }
 
-  crossfadeImageElement(customImg, crossfadeImg, photoUrl, 'masterplan', animateCrossfade);
-  customImg.style.display = 'block';
-  customImg.style.filter = 'none';
+  const emptyPh = document.getElementById('masterplan-empty-placeholder');
+  if (!photoUrl) {
+    if (emptyPh) {
+      emptyPh.style.display = 'flex';
+      const titleEl = document.getElementById('mep-title');
+      if (titleEl) {
+        titleEl.textContent = isExterior
+          ? 'Proyecto de Estructuras en Blanco'
+          : `Plano en Planta: ${activeLevel?.name || 'Nivel'} (Sin imagen aún)`;
+      }
+    }
+    customImg.style.display = 'none';
+    customImg.removeAttribute('src');
+    if (crossfadeImg) { crossfadeImg.style.opacity = '0'; crossfadeImg.removeAttribute('src'); }
+  } else {
+    if (emptyPh) emptyPh.style.display = 'none';
+    crossfadeImageElement(customImg, crossfadeImg, photoUrl, 'masterplan', animateCrossfade);
+    customImg.style.display = 'block';
+    customImg.style.filter = 'none';
+  }
   const isPortalVisible = Boolean(portalEl && portalEl.style.display !== 'none');
   document.body.classList.toggle('has-exterior-360-btn', isPortalVisible);
   const nav360Btn = document.getElementById('nav-tour360');
@@ -2007,21 +2168,31 @@ function drawMasterplanRender(animateCrossfade = false) {
 }
 
 function syncEditorImgQuickBars() {
+  const isStruct = isStructuresProject();
   const mpLbl = document.getElementById('editor-mp-img-label');
   if (mpLbl) {
     const isExt = state.activeLevelId === 'facade';
     const lvl = state.levels.find((l) => l.id === state.activeLevelId);
+    const modeTag = isStruct
+      ? (state.isNightMode ? 'Con Armadura' : 'Sin Armadura')
+      : (state.isNightMode ? 'Noche' : 'Día');
     if (isExt) {
-      mpLbl.textContent = state.isNightMode ? `Exterior #${state.exteriorAngleIndex + 1} · Noche` : `Exterior #${state.exteriorAngleIndex + 1} · Día`;
+      mpLbl.textContent = isStruct
+        ? `Estructura #${state.exteriorAngleIndex + 1} · ${modeTag}`
+        : `Exterior #${state.exteriorAngleIndex + 1} · ${modeTag}`;
     } else if (state.is2DPlanMode) {
       mpLbl.textContent = `Plano 2D · ${lvl?.badge || lvl?.name || 'Piso'}`;
     } else {
-      mpLbl.textContent = `${lvl?.badge || 'Planta'} · ${state.isNightMode ? 'Noche' : 'Día'}`;
+      mpLbl.textContent = isStruct
+        ? `Plano en Planta · ${lvl?.badge || lvl?.name || 'Nivel'} · ${modeTag}`
+        : `${lvl?.badge || 'Planta'} · ${modeTag}`;
     }
   }
   const t360Lbl = document.getElementById('editor-360-img-label');
   if (t360Lbl) {
-    t360Lbl.textContent = state.isNightMode ? '360° · Noche' : '360° · Día';
+    t360Lbl.textContent = isStruct
+      ? (state.isNightMode ? '360° · Con Armadura' : '360° · Sin Armadura')
+      : (state.isNightMode ? '360° · Noche' : '360° · Día');
   }
 }
 
@@ -2032,25 +2203,69 @@ function closePlanActionPopover() {
   document.getElementById('plan-action-popover')?.classList.remove('open');
 }
 
-function openPlanActionPopover(cb, unit, anchorEvent = null) {
+function openPdfViewer(url, caption = 'Documento PDF') {
+  const modal = document.getElementById('modal-pdf-viewer');
+  const frame = document.getElementById('pdf-viewer-frame');
+  const cap = document.getElementById('pdf-viewer-caption');
+  const dl = document.getElementById('btn-pdf-viewer-download');
+  if (!modal || !frame || !url) return;
+  frame.src = url;
+  if (cap) cap.textContent = caption;
+  if (dl) dl.href = url;
+  modal.classList.add('open');
+}
+
+function openPlanActionPopover(cb, unit, anchorEvent = null, directPointId = null) {
   const pop = document.getElementById('plan-action-popover');
   const titleEl = document.getElementById('pap-title');
   const typeEl = document.getElementById('pap-type');
   if (!pop || !cb) return;
 
   if (titleEl) titleEl.textContent = cb.label || 'Vista';
-  if (typeEl) typeEl.textContent = cb.actionType === 'tour360' ? '🌐 Recorrido Panorámico 360°' : '🖼️ Fotografía / Render';
+  if (typeEl) {
+    typeEl.textContent = cb.actionType === 'tour360'
+      ? '🌐 Recorrido Panorámico 360°'
+      : (cb.actionType === 'pdf' ? '📄 Plano / Documento PDF' : '🖼️ Fotografía / Imagen');
+  }
+
+  // Optional editor delete button for direct standalone plan points
+  let delDirectBtn = document.getElementById('btn-pap-del-direct');
+  if (directPointId && isEditor()) {
+    if (!delDirectBtn) {
+      delDirectBtn = document.createElement('button');
+      delDirectBtn.type = 'button';
+      delDirectBtn.id = 'btn-pap-del-direct';
+      delDirectBtn.className = 'glass-pill-btn';
+      delDirectBtn.style.cssText = 'color:#f87171;border-color:rgba(239,68,68,0.4);padding:4px 9px;font-size:10.5px;';
+      delDirectBtn.textContent = '🗑️ Eliminar';
+      document.getElementById('btn-pap-view')?.parentElement?.appendChild(delDirectBtn);
+    }
+    delDirectBtn.style.display = 'inline-flex';
+    delDirectBtn.onclick = () => {
+      state.planPoints = (state.planPoints || []).filter((p) => p.id !== directPointId);
+      savePersistedState();
+      closePlanActionPopover();
+      renderMasterplanOverlays();
+      showToast('Punto en plano eliminado');
+    };
+  } else if (delDirectBtn) {
+    delDirectBtn.style.display = 'none';
+  }
 
   activePlanPopoverAction = async () => {
     closePlanActionPopover();
     if (cb.actionType === 'tour360') {
       const scopeLvl = state.activeLevelId !== 'facade' ? state.activeLevelId : (unit?.targetLevelId || null);
       await openFloorTour360(scopeLvl, cb.targetRoom360Id || null, true);
+    } else if (cb.actionType === 'pdf') {
+      const pdfSrc = cb.pdfMediaKey ? (await getMediaUrl(cb.pdfMediaKey)) || cb.pdfUrl : (cb.fileMediaKey ? (await getMediaUrl(cb.fileMediaKey)) || cb.fileUrl : (cb.pdfUrl || cb.fileUrl));
+      if (pdfSrc) openPdfViewer(pdfSrc, cb.label || 'Documento PDF');
+      else showToast('Este punto aún no tiene un archivo PDF asignado');
     } else {
-      const photoSrc = cb.photoMediaKey ? (await getMediaUrl(cb.photoMediaKey)) || cb.photoUrl : cb.photoUrl;
-      const nightSrc = cb.nightPhotoMediaKey ? (await getMediaUrl(cb.nightPhotoMediaKey)) || cb.nightPhotoUrl : (cb.nightPhotoUrl || null);
+      const photoSrc = cb.photoMediaKey ? (await getMediaUrl(cb.photoMediaKey)) || cb.photoUrl : (cb.fileMediaKey ? (await getMediaUrl(cb.fileMediaKey)) || cb.fileUrl : (cb.photoUrl || cb.fileUrl));
+      const nightSrc = cb.nightPhotoMediaKey ? (await getMediaUrl(cb.nightPhotoMediaKey)) || cb.nightPhotoUrl : (cb.rebarMediaKey ? (await getMediaUrl(cb.rebarMediaKey)) || cb.rebarUrl : (cb.nightPhotoUrl || cb.rebarUrl || null));
       if (photoSrc) openPhotoLightbox(photoSrc, cb.label, nightSrc);
-      else showToast('Este botón aún no tiene una foto render asignada');
+      else showToast('Este botón aún no tiene una imagen asignada');
     }
   };
 
@@ -3751,7 +3966,7 @@ function renderMasterplanOverlays() {
     poly.addEventListener('mousemove', (e) => { if (!state.isDrawingPolygon) showUnitHoverTooltip(unit, e.clientX, e.clientY); });
     poly.addEventListener('mouseleave', hideUnitHoverTooltip);
     poly.addEventListener('click', (e) => {
-      if (state.isDrawingPolygon || state.isPlacingPlanPoint) return; // let the click reach #scene-frame
+      if (state.isDrawingPolygon || state.isPlacingPlanPoint || state.isPlacingDirectPlanPoint) return; // let the click reach #scene-frame
       e.stopPropagation();
       if (state.editingShapeUnitId) return;
       hideUnitHoverTooltip();
@@ -3862,7 +4077,7 @@ function renderMasterplanOverlays() {
         poly.classList.remove('proximity-reveal');
       });
       pin.addEventListener('click', (e) => {
-        if (state.isDrawingPolygon || state.isPlacingPlanPoint) return;
+        if (state.isDrawingPolygon || state.isPlacingPlanPoint || state.isPlacingDirectPlanPoint) return;
         e.stopPropagation();
         hideUnitHoverTooltip();
         selectUnit(unit.id, true);
@@ -3890,7 +4105,7 @@ function renderMasterplanOverlays() {
       goDeptBtn.className = 'floating-goto-dept-btn';
       goDeptBtn.style.left = `${unit.center.x}%`;
       goDeptBtn.style.top = `${Math.max(10, unit.center.y)}%`;
-      goDeptBtn.innerHTML = '🏢 Ir a departamento →';
+      goDeptBtn.innerHTML = isStructuresProject() ? '📐 Ir a Plano en Planta →' : '🏢 Ir a departamento →';
       goDeptBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         hideUnitHoverTooltip();
@@ -3925,10 +4140,13 @@ function renderMasterplanOverlays() {
       pt.style.left = `${px}%`;
       pt.style.top = `${py}%`;
       pt.style.setProperty('--pt-color', cb.pinColor || '#d4af37');
-      pt.title = cb.actionType === 'tour360' ? `Ir a 360°: ${cb.label}` : `Ver Render: ${cb.label}`;
-      pt.innerHTML = `<span class="plan-render-point-dot"></span><span>${cb.label}</span>`;
+      pt.title = cb.actionType === 'tour360'
+        ? `Ir a 360°: ${cb.label}`
+        : (cb.actionType === 'pdf' ? `Abrir PDF: ${cb.label}` : `Ver Imagen: ${cb.label}`);
+      if (cb.actionType === 'pdf') pt.classList.add('is-pdf');
+      pt.innerHTML = `<span class="plan-render-point-dot"></span><span>${cb.actionType === 'pdf' ? '📄 ' : ''}${escapeHtml(cb.label)}</span>`;
       pt.addEventListener('click', (e) => {
-        if (state.isDrawingPolygon || state.isPlacingPlanPoint) return;
+        if (state.isDrawingPolygon || state.isPlacingPlanPoint || state.isPlacingDirectPlanPoint) return;
         e.stopPropagation();
         hideUnitHoverTooltip();
         openPlanActionPopover(cb, unit, e);
@@ -3936,6 +4154,28 @@ function renderMasterplanOverlays() {
       pinsContainer.appendChild(pt);
     });
   });
+
+  // Render standalone direct points placed on Plano en Planta (Image or PDF)
+  (state.planPoints || [])
+    .filter((dp) => dp && dp.levelId === state.activeLevelId)
+    .forEach((dp) => {
+      const pt = document.createElement('button');
+      pt.type = 'button';
+      pt.className = `plan-render-point ${dp.actionType === 'pdf' ? 'is-pdf' : ''}`;
+      pt.dataset.directPointId = dp.id;
+      pt.style.left = `${dp.coords?.x ?? 50}%`;
+      pt.style.top = `${dp.coords?.y ?? 50}%`;
+      pt.style.setProperty('--pt-color', dp.color || '#38bdf8');
+      pt.title = dp.actionType === 'pdf' ? `Abrir PDF: ${dp.label}` : `Ver Imagen: ${dp.label}`;
+      pt.innerHTML = `<span class="plan-render-point-dot"></span><span>${dp.actionType === 'pdf' ? '📄 ' : '🖼️ '}${escapeHtml(dp.label)}</span>`;
+      pt.addEventListener('click', (e) => {
+        if (state.isDrawingPolygon || state.isPlacingPlanPoint || state.isPlacingDirectPlanPoint) return;
+        e.stopPropagation();
+        hideUnitHoverTooltip();
+        openPlanActionPopover(dp, null, e, dp.id);
+      });
+      pinsContainer.appendChild(pt);
+    });
 
   // Render floating "🏢 Ir a Planta →" button when previewing a floor from Exterior sidebar
   if (isExterior && state.previewFloorLevelId && !state.isDrawingPolygon && !state.isPlacingPlanPoint) {
@@ -4398,7 +4638,7 @@ function saveFloorFromModal() {
         lvl.dayPhoto = floorDraft.planPhotoUrl;
         lvl.dayMediaKey = floorDraft.planPhotoKey;
       } else {
-        lvl.dayPhoto = './sample-assets/floor-piso9-3d.jpg';
+        lvl.dayPhoto = isStructuresProject() ? '' : './sample-assets/floor-piso9-3d.jpg';
         lvl.dayMediaKey = null;
       }
       if (floorDraft.plan2DCleared) {
@@ -4432,7 +4672,7 @@ function saveFloorFromModal() {
       name,
       badge,
       floorNum: state.levels.length,
-      dayPhoto: floorDraft.planPhotoUrl || './sample-assets/floor-piso9-3d.jpg',
+      dayPhoto: floorDraft.planPhotoUrl || (isStructuresProject() ? '' : './sample-assets/floor-piso9-3d.jpg'),
       nightPhoto: floorDraft.nightPhotoUrl || null,
       plan2DPhoto: floorDraft.plan2DPhotoUrl || null,
       plan2DMediaKey: floorDraft.plan2DPhotoKey || null,
@@ -4968,25 +5208,44 @@ let activeLightboxState = { dayUrl: null, nightUrl: null, caption: 'Vista Render
 
 function syncDayNightButtonsUI() {
   const isNight = !!state.isNightMode;
+  const isStruct = isStructuresProject();
+  const dnBtn = document.getElementById('btn-day-night');
   const dnIcon = document.getElementById('day-night-icon');
-  if (dnIcon) dnIcon.textContent = isNight ? '🌙' : '☀️';
-  document.getElementById('btn-day-night')?.classList.toggle('active', isNight);
+  if (dnBtn) {
+    dnBtn.classList.toggle('active', isNight);
+    dnBtn.classList.toggle('is-rebar-btn', isStruct);
+    dnBtn.title = isStruct
+      ? (isNight ? 'Ocultar Armadura (ver imagen base)' : 'Mostrar Armadura (ver imagen con armadura)')
+      : 'Alternar Vista Día / Noche';
+  }
+  if (dnIcon) {
+    dnIcon.textContent = isStruct
+      ? (isNight ? '🧱 Ocultar Armadura' : '🔩 Mostrar Armadura')
+      : (isNight ? '🌙' : '☀️');
+  }
 
   const btn360 = document.getElementById('btn-360-day-night');
   if (btn360) {
-    btn360.textContent = isNight ? '🌙' : '☀️';
+    btn360.textContent = isStruct ? (isNight ? '🧱' : '🔩') : (isNight ? '🌙' : '☀️');
+    btn360.title = isStruct
+      ? (isNight ? 'Ocultar Armadura' : 'Mostrar Armadura')
+      : 'Alternar Día / Noche en Panorámica';
     btn360.classList.toggle('active', isNight);
   }
 
   const btnGal = document.getElementById('btn-gallery-day-night');
   if (btnGal) {
-    btnGal.textContent = isNight ? '🌙 Noche' : '☀️ Día';
+    btnGal.textContent = isStruct
+      ? (isNight ? '🧱 Ocultar Armadura' : '🔩 Mostrar Armadura')
+      : (isNight ? '🌙 Noche' : '☀️ Día');
     btnGal.classList.toggle('active', isNight);
   }
 
   const btnLb = document.getElementById('btn-photo-viewer-day-night');
   if (btnLb) {
-    btnLb.textContent = isNight ? '🌙 Modo Noche' : '☀️ Modo Día';
+    btnLb.textContent = isStruct
+      ? (isNight ? '🧱 Ocultar Armadura' : '🔩 Mostrar Armadura')
+      : (isNight ? '🌙 Modo Noche' : '☀️ Modo Día');
     btnLb.classList.toggle('active', isNight);
   }
 }
@@ -5107,12 +5366,22 @@ function selectUnit(unitId, ensureOpen = false) {
   document.getElementById('drawer-status-text').textContent = statusLabels[unit.status] || 'DISPONIBLE';
 
   document.getElementById('drawer-title').textContent = unit.code;
-  document.getElementById('drawer-subtitle').textContent = `${unit.floorLabel || 'Torre Principal'} · ${unit.orientation || 'Vista'}`;
+  document.getElementById('drawer-subtitle').textContent = isStructuresProject()
+    ? `${unit.floorLabel || 'Estructura'} · Plano en Planta`
+    : `${unit.floorLabel || 'Torre Principal'} · ${unit.orientation || 'Vista'}`;
   document.getElementById('drawer-area').textContent = `${unit.area} m²`;
   document.getElementById('drawer-beds').textContent = `${unit.beds} ${unit.beds === 1 ? 'Cto' : 'Ctos'}`;
   document.getElementById('drawer-baths').textContent = `${unit.baths ?? 2} ${(unit.baths ?? 2) === 1 ? 'Baño' : 'Baños'}`;
   document.getElementById('drawer-kitchens').textContent = `${unit.kitchens ?? 1} Cocina`;
   document.getElementById('drawer-price').textContent = `$${Number(unit.price).toLocaleString()} USD`;
+
+  const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  setTxt('drawer-columns', String(unit.columns ?? 0));
+  setTxt('drawer-beams', String(unit.beams ?? 0));
+  setTxt('drawer-slabs2way', String(unit.slabs2Way ?? 0));
+  setTxt('drawer-solidslabs', String(unit.solidSlabs ?? 0));
+  setTxt('drawer-droppanels', String(unit.dropPanelSlabs ?? 0));
+  setTxt('drawer-struct-area', `${unit.area ?? 0} m²`);
 
   const currentLvl = state.levels.find((l) => l.id === state.activeLevelId);
   const targetLvl = state.levels.find((l) => l.id === (unit.targetLevelId || unit.levelId)) || state.levels[0];
@@ -5161,9 +5430,9 @@ function selectUnit(unitId, ensureOpen = false) {
     cBtns.forEach((cb) => {
       const b = document.createElement('button');
       b.className = 'custom-view-btn';
-      const icon = cb.actionType === 'tour360' ? '🌐' : '🖼️';
-      const tag = cb.actionType === 'tour360' ? '360° →' : 'Render →';
-      b.innerHTML = `<span>${icon} ${cb.label}</span><small style="opacity:0.8;">${tag}</small>`;
+      const icon = cb.actionType === 'tour360' ? '🌐' : (cb.actionType === 'pdf' ? '📄' : '🖼️');
+      const tag = cb.actionType === 'tour360' ? '360° →' : (cb.actionType === 'pdf' ? 'PDF →' : 'Imagen →');
+      b.innerHTML = `<span>${icon} ${escapeHtml(cb.label)}</span><small style="opacity:0.8;">${tag}</small>`;
       b.addEventListener('click', (e) => {
         e.stopPropagation();
         openPlanActionPopover(cb, unit, e);
@@ -5195,15 +5464,24 @@ function applyFieldVisibilityToDrawer(activeUnit = null) {
   const unit = activeUnit || state.units.find((u) => u.id === state.selectedUnitId);
   const levelId = state.activeLevelId || unit?.levelId || 'facade';
   const vf = getVisibleFieldsForLevel(levelId);
+  const isStruct = isStructuresProject();
   syncFieldVisibilityCheckboxes(levelId);
-  const showUnitAvail = vf.availability && (!unit || unit.showAvailability !== false);
-  document.getElementById('drawer-availability-banner').style.display = showUnitAvail ? 'flex' : 'none';
-  document.getElementById('field-wrap-name').style.display = vf.name ? 'block' : 'none';
-  document.getElementById('field-wrap-area').style.display = vf.area ? 'block' : 'none';
-  document.getElementById('field-wrap-rooms').style.display = vf.rooms ? 'block' : 'none';
-  document.getElementById('field-wrap-baths').style.display = vf.baths ? 'block' : 'none';
-  document.getElementById('field-wrap-kitchen').style.display = vf.kitchen ? 'block' : 'none';
-  document.getElementById('field-wrap-price').style.display = vf.price ? 'block' : 'none';
+  const showUnitAvail = !isStruct && vf.availability && (!unit || unit.showAvailability !== false);
+  const setDisp = (id, show, mode = 'block') => { const el = document.getElementById(id); if (el) el.style.display = show ? mode : 'none'; };
+  setDisp('drawer-availability-banner', showUnitAvail, 'flex');
+  setDisp('field-wrap-name', vf.name !== false, 'block');
+  setDisp('field-wrap-area', vf.area !== false, 'block');
+  setDisp('field-wrap-rooms', vf.rooms !== false, 'block');
+  setDisp('field-wrap-baths', vf.baths !== false, 'block');
+  setDisp('field-wrap-kitchen', vf.kitchen !== false, 'block');
+  setDisp('field-wrap-price', vf.price !== false, 'block');
+
+  setDisp('field-wrap-columns', vf.columns !== false, 'block');
+  setDisp('field-wrap-beams', vf.beams !== false, 'block');
+  setDisp('field-wrap-slabs2way', vf.slabs2Way !== false, 'block');
+  setDisp('field-wrap-solidslabs', vf.solidSlabs !== false, 'block');
+  setDisp('field-wrap-droppanels', vf.dropPanelSlabs !== false, 'block');
+  setDisp('field-wrap-struct-area', vf.area !== false, 'block');
 }
 
 function renderLevelsSidebar() {
@@ -5284,11 +5562,17 @@ function syncNewBtnTypeUI() {
     }
   }
   if (lbl && !pendingNewBtnFile.name) {
-    lbl.textContent = t === 'tour360' ? 'Subir nueva foto 360° (opcional)' : 'Subir Foto Render asignada';
+    lbl.textContent = t === 'tour360'
+      ? 'Subir nueva foto 360° (opcional)'
+      : (t === 'pdf' ? 'Subir Archivo PDF asignado' : 'Subir Imagen asignada');
   }
   if (nightWrap) nightWrap.style.display = t === 'photo' ? 'inline-flex' : 'none';
   if (clrNightBtn) clrNightBtn.style.display = (t === 'photo' && pendingNewBtnNightFile.url) ? 'inline-flex' : 'none';
-  if (nightLbl) nightLbl.textContent = pendingNewBtnNightFile.name ? `🌙 ${pendingNewBtnNightFile.name}` : 'Subir Nocturna (Opcional)';
+  if (nightLbl) {
+    nightLbl.textContent = pendingNewBtnNightFile.name
+      ? `${isStructuresProject() ? '🔩' : '🌙'} ${pendingNewBtnNightFile.name}`
+      : (isStructuresProject() ? 'Subir Con Armadura (Opcional)' : 'Subir Nocturna (Opcional)');
+  }
 }
 
 function renderDraftCustomLines() {
@@ -5325,8 +5609,8 @@ function renderDraftCustomButtons() {
   draftCustomButtons.forEach((btn, idx) => {
     const row = document.createElement('div');
     row.className = 'builder-item-row';
-    const badge = btn.actionType === 'tour360' ? '🌐 Vista 360°' : '🖼️ Foto Render';
-    const nightTag = btn.nightPhotoUrl ? ' · 🌙 Nocturna' : '';
+    const badge = btn.actionType === 'tour360' ? '🌐 Vista 360°' : (btn.actionType === 'pdf' ? '📄 Documento PDF' : '🖼️ Foto Render');
+    const nightTag = btn.nightPhotoUrl ? (isStructuresProject() ? ' · 🔩 Con Armadura' : ' · 🌙 Nocturna') : '';
     const planTag = btn.showOnPlan
       ? ` · <span style="display:inline-flex;align-items:center;gap:4px;"><i style="width:9px;height:9px;border-radius:50%;background:${btn.pinColor || '#d4af37'};display:inline-block;border:1px solid #fff;"></i>Punto en Planta</span>`
       : ' · Lista';
@@ -5396,33 +5680,56 @@ function openPolygonEditorModal(existingUnit = null) {
   if (planOpts) planOpts.style.display = 'none';
   if (ptLbl) ptLbl.textContent = 'Ubicación: Automática (centro)';
 
+  const isStruct = isStructuresProject();
+  const showBox = document.getElementById('poly-fields-showroom');
+  const structBox = document.getElementById('poly-fields-structures');
+  if (showBox) showBox.style.display = isStruct ? 'none' : 'flex';
+  if (structBox) structBox.style.display = isStruct ? 'flex' : 'none';
+
   if (existingUnit) {
     state.editingPolygonUnitId = existingUnit.id;
     document.getElementById('poly-input-name').value = existingUnit.code;
     document.getElementById('poly-input-btn-text').value = existingUnit.buttonText || existingUnit.code;
     document.getElementById('poly-input-show-avail').checked = existingUnit.showAvailability !== false;
     document.getElementById('poly-input-status').value = existingUnit.status || 'available';
-    document.getElementById('poly-input-price').value = existingUnit.price;
-    document.getElementById('poly-input-area').value = existingUnit.area;
-    document.getElementById('poly-input-beds').value = existingUnit.beds;
+    document.getElementById('poly-input-price').value = existingUnit.price ?? 0;
+    document.getElementById('poly-input-area').value = existingUnit.area ?? 0;
+    document.getElementById('poly-input-beds').value = existingUnit.beds ?? 0;
     document.getElementById('poly-input-baths').value = existingUnit.baths ?? 2;
     document.getElementById('poly-input-kitchens').value = existingUnit.kitchens ?? 1;
+    if (document.getElementById('poly-input-columns')) document.getElementById('poly-input-columns').value = existingUnit.columns ?? 0;
+    if (document.getElementById('poly-input-beams')) document.getElementById('poly-input-beams').value = existingUnit.beams ?? 0;
+    if (document.getElementById('poly-input-slabs2way')) document.getElementById('poly-input-slabs2way').value = existingUnit.slabs2Way ?? 0;
+    if (document.getElementById('poly-input-solidslabs')) document.getElementById('poly-input-solidslabs').value = existingUnit.solidSlabs ?? 0;
+    if (document.getElementById('poly-input-droppanels')) document.getElementById('poly-input-droppanels').value = existingUnit.dropPanelSlabs ?? 0;
+    if (document.getElementById('poly-input-struct-area')) document.getElementById('poly-input-struct-area').value = existingUnit.area ?? 0;
     targetSelect.value = existingUnit.targetLevelId || state.activeLevelId;
     draftCustomLines = structuredClone(existingUnit.customLines || []);
     draftCustomButtons = structuredClone(existingUnit.customButtons || []);
   } else {
     state.editingPolygonUnitId = null;
     const nextNum = state.units.length + 1;
-    document.getElementById('poly-input-name').value = state.activeLevelId === 'facade' ? `Piso / Unidad ${nextNum}` : `Ambiente ${nextNum}`;
-    document.getElementById('poly-input-btn-text').value = state.activeLevelId === 'facade' ? `Unidad ${nextNum} · 150 m²` : `Ambiente ${nextNum}`;
-    document.getElementById('poly-input-show-avail').checked = true;
+    document.getElementById('poly-input-name').value = isStruct
+      ? (state.activeLevelId === 'facade' ? `Nivel Estructural ${nextNum}` : `Sector / Elemento ${nextNum}`)
+      : (state.activeLevelId === 'facade' ? `Piso / Unidad ${nextNum}` : `Ambiente ${nextNum}`);
+    document.getElementById('poly-input-btn-text').value = isStruct
+      ? `Nivel ${nextNum} · Plano en Planta`
+      : (state.activeLevelId === 'facade' ? `Unidad ${nextNum} · 150 m²` : `Ambiente ${nextNum}`);
+    document.getElementById('poly-input-show-avail').checked = !isStruct;
     document.getElementById('poly-input-status').value = 'available';
-    document.getElementById('poly-input-price').value = '165000';
-    document.getElementById('poly-input-area').value = '150';
-    document.getElementById('poly-input-beds').value = '3';
-    document.getElementById('poly-input-baths').value = '2';
-    document.getElementById('poly-input-kitchens').value = '1';
-    targetSelect.value = state.activeLevelId === 'facade' ? 'floor-9' : state.activeLevelId;
+    document.getElementById('poly-input-price').value = isStruct ? '0' : '165000';
+    document.getElementById('poly-input-area').value = isStruct ? '0' : '150';
+    document.getElementById('poly-input-beds').value = isStruct ? '0' : '3';
+    document.getElementById('poly-input-baths').value = isStruct ? '0' : '2';
+    document.getElementById('poly-input-kitchens').value = isStruct ? '0' : '1';
+    if (document.getElementById('poly-input-columns')) document.getElementById('poly-input-columns').value = '0';
+    if (document.getElementById('poly-input-beams')) document.getElementById('poly-input-beams').value = '0';
+    if (document.getElementById('poly-input-slabs2way')) document.getElementById('poly-input-slabs2way').value = '0';
+    if (document.getElementById('poly-input-solidslabs')) document.getElementById('poly-input-solidslabs').value = '0';
+    if (document.getElementById('poly-input-droppanels')) document.getElementById('poly-input-droppanels').value = '0';
+    if (document.getElementById('poly-input-struct-area')) document.getElementById('poly-input-struct-area').value = '0';
+    const defaultTarget = state.levels.find((l) => l.id !== 'facade')?.id || state.activeLevelId;
+    targetSelect.value = state.activeLevelId === 'facade' ? defaultTarget : state.activeLevelId;
     draftCustomLines = [];
     draftCustomButtons = [];
   }
@@ -5436,22 +5743,30 @@ function openPolygonEditorModal(existingUnit = null) {
 
 function savePolygonFromModal() {
   if (!isEditor()) return;
-  const name = document.getElementById('poly-input-name').value.trim() || 'Ambiente';
+  const isStruct = isStructuresProject();
+  const name = document.getElementById('poly-input-name').value.trim() || (isStruct ? 'Sector Estructural' : 'Ambiente');
   const buttonText = document.getElementById('poly-input-btn-text').value.trim() || name;
-  const showAvailability = document.getElementById('poly-input-show-avail').checked;
+  const showAvailability = isStruct ? false : document.getElementById('poly-input-show-avail').checked;
   const status = document.getElementById('poly-input-status').value;
   const price = Number(document.getElementById('poly-input-price').value) || 0;
-  const area = Number(document.getElementById('poly-input-area').value) || 0;
+  const area = isStruct
+    ? (Number(document.getElementById('poly-input-struct-area')?.value) || 0)
+    : (Number(document.getElementById('poly-input-area').value) || 0);
   const beds = Number(document.getElementById('poly-input-beds').value) || 0;
   const baths = Number(document.getElementById('poly-input-baths').value) || 0;
   const kitchens = Number(document.getElementById('poly-input-kitchens').value) || 0;
+  const columns = Number(document.getElementById('poly-input-columns')?.value) || 0;
+  const beams = Number(document.getElementById('poly-input-beams')?.value) || 0;
+  const slabs2Way = Number(document.getElementById('poly-input-slabs2way')?.value) || 0;
+  const solidSlabs = Number(document.getElementById('poly-input-solidslabs')?.value) || 0;
+  const dropPanelSlabs = Number(document.getElementById('poly-input-droppanels')?.value) || 0;
   const targetLevelId = document.getElementById('poly-input-target-level').value || state.activeLevelId;
   const customLines = structuredClone(draftCustomLines);
   const customButtons = structuredClone(draftCustomButtons);
 
   if (state.editingPolygonUnitId) {
     const u = state.units.find((x) => x.id === state.editingPolygonUnitId);
-    if (u) Object.assign(u, { code: name, buttonText, showAvailability, status, price, area, beds, baths, kitchens, targetLevelId, customLines, customButtons });
+    if (u) Object.assign(u, { code: name, buttonText, showAvailability, status, price, area, beds, baths, kitchens, columns, beams, slabs2Way, solidSlabs, dropPanelSlabs, targetLevelId, customLines, customButtons });
     savePersistedState();
     selectUnit(state.editingPolygonUnitId, true);
     showToast('Polígono y panel actualizados');
@@ -5461,11 +5776,12 @@ function savePolygonFromModal() {
     const newId = `u-poly-${Date.now()}`;
     const activeLvl = state.levels.find((l) => l.id === state.activeLevelId);
     state.units.push({
-      id: newId, code: name, buttonText, type: 'Ambiente / Unidad',
+      id: newId, code: name, buttonText, type: isStruct ? 'Elemento Estructural' : 'Ambiente / Unidad',
       levelId: state.activeLevelId, targetLevelId, transitionVideo: 'auto',
-      floorNum: activeLvl?.floorNum || 1, floorLabel: activeLvl?.name || 'Planta',
-      area, beds, baths, kitchens, price, orientation: 'Vista', status, showAvailability,
-      defaultRoom360: getRooms360ForScope(state.activeLevelId)[0]?.id || 'living',
+      floorNum: activeLvl?.floorNum || 1, floorLabel: activeLvl?.name || (isStruct ? 'Plano en Planta' : 'Planta'),
+      area, beds, baths, kitchens, columns, beams, slabs2Way, solidSlabs, dropPanelSlabs,
+      price, orientation: isStruct ? 'Estructural' : 'Vista', status, showAvailability,
+      defaultRoom360: getRooms360ForScope(state.activeLevelId)[0]?.id || null,
       customLines, customButtons,
       center, polygon: savedPoly
     });
@@ -8006,8 +8322,10 @@ function bindEvents() {
   document.getElementById('btn-cancel-code-gate')?.addEventListener('click', closeCodeGate);
   document.getElementById('portal-search-input')?.addEventListener('input', renderPortalProjects);
 
-  document.getElementById('btn-portal-create-project')?.addEventListener('click', openNewProjectModal);
-  document.getElementById('btn-portal-signed-new-proj')?.addEventListener('click', openNewProjectModal);
+  document.getElementById('btn-portal-create-project')?.addEventListener('click', () => openNewProjectModal('showroom'));
+  document.getElementById('btn-portal-signed-new-proj')?.addEventListener('click', () => openNewProjectModal('showroom'));
+  document.getElementById('btn-np-tab-showroom')?.addEventListener('click', () => setNewProjectTypeTab('showroom'));
+  document.getElementById('btn-np-tab-structures')?.addEventListener('click', () => setNewProjectTypeTab('structures'));
   document.getElementById('btn-close-new-project')?.addEventListener('click', () => document.getElementById('modal-new-project').classList.remove('open'));
   document.getElementById('btn-cancel-new-project')?.addEventListener('click', () => document.getElementById('modal-new-project').classList.remove('open'));
   document.getElementById('np-upload-cover')?.addEventListener('change', async (e) => {
@@ -8304,6 +8622,60 @@ function bindEvents() {
   });
   document.getElementById('modal-photo-viewer')?.addEventListener('click', (e) => {
     if (e.target.id === 'modal-photo-viewer') e.currentTarget.classList.remove('open');
+  });
+  document.getElementById('btn-close-pdf-viewer')?.addEventListener('click', () => {
+    document.getElementById('modal-pdf-viewer')?.classList.remove('open');
+    const fr = document.getElementById('pdf-viewer-frame');
+    if (fr) fr.src = '';
+  });
+  document.getElementById('modal-pdf-viewer')?.addEventListener('click', (e) => {
+    if (e.target.id === 'modal-pdf-viewer') {
+      e.currentTarget.classList.remove('open');
+      const fr = document.getElementById('pdf-viewer-frame');
+      if (fr) fr.src = '';
+    }
+  });
+
+  // Blank Structures placeholder quick uploads (Base image / Rebar image)
+  document.getElementById('input-empty-upload-base')?.addEventListener('change', async (e) => {
+    if (!isEditor()) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const lvl = state.levels.find((l) => l.id === state.activeLevelId);
+    const key = `struct-base-${state.activeLevelId}-${Date.now()}`;
+    const url = await saveMediaBlob(key, file);
+    if (state.activeLevelId === 'facade' && state.exteriorAngles[0]) {
+      state.exteriorAngles[0].photo = url;
+      state.exteriorAngles[0].mediaKey = key;
+    }
+    if (lvl) {
+      lvl.dayPhoto = url;
+      lvl.dayMediaKey = key;
+    }
+    savePersistedState();
+    drawMasterplanRender();
+    showToast('Imagen base (sin armadura) cargada');
+    e.target.value = '';
+  });
+  document.getElementById('input-empty-upload-rebar')?.addEventListener('change', async (e) => {
+    if (!isEditor()) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const lvl = state.levels.find((l) => l.id === state.activeLevelId);
+    const key = `struct-rebar-${state.activeLevelId}-${Date.now()}`;
+    const url = await saveMediaBlob(key, file);
+    if (state.activeLevelId === 'facade' && state.exteriorAngles[0]) {
+      state.exteriorAngles[0].nightPhoto = url;
+      state.exteriorAngles[0].nightMediaKey = key;
+    }
+    if (lvl) {
+      lvl.nightPhoto = url;
+      lvl.nightMediaKey = key;
+    }
+    savePersistedState();
+    toggleDayNightMode(true);
+    showToast('Imagen con armadura cargada');
+    e.target.value = '';
   });
 
   // Top-right Toolbar Actions (Consult WhatsApp, Share, Fullscreen, Finder 🔍, Avance de Obra)
@@ -9131,9 +9503,125 @@ function bindEvents() {
     });
   });
 
+  let directPointDraft = { coords: { x: 50, y: 50 }, fileUrl: null, fileMediaKey: null, rebarUrl: null, rebarMediaKey: null, fileName: '' };
+  const openDirectPlanPointModal = (coords) => {
+    directPointDraft = { coords: { x: coords.x, y: coords.y }, fileUrl: null, fileMediaKey: null, rebarUrl: null, rebarMediaKey: null, fileName: '' };
+    const lblInp = document.getElementById('dpp-input-label');
+    const typeSel = document.getElementById('dpp-input-type');
+    const colInp = document.getElementById('dpp-input-color');
+    const fileLbl = document.getElementById('dpp-file-lbl');
+    const rebarLbl = document.getElementById('dpp-rebar-lbl');
+    const rebarWrap = document.getElementById('dpp-rebar-wrap');
+    const coordsLbl = document.getElementById('dpp-coords-lbl');
+    if (lblInp) lblInp.value = '';
+    if (typeSel) typeSel.value = 'photo';
+    if (colInp) colInp.value = '#38bdf8';
+    if (fileLbl) fileLbl.textContent = 'Subir Imagen o PDF';
+    if (rebarLbl) rebarLbl.textContent = 'Opcional: 2da Imagen (Con Armadura)';
+    if (rebarWrap) rebarWrap.style.display = 'inline-flex';
+    if (coordsLbl) coordsLbl.textContent = `Coordenadas en plano: ${coords.x}%, ${coords.y}%`;
+    document.getElementById('modal-direct-plan-point')?.classList.add('open');
+  };
+
+  document.getElementById('btn-add-direct-plan-point')?.addEventListener('click', () => {
+    if (!isEditor()) return;
+    if (state.isDrawingPolygon) resetPolygonDrawingState(false);
+    if (state.is2DPlanMode) {
+      state.is2DPlanMode = false;
+      syncPlanModeButtons();
+      drawMasterplanRender();
+      renderMasterplanOverlays();
+    }
+    state.isPlacingDirectPlanPoint = true;
+    state.isPlacingPlanPoint = false;
+    document.body.classList.add('placing-plan-point');
+    document.getElementById('plan-point-place-banner')?.classList.add('active');
+    if (state.activeView !== 'masterplan') switchView('masterplan', false, true);
+    showToast('Haz clic sobre el Plano en Planta para ubicar el punto a Imagen o PDF');
+  });
+
+  document.getElementById('dpp-input-type')?.addEventListener('change', (e) => {
+    const isPdf = e.target.value === 'pdf';
+    const rebarWrap = document.getElementById('dpp-rebar-wrap');
+    const fileLbl = document.getElementById('dpp-file-lbl');
+    if (rebarWrap) rebarWrap.style.display = isPdf ? 'none' : 'inline-flex';
+    if (fileLbl && !directPointDraft.fileName) {
+      fileLbl.textContent = isPdf ? 'Subir Archivo PDF' : 'Subir Imagen';
+    }
+  });
+
+  document.getElementById('dpp-upload-file')?.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+    const typeSel = document.getElementById('dpp-input-type');
+    if (typeSel) {
+      typeSel.value = isPdf ? 'pdf' : 'photo';
+      const rebarWrap = document.getElementById('dpp-rebar-wrap');
+      if (rebarWrap) rebarWrap.style.display = isPdf ? 'none' : 'inline-flex';
+    }
+    const key = `planpt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}${isPdf ? '.pdf' : ''}`;
+    directPointDraft.fileUrl = await saveMediaBlob(key, file);
+    directPointDraft.fileMediaKey = key;
+    directPointDraft.fileName = file.name;
+    const fileLbl = document.getElementById('dpp-file-lbl');
+    if (fileLbl) fileLbl.textContent = `✅ ${file.name}`;
+    e.target.value = '';
+  });
+
+  document.getElementById('dpp-upload-rebar-file')?.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const key = `planpt-rebar-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    directPointDraft.rebarUrl = await saveMediaBlob(key, file);
+    directPointDraft.rebarMediaKey = key;
+    const rebarLbl = document.getElementById('dpp-rebar-lbl');
+    if (rebarLbl) rebarLbl.textContent = `🔩 ${file.name}`;
+    e.target.value = '';
+  });
+
+  const closeDppModal = () => document.getElementById('modal-direct-plan-point')?.classList.remove('open');
+  document.getElementById('btn-close-dpp-modal')?.addEventListener('click', closeDppModal);
+  document.getElementById('btn-cancel-dpp-modal')?.addEventListener('click', closeDppModal);
+  document.getElementById('btn-save-dpp-modal')?.addEventListener('click', () => {
+    if (!isEditor()) return;
+    const label = (document.getElementById('dpp-input-label')?.value || '').trim() || 'Detalle en Plano';
+    const actionType = document.getElementById('dpp-input-type')?.value === 'pdf' ? 'pdf' : 'photo';
+    const color = document.getElementById('dpp-input-color')?.value || '#38bdf8';
+    if (!directPointDraft.fileUrl) {
+      showToast(actionType === 'pdf' ? 'Sube un archivo PDF para este punto' : 'Sube una imagen para este punto');
+      return;
+    }
+    if (!Array.isArray(state.planPoints)) state.planPoints = [];
+    state.planPoints.push({
+      id: `dp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      levelId: state.activeLevelId || 'facade',
+      label,
+      actionType,
+      color,
+      coords: { ...directPointDraft.coords },
+      fileUrl: directPointDraft.fileUrl,
+      fileMediaKey: directPointDraft.fileMediaKey,
+      rebarUrl: actionType === 'photo' ? directPointDraft.rebarUrl : null,
+      rebarMediaKey: actionType === 'photo' ? directPointDraft.rebarMediaKey : null
+    });
+    savePersistedState();
+    closeDppModal();
+    renderMasterplanOverlays();
+    showToast(`Punto "${label}" colocado sobre el Plano en Planta`);
+  });
+
   const sceneFrame = document.getElementById('scene-frame');
   sceneFrame.addEventListener('click', (e) => {
     if (!isEditor()) return;
+    if (state.isPlacingDirectPlanPoint && !state.isDrawingPolygon) {
+      const pt = clientToMediaPct(e.clientX, e.clientY);
+      state.isPlacingDirectPlanPoint = false;
+      document.body.classList.remove('placing-plan-point');
+      document.getElementById('plan-point-place-banner')?.classList.remove('active');
+      openDirectPlanPointModal(pt);
+      return;
+    }
     if (state.isPlacingPlanPoint && !state.isDrawingPolygon) {
       const pt = clientToMediaPct(e.clientX, e.clientY);
       pendingNewBtnPoint = { x: pt.x, y: pt.y };
@@ -9382,10 +9870,12 @@ function bindEvents() {
     showToast('Haz clic sobre la planta para ubicar el punto interactivo');
   });
   document.getElementById('btn-cancel-plan-point')?.addEventListener('click', () => {
+    const wasDirect = state.isPlacingDirectPlanPoint;
     state.isPlacingPlanPoint = false;
+    state.isPlacingDirectPlanPoint = false;
     document.body.classList.remove('placing-plan-point');
     document.getElementById('plan-point-place-banner')?.classList.remove('active');
-    document.getElementById('modal-polygon-editor')?.classList.add('open');
+    if (!wasDirect) document.getElementById('modal-polygon-editor')?.classList.add('open');
   });
   document.getElementById('new-btn-upload-file')?.addEventListener('change', async (e) => {
     const file = e.target.files[0]; if (!file) return;
@@ -9448,6 +9938,26 @@ function bindEvents() {
         pinColor,
         pinCoords
       });
+    } else if (actionType === 'pdf') {
+      if (!pendingNewBtnFile.url) {
+        showToast('Primero sube un archivo PDF para este botón');
+        return;
+      }
+      draftCustomButtons.push({
+        id: `cb-${Date.now()}`,
+        label,
+        actionType: 'pdf',
+        photoUrl: null,
+        photoMediaKey: null,
+        nightPhotoUrl: null,
+        nightPhotoMediaKey: null,
+        pdfUrl: pendingNewBtnFile.url,
+        pdfMediaKey: pendingNewBtnFile.mediaKey || null,
+        targetRoom360Id: null,
+        showOnPlan,
+        pinColor,
+        pinCoords
+      });
     } else {
       draftCustomButtons.push({
         id: `cb-${Date.now()}`,
@@ -9457,6 +9967,8 @@ function bindEvents() {
         photoMediaKey: pendingNewBtnFile.mediaKey || null,
         nightPhotoUrl: pendingNewBtnNightFile.url || null,
         nightPhotoMediaKey: pendingNewBtnNightFile.mediaKey || null,
+        pdfUrl: null,
+        pdfMediaKey: null,
         targetRoom360Id: null,
         showOnPlan,
         pinColor,
@@ -9592,23 +10104,53 @@ function bindEvents() {
     });
   };
 
+  const pendingRemoveRemoteCodes = new Set();
   const renderCloudProjectsChecklist = () => {
     const box = document.getElementById('cloud-projects-checklist');
     if (!box) return;
     box.innerHTML = '';
     portalState.projects.forEach((proj) => {
+      const codeUp = String(proj.code || '').toUpperCase();
       const isPub = proj.published !== false;
-      const row = document.createElement('label');
+      const isRemoving = pendingRemoveRemoteCodes.has(codeUp);
+      const row = document.createElement('div');
       row.className = 'assign-poly-item';
+      row.style.justifyContent = 'space-between';
       row.innerHTML = `
-        <input type="checkbox" data-cloud-proj-pub="${proj.code}" ${isPub ? 'checked' : ''} />
-        <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong>${proj.buildingName}</strong> <small style="color:var(--gold-bright);">(${proj.code})</small></span>
-        <span class="code-tag" style="${isPub ? 'background:rgba(34,197,94,0.2);color:#4ade80;' : ''}">${isPub ? '🟢 Publicar' : '📝 Borrador (PC)'}</span>
+        <label style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;cursor:pointer;">
+          <input type="checkbox" data-cloud-proj-pub="${proj.code}" ${isPub && !isRemoving ? 'checked' : ''} />
+          <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            <strong>${escapeHtml(proj.buildingName)}</strong>
+            <small style="color:var(--gold-bright);">(${escapeHtml(proj.code)}${proj.projectType === 'structures' ? ' · Estructuras' : ''})</small>
+          </span>
+        </label>
+        <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;">
+          <span class="code-tag" style="${isRemoving ? 'background:rgba(239,68,68,0.2);color:#f87171;' : (isPub ? 'background:rgba(34,197,94,0.2);color:#4ade80;' : '')}">
+            ${isRemoving ? '🗑️ Retirar de web' : (isPub ? '🚀 Subir / Actualizar' : '⏸️ Mantener intacto')}
+          </span>
+          <button type="button" class="icon-btn" data-cloud-remove-web="${proj.code}" title="${isRemoving ? 'Cancelar retiro de la web' : 'Marcar para retirar este proyecto de la web publicada'}" style="width:22px;height:22px;font-size:11px;color:${isRemoving ? '#4ade80' : '#f87171'};">
+            ${isRemoving ? '↩️' : '🗑️'}
+          </button>
+        </div>
       `;
       row.querySelector('input').addEventListener('change', (e) => {
+        if (e.target.checked) pendingRemoveRemoteCodes.delete(codeUp);
         proj.published = e.target.checked;
         savePortalState();
         renderPortalProjects();
+        renderCloudProjectsChecklist();
+      });
+      row.querySelector('[data-cloud-remove-web]')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (pendingRemoveRemoteCodes.has(codeUp)) {
+          pendingRemoveRemoteCodes.delete(codeUp);
+        } else {
+          pendingRemoveRemoteCodes.add(codeUp);
+          proj.published = false;
+          savePortalState();
+          renderPortalProjects();
+        }
         renderCloudProjectsChecklist();
       });
       box.appendChild(row);
@@ -9772,6 +10314,7 @@ function bindEvents() {
         portalState,
         loadProjectStateByCode: getRawProjectStateForPublish,
         getMediaBlob,
+        removeRemoteCodes: [...pendingRemoveRemoteCodes],
         onProgress: (pct, msg) => {
           if (progBar) progBar.style.width = `${pct}%`;
           if (progSt) progSt.textContent = msg;
@@ -9782,6 +10325,8 @@ function bindEvents() {
         mockApiBase: window.__SALO_TEST_MOCK_API_BASE || '',
         mockUploadsBase: window.__SALO_TEST_MOCK_UPLOADS_BASE || ''
       });
+      pendingRemoveRemoteCodes.clear();
+      renderCloudProjectsChecklist();
       if (resBox) {
         resBox.style.display = 'block';
         resBox.innerHTML = `

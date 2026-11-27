@@ -1,10 +1,11 @@
 {
-  "publishVersion": "1795625579660",
-  "publishedAt": "2026-11-25T16:52:59.660Z",
+  "publishVersion": "1795751219080",
+  "publishedAt": "2026-11-27T03:46:59.080Z",
   "visitsScriptUrl": "https://script.google.com/macros/s/AKfycbz4XDuDUinem9hZzjQrFKxP2dZjrP1VekhQ3lmwHcDwnKuUOkYtPLiWNrWshdSMT6t9/exec",
   "projects": [
     {
       "code": "PRJ-003",
+      "projectType": "showroom",
       "buildingName": "Torre Onix",
       "subtitle": "Showroom Interactivo 3D · Panorámica · Plantas",
       "whatsappPhone": "59173080076",
@@ -81,5 +82,13 @@
       "url": "./media/PORTAL/portal-example-ex-1795026677355-uagw.jpg"
     }
   ],
-  "news": []
+  "news": [
+    {
+      "id": "news-1795751097332-uzhh",
+      "title": "Promocion",
+      "url": "https://www.tiktok.com/@.salo.bo/video/7711969141774847253?is_from_webapp=1&sender_device=pc&web_id=7705489058814084629",
+      "videoId": "7711969141774847253",
+      "createdAt": "2026-11-27T03:44:57.332Z"
+    }
+  ]
 }

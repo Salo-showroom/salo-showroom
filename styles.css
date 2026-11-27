@@ -5687,3 +5687,86 @@ body[data-role="editor"] .main-project-logo-wrap.visible:hover {
   color: var(--ink-silver);
   font-size: 12px;
 }
+
+/* ==========================================================================
+   V13: PROYECTO DE ESTRUCTURAS (CAMPOS ARMADURAS, LIENZO EN BLANCO, PDF)
+   ========================================================================== */
+.struct-only-grid {
+  display: none !important;
+}
+
+body[data-project-type="structures"] .struct-only-grid {
+  display: grid !important;
+}
+
+body[data-project-type="structures"] #drawer-kpi-grid,
+body[data-project-type="structures"] #config-fields-showroom {
+  display: none !important;
+}
+
+body[data-project-type="structures"] #btn-day-night.is-rebar-btn {
+  width: auto;
+  padding: 0 10px;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.masterplan-empty-placeholder {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(56, 189, 248, 0.09), transparent 55%),
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    #0a0c12;
+  background-size: 100% 100%, 36px 36px, 36px 36px, 100% 100%;
+  padding: 20px;
+}
+
+.masterplan-empty-placeholder .mep-card {
+  max-width: 440px;
+  text-align: center;
+  background: rgba(10, 12, 18, 0.88);
+  border: 1px dashed rgba(212, 175, 55, 0.45);
+  border-radius: 16px;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.65);
+}
+
+.masterplan-empty-placeholder .mep-icon {
+  font-size: 34px;
+}
+
+.masterplan-empty-placeholder h3 {
+  font-family: var(--font-display);
+  color: var(--gold-bright);
+  font-size: 17px;
+}
+
+.masterplan-empty-placeholder p {
+  font-size: 12px;
+  color: var(--ink-silver);
+  line-height: 1.45;
+}
+
+.masterplan-empty-placeholder .mep-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+.plan-render-point.is-pdf {
+  border-color: rgba(56, 189, 248, 0.85);
+}
